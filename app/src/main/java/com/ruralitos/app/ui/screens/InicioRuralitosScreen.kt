@@ -170,29 +170,22 @@ fun InicioRuralitosScreen(
                 modifier = Modifier
                     .fillMaxHeight()
                     .widthIn(max = 340.dp),
-                drawerContainerColor = Color.Transparent
+                drawerContainerColor = Color.White
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth()
-                        .background(Color(0xFFE8EFFA))
+                        .background(Color.White)
                 ) {
-                    FondoMenuLateralAzul(
-                        modifier = Modifier.fillMaxSize()
-                    )
-
                     Column(
                         modifier = Modifier.fillMaxHeight()
                     ) {
                         Surface(
                             modifier = Modifier.fillMaxWidth(),
-                            color = Color.White.copy(alpha = 0.92f),
-                            shape = RoundedCornerShape(
-                                bottomStart = 28.dp,
-                                bottomEnd = 28.dp
-                            ),
-                            shadowElevation = 1.dp
+                            color = Color.White,
+                            shape = RoundedCornerShape(0.dp),
+                            shadowElevation = 0.dp
                         ) {
                             Row(
                                 modifier = Modifier
@@ -249,6 +242,8 @@ fun InicioRuralitosScreen(
                             }
                         }
 
+                        HorizontalDivider(color = BordeClinico)
+
                         Column(
                             modifier = Modifier
                                 .weight(1f, fill = true)
@@ -261,14 +256,13 @@ fun InicioRuralitosScreen(
                                 )
                         ) {
                             Text(
-                                text = "CUENTA Y SEGURIDAD",
-                                color = AzulClinicoOscuro.copy(alpha = 0.82f),
+                                text = "Cuenta y seguridad",
+                                color = TextoSecundario,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                letterSpacing = 1.1.sp,
                                 modifier = Modifier.padding(
                                     start = 8.dp,
-                                    bottom = 16.dp
+                                    bottom = 8.dp
                                 )
                             )
 
@@ -344,7 +338,7 @@ fun InicioRuralitosScreen(
 
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 18.dp),
-                            color = AzulClinico.copy(alpha = 0.20f)
+                            color = BordeClinico
                         )
 
                         Surface(
@@ -359,8 +353,8 @@ fun InicioRuralitosScreen(
                                     top = 14.dp,
                                     bottom = 18.dp
                                 )
-                                .height(66.dp),
-                            color = Color.White.copy(alpha = 0.95f),
+                                .height(52.dp),
+                            color = Color.White,
                             shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(
                                 1.3.dp,
@@ -922,33 +916,28 @@ private fun ItemMenu(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(bottom = 12.dp)
-            .heightIn(min = 74.dp),
-        color = Color.White.copy(alpha = 0.96f),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            1.dp,
-            AzulClinico.copy(alpha = 0.08f)
-        ),
-        shadowElevation = 1.dp
+            .padding(bottom = 4.dp)
+            .heightIn(min = 56.dp),
+        color = Color.White,
+        shape = RoundedCornerShape(12.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 13.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier.size(44.dp),
-                shape = CircleShape,
-                color = color.copy(alpha = 0.11f)
+                modifier = Modifier.size(36.dp),
+                shape = RoundedCornerShape(10.dp),
+                color = color.copy(alpha = 0.12f)
             ) {
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(12.dp)
+                            .size(10.dp)
                             .background(
                                 color = color,
                                 shape = CircleShape
@@ -960,18 +949,17 @@ private fun ItemMenu(
             Text(
                 text = titulo,
                 color = AzulClinicoOscuro,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(start = 14.dp)
+                    .padding(start = 12.dp)
             )
 
             Text(
                 text = "›",
-                color = AzulSecundario,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.SemiBold
+                color = TextoSecundario,
+                fontSize = 22.sp
             )
         }
     }
