@@ -230,11 +230,12 @@ Column(
     ) {
         EncabezadoPantallaRuralitos(
             titulo = "Buscar y modificar fichas",
-            subtitulo = "Encuentra una familia por cualquiera de sus integrantes.",
+            subtitulo = null,
             paso = null,
             totalPasos = null,
             etiquetaPaso = "",
-            onVolver = onRegresar
+            onVolver = onRegresar,
+            descripcion = "Encuentra una familia por cualquiera de sus integrantes."
         )
 
         LazyColumn(

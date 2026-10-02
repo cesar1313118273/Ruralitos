@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.Manifest
@@ -222,44 +223,19 @@ fun NotasDiariasScreen(
             .formularioSeguro()
             .background(FondoNotasDiarias)
     ) {
-        CabeceraNotasConOnda(onRegresar)
+        EncabezadoPantallaRuralitos(
+            titulo = "Notas diarias",
+            subtitulo = null,
+            paso = null,
+            totalPasos = null,
+            etiquetaPaso = "",
+            onVolver = onRegresar,
+            descripcion = "Notas importantes de las personas registradas"
+        )
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp)
-            ) {
-                Text(
-                    text = "SEGUIMIENTO",
-                    color = AzulEtiquetaNotas,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 2.sp
-                )
-
-                Text(
-                    text = "Notas Diarias",
-                    color = AzulTituloNotas,
-                    fontSize = 22.sp,
-                    lineHeight = 36.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Text(
-                    text = "Notas importantes de las personas registradas",
-                    color = GrisTextoNotas,
-                    fontSize = 16.sp,
-                    lineHeight = 20.sp,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-        }
 
         item {
             CampoBusquedaNotas(

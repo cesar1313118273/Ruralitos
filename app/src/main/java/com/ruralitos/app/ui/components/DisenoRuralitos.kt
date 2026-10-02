@@ -263,7 +263,8 @@ fun EncabezadoPantallaRuralitos(
     paso: Int?,
     totalPasos: Int?,
     etiquetaPaso: String,
-    onVolver: (() -> Unit)? = null
+    onVolver: (() -> Unit)? = null,
+    descripcion: String? = null
 ) {
     Column(
         Modifier
@@ -286,9 +287,17 @@ fun EncabezadoPantallaRuralitos(
                 subtitulo?.takeIf { it.isNotBlank() }?.let {
                     Text(
                         it,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+                descripcion?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        limpiarTextoInterfaz(it),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 }
             }
@@ -352,7 +361,7 @@ fun PantallaRuralitos(
             .background(FondoRuralitosWeb)
             .formularioSeguro()
     ) {
-        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver)
+        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver, descripcion)
         Column(
             Modifier
                 .weight(1f)
@@ -361,7 +370,6 @@ fun PantallaRuralitos(
                 .padding(RuralitosSpacing.base),
             verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
         ) {
-            DescripcionPantallaRuralitos(descripcion)
             contenido()
         }
         if (barraAccion != null) BarraAccionPantallaRuralitos(barraAccion)
@@ -388,13 +396,12 @@ fun PantallaListaRuralitos(
             .background(FondoRuralitosWeb)
             .formularioSeguro()
     ) {
-        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver)
+        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver, descripcion)
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(RuralitosSpacing.base),
             verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
         ) {
-            descripcion?.takeIf { it.isNotBlank() }?.let { item { DescripcionPantallaRuralitos(it) } }
             contenido()
         }
         if (barraAccion != null) BarraAccionPantallaRuralitos(barraAccion)

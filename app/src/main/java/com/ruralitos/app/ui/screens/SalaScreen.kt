@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -250,16 +251,15 @@ fun SalaScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                BotonVolverRuralitos(onRegresar)
-            }
-            HorizontalDivider(color = Color(0xFFE2ECF1))
+            EncabezadoPantallaRuralitos(
+                titulo = "Mis Salas",
+                subtitulo = null,
+                paso = null,
+                totalPasos = null,
+                etiquetaPaso = "",
+                onVolver = onRegresar,
+                descripcion = "Centros, barrios y accesos organizados por sección."
+            )
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -292,26 +292,6 @@ fun SalaScreen(
                         ),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    Text(
-                        text = seccion.etiqueta.uppercase(),
-                        color = MoradoClinico,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-
-                    Text(
-                        text = "Mis Salas",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Text(
-                        text = "Centros, barrios y accesos organizados por sección.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
                     TabsSalaModernas(
                         seleccionada = seccion,
                         onSeleccionar = { seccion = it }

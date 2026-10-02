@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
 import com.ruralitos.app.ui.components.BotonSelectorRuralitos
@@ -849,41 +850,15 @@ private fun EncabezadoRegistroCurvo(
     paso: String,
     onVolver: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .statusBarsPadding()
-    ) {
-        Column(
-            modifier = Modifier.padding(
-                start = 16.dp,
-                end = 16.dp,
-                top = 14.dp,
-                bottom = 12.dp
-            )
-        ) {
-            BotonVolverRuralitos(onVolver, Modifier.padding(bottom = 10.dp))
-            Text(
-                text = paso.uppercase(Locale.getDefault()),
-                color = AzulClinico,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = titulo,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-            Text(
-                text = descripcion,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 3.dp)
-            )
-        }
-    }
+    EncabezadoPantallaRuralitos(
+        titulo = titulo,
+        subtitulo = paso,
+        paso = null,
+        totalPasos = null,
+        etiquetaPaso = "",
+        onVolver = onVolver,
+        descripcion = descripcion
+    )
 }
 
 @Composable

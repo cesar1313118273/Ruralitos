@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.ui.draw.clip
 import com.ruralitos.app.ui.theme.CianRuralitos
@@ -403,21 +404,21 @@ fun AgendaScreen(
     }
 
     Column(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
-      CabeceraAgenda(onRegresar)
+      EncabezadoPantallaRuralitos(
+          titulo = if (pestana == 0) "Seguimiento" else "Agenda",
+          subtitulo = null,
+          paso = null,
+          totalPasos = null,
+          etiquetaPaso = "",
+          onVolver = onRegresar,
+          descripcion = if (pestana == 0) "Organiza visitas, notas y controles pendientes"
+              else "Organiza y consulta tus actividades de salud"
+      )
       Box(Modifier.weight(1f).fillMaxWidth()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            item {
-                Column(Modifier.padding(horizontal = 18.dp)) {
-                    Text(if (pestana == 0) "Seguimiento" else "Agenda",
-                        color = agendaAzul, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                    Text(if (pestana == 0) "Organiza visitas, notas y controles pendientes"
-                        else "Organiza y consulta tus actividades de salud",
-                        color = agendaSecundario, fontSize = 15.sp, lineHeight = 20.sp)
-                }
-            }
             item { PestanasAgenda(pestana, onSeleccionar = { pestana = it }) }
             if (pestana == 0) {
                 item {

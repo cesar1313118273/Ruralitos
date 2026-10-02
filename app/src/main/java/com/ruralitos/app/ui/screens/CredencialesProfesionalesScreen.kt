@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -537,30 +538,15 @@ private val AzulMarcaMuyClaro = Color(0xFFE8EFFA)
 
 @Composable
 private fun CabeceraIdentidadProfesional(onVolver: (() -> Unit)?) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.White)
-            .statusBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 14.dp)
-    ) {
-        onVolver?.let { BotonVolverRuralitos(it, Modifier.padding(bottom = 10.dp)) }
-        Text(
-            text = "Identidad profesional",
-            color = AzulMarcaOscuro,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Text(
-            text =
-                "Configura una sola vez el código y la firma que se colocarán automáticamente en tus fichas.",
-            color = Color(0xFF5B7083),
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 2.dp)
-        )
-    }
-    HorizontalDivider(color = Color(0xFFE2ECF1))
+    EncabezadoPantallaRuralitos(
+        titulo = "Identidad profesional",
+        subtitulo = null,
+        paso = null,
+        totalPasos = null,
+        etiquetaPaso = "",
+        onVolver = onVolver,
+        descripcion = "Configura una sola vez el código y la firma que se colocarán automáticamente en tus fichas."
+    )
 }
 
 @Composable

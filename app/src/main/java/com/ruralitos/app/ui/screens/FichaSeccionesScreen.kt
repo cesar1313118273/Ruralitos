@@ -222,32 +222,31 @@ private fun BannerFichaPanel(
             .fillMaxWidth()
             .background(AzulClinicoOscuro)
             .statusBarsPadding()
-            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 22.dp)
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)
     ) {
-        BotonVolverRuralitos(onVolver, Modifier.padding(bottom = 12.dp))
-
-        Text(
-            text = "Panel de la ficha",
-            color = Color.White.copy(alpha = 0.75f),
-            style = MaterialTheme.typography.labelLarge
-        )
-
-        Text(
-            text = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha familiar" },
-            style = MaterialTheme.typography.headlineMedium,
-            color = Color.White,
-            modifier = Modifier.padding(top = 4.dp)
-        )
-
-        Row(
-            modifier = Modifier.padding(top = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Ficha ${ficha.numeroFichaFamiliar} · Estado: ${ficha.estado.replace('_', ' ')}",
-                color = Color.White.copy(alpha = 0.85f),
-                style = MaterialTheme.typography.bodyMedium
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BotonVolverRuralitos(
+                onVolver,
+                Modifier.padding(end = 14.dp)
             )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = "Panel de la ficha",
+                    color = Color.White.copy(alpha = 0.75f),
+                    style = MaterialTheme.typography.labelMedium
+                )
+                Text(
+                    text = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha familiar" },
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White
+                )
+                Text(
+                    text = "Ficha ${ficha.numeroFichaFamiliar} · Estado: ${ficha.estado.replace('_', ' ')}",
+                    color = Color.White.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
         }
     }
 }
