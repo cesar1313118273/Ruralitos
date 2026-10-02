@@ -149,7 +149,7 @@ fun BuscarUnidadOperativaScreen(
                     Column(Modifier.fillMaxWidth().padding(20.dp)) {
                         Text(
                             "No encontramos unidades operativas",
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             color = AzulClinicoOscuro
                         )
                         Text(
@@ -220,7 +220,7 @@ fun EstablecimientoCard(
                 Text(
                     text = "Código UO: ${establecimiento.codigoUo}",
                     color = AzulClinico,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 5.dp)
                 )
                 Text(

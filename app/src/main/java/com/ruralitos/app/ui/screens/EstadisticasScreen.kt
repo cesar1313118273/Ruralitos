@@ -165,7 +165,7 @@ item {
             ) {
                 Row(Modifier.fillMaxWidth().padding(15.dp)) {
                     Column(Modifier.weight(1f)) {
-                        Text(ficha.nombreApellidoJefeFamilia, fontWeight = FontWeight.Bold)
+                        Text(ficha.nombreApellidoJefeFamilia, fontWeight = FontWeight.SemiBold)
                         Text(
                             "${ficha.numeroFichaFamiliar} · ${ficha.barrio.ifBlank { ficha.comunidad.ifBlank { ficha.parroquia } }}",
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -178,7 +178,7 @@ item {
                             "ARCHIVADA" -> MoradoClinico
                             else -> NaranjaClinico
                         },
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp
                     )
                 }
@@ -209,7 +209,7 @@ private fun GraficoEstadoFichas(resumen: ResumenFichas) {
         border = BorderStroke(1.dp, BordeClinico)
     ) {
         Column(Modifier.fillMaxWidth().padding(15.dp)) {
-            Text("Estado de fichas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("Estado de fichas", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Row(
                 Modifier.fillMaxWidth().padding(top = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -227,7 +227,7 @@ private fun GraficoEstadoFichas(resumen: ResumenFichas) {
                         }
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(resumen.total.toString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
+                        Text(resumen.total.toString(), color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)
                         Text("fichas", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                     }
                 }
@@ -236,7 +236,7 @@ private fun GraficoEstadoFichas(resumen: ResumenFichas) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Canvas(Modifier.size(8.dp)) { drawCircle(color) }
                             Text(titulo, modifier = Modifier.weight(1f).padding(start = 7.dp), style = MaterialTheme.typography.bodySmall)
-                            Text(cantidad.toString(), color = color, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall)
+                            Text(cantidad.toString(), color = color, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -261,11 +261,11 @@ private fun TarjetasResumen(resumen: ResumenFichas) {
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
-            Text("Resumen general", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text("Resumen general", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Row(Modifier.fillMaxWidth().padding(top = 10.dp)) {
                 tarjetas.forEach { (titulo, valor, color) ->
                     Column(Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
-                        Text(valor.toString(), color = color, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text(valor.toString(), color = color, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                         Text(
                             titulo,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -254,7 +254,7 @@ fun PerfilScreen(
                 Text(
                     it,
                     color = if (esError) MaterialTheme.colorScheme.error else CianRuralitos,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(15.dp)
                 )
             }
@@ -280,7 +280,7 @@ internal fun CampoCargoPredeterminado(
             "Cargo profesional",
             style = MaterialTheme.typography.labelLarge,
             color = Color(0xFF5B7083),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
         ExposedDropdownMenuBox(
             expanded = abierto,
@@ -311,7 +311,7 @@ internal fun CampoCargoPredeterminado(
                     DropdownMenuItem(
                         text = {
                             Column {
-                                Text(opcion, fontWeight = FontWeight.Bold)
+                                Text(opcion, fontWeight = FontWeight.SemiBold)
                                 if (opcion == valor) {
                                     Text(
                                         "Cargo seleccionado",
@@ -352,7 +352,7 @@ private fun CampoPerfilSeparado(
             text = etiqueta,
             style = MaterialTheme.typography.labelLarge,
             color = Color(0xFF5B7083),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
         OutlinedTextField(
             value = valor,

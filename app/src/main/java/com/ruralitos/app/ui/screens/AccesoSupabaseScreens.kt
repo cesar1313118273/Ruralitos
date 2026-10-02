@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -243,7 +245,7 @@ private fun CabeceraLoginRuralitos() {
         Text(
             text = "Ruralitos",
             color = AzulLoginNuevoOscuro,
-            fontSize = 34.sp,
+            fontSize = 28.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 10.dp)
@@ -799,7 +801,7 @@ fun RegistroSupabaseScreen(
     var confirmar by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    FormularioBase("Crear cuenta", "Completa tus datos para empezar a crear fichas familiares", estiloLogin = true) {
+    FormularioBase("Crear cuenta", "Completa tus datos para empezar a crear fichas familiares", onVolver = onVolver) {
         TituloSeccionAcceso(
             numero = "1",
             titulo = "Datos de acceso",
@@ -877,9 +879,8 @@ fun RegistroSupabaseScreen(
                 }
             },
             enabled = !procesando,
-            color = ColorAccesoAzul
+            color = ColorAccesoVerde
         )
-        BotonVolver(onVolver, procesando)
     }
 }
 
@@ -895,7 +896,7 @@ fun RecuperarCuentaScreen(
     FormularioBase(
         "Recuperar contraseña",
         "Te enviaremos un enlace seguro al correo registrado",
-        estiloLogin = true
+        onVolver = onVolver
     ) {
         AvisoAccesoRuralitos(
             texto = "Abre el enlace desde este mismo teléfono para volver a Ruralitos y crear una contraseña nueva.",
@@ -908,9 +909,8 @@ fun RecuperarCuentaScreen(
             texto = if (procesando) "Enviando enlace…" else "Enviar enlace de recuperación",
             onClick = { onEnviar(correo.trim()) },
             enabled = !procesando && correoValido(correo),
-            color = ColorAccesoNaranja
+            color = ColorAccesoVerde
         )
-        BotonVolver(onVolver, procesando)
     }
 }
 
@@ -947,7 +947,7 @@ fun OrganizacionInicialScreen(
             texto = if (procesando) "Comprobando…" else "Continuar con el código",
             onClick = { onAceptarCodigo(invitacion.trim()) },
             enabled = !procesando && invitacion.length >= 8,
-            color = ColorAccesoAzul
+            color = ColorAccesoVerde
         )
         BotonAccesoSecundario(
             texto = "Crear mi propia Sala",
@@ -1001,7 +1001,7 @@ fun ConfigurarPinScreen(
                 if (error == null) onGuardar(pin)
             },
             enabled = !procesando,
-            color = ColorAccesoMorado
+            color = ColorAccesoVerde
         )
     }
 }
@@ -1019,7 +1019,7 @@ fun DesbloqueoOfflineScreen(
     FormularioBase(
         "Entrar sin internet",
         "Usa la cédula y el PIN guardados en este teléfono",
-        estiloLogin = true
+        onVolver = onVolver
     ) {
         AvisoAccesoRuralitos(
             texto = "Podrás consultar y crear fichas locales. La sincronización se reanudará cuando vuelva la conexión.",
@@ -1041,9 +1041,8 @@ fun DesbloqueoOfflineScreen(
             texto = if (procesando) "Comprobando…" else "Entrar sin conexión",
             onClick = { onEntrar(cedula, pin) },
             enabled = !procesando && cedula.length >= 10 && pin.length == 6,
-            color = ColorAccesoMorado
+            color = ColorAccesoVerde
         )
-        BotonVolver(onVolver, procesando)
     }
 }
 
@@ -1080,7 +1079,7 @@ fun NuevaClaveSupabaseScreen(
                 if (error == null) onGuardar(clave)
             },
             enabled = !procesando,
-            color = ColorAccesoMorado
+            color = ColorAccesoVerde
         )
     }
 }
@@ -1099,7 +1098,8 @@ fun CambiarClaveCuentaScreen(
 
     FormularioBase(
         "Cambiar contraseña",
-        "Confirma tu contraseña actual antes de crear una nueva"
+        "Confirma tu contraseña actual antes de crear una nueva",
+        onVolver = onVolver
     ) {
         TituloSeccionAcceso(
             numero = "1",
@@ -1130,9 +1130,8 @@ fun CambiarClaveCuentaScreen(
                 if (error == null) onGuardar(actual, nueva)
             },
             enabled = !procesando,
-            color = ColorAccesoMorado
+            color = ColorAccesoVerde
         )
-        BotonVolver(onVolver, procesando)
     }
 }
 
@@ -1146,13 +1145,13 @@ fun GestionEquipoSupabaseScreen(
 ) {
     var correo by remember { mutableStateOf("") }
     var rol by remember { mutableStateOf("MEDICO") }
-    FormularioBase("Equipo de trabajo", "Invita personal para compartir las fichas de tu organización") {
+    FormularioBase("Equipo de trabajo", "Invita personal para compartir las fichas de tu organización", onVolver = onRegresar) {
         Text(
             "La persona debe crear su cuenta con este correo y luego ingresar el código.",
             style = MaterialTheme.typography.bodyMedium
         )
         CampoCorreo(correo) { correo = it }
-        Text("Rol del usuario", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 18.dp))
+        Text("Rol del usuario", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 18.dp))
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1174,7 +1173,7 @@ fun GestionEquipoSupabaseScreen(
             modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
         ) { Text(if (procesando) "Generando…" else "Generar invitación") }
         codigoGenerado?.let { codigo ->
-            Text("Código de invitación", fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 22.dp))
+            Text("Código de invitación", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 22.dp))
             Text(
                 codigo,
                 style = MaterialTheme.typography.headlineSmall,
@@ -1185,7 +1184,6 @@ fun GestionEquipoSupabaseScreen(
             Text("Válido durante 7 días y para un solo uso.", style = MaterialTheme.typography.bodySmall)
         }
         MensajeAcceso(mensaje)
-        BotonVolver(onRegresar, procesando)
     }
 }
 
@@ -1193,11 +1191,12 @@ fun GestionEquipoSupabaseScreen(
 private fun FormularioBase(
     titulo: String,
     subtitulo: String,
-    estiloLogin: Boolean = false,
+    estiloLogin: Boolean = true,
+    onVolver: (() -> Unit)? = null,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
     if (estiloLogin) {
-        FormularioConDisenoLogin(titulo, subtitulo, contenido)
+        FormularioConDisenoLogin(titulo, subtitulo, onVolver, contenido)
     } else {
         MarcoAccesoRuralitos(
             titulo = titulo,
@@ -1211,6 +1210,7 @@ private fun FormularioBase(
 private fun FormularioConDisenoLogin(
     titulo: String,
     subtitulo: String,
+    onVolver: (() -> Unit)?,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
     Box(
@@ -1264,6 +1264,15 @@ private fun FormularioConDisenoLogin(
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
+        }
+        onVolver?.let {
+            BotonVolverRuralitos(
+                it,
+                Modifier
+                    .align(Alignment.TopStart)
+                    .statusBarsPadding()
+                    .padding(start = 16.dp, top = 12.dp)
+            )
         }
     }
 }
@@ -1361,6 +1370,9 @@ private fun CampoPin(valor: String, etiqueta: String, onCambio: (String) -> Unit
         onValueChange = { onCambio(it.filter(Char::isDigit).take(6)) },
         label = { Text(etiqueta) },
         supportingText = { Text("${valor.length}/6 dígitos") },
+        leadingIcon = {
+            IconoCampoLogin(simbolo = "#", color = AzulLoginNuevo)
+        },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
         visualTransformation = if (visible) {
             androidx.compose.ui.text.input.VisualTransformation.None
@@ -1369,12 +1381,24 @@ private fun CampoPin(valor: String, etiqueta: String, onCambio: (String) -> Unit
         },
         trailingIcon = {
             TextButton(onClick = { visible = !visible }) {
-                Text(if (visible) "Ocultar" else "Ver")
+                Text(
+                    text = if (visible) "Ocultar" else "Ver",
+                    color = VerdeLoginNuevo,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         },
         singleLine = true,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = AzulLoginNuevo,
+            unfocusedBorderColor = BordeLoginNuevo,
+            focusedLabelColor = AzulLoginNuevo,
+            cursorColor = AzulLoginNuevo,
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White
+        ),
+        modifier = Modifier.fillMaxWidth().padding(top = 13.dp)
     )
 }
 

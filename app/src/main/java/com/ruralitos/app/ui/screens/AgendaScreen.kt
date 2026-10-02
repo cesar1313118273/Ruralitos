@@ -342,7 +342,7 @@ fun AgendaScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     Text(grupo.joinToString(", ") { it.persona }.ifBlank { "Actividad general" }, color = agendaAzul)
                     Text("${formato(actividad.fechaHora, "EEEE d 'de' MMMM · HH:mm")} · ${actividad.barrio}", color = agendaSecundario)
-                    Text(estadoVisible(actividad, ahora), color = colorEstado(actividad, ahora), fontWeight = FontWeight.Bold)
+                    Text(estadoVisible(actividad, ahora), color = colorEstado(actividad, ahora), fontWeight = FontWeight.SemiBold)
                     if (actividad.nota.isNotBlank()) Text(actividad.nota, color = agendaSecundario)
                     if (actividad.fichaId != null) {
                         Row {
@@ -380,7 +380,7 @@ fun AgendaScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Checkbox(checked = true, onCheckedChange = null,
                                 colors = CheckboxDefaults.colors(checkedColor = agendaVerde))
-                            Text("Realizada", color = agendaVerde, fontWeight = FontWeight.Bold)
+                            Text("Realizada", color = agendaVerde, fontWeight = FontWeight.SemiBold)
                         }
                     }
                     if (actividad.estado != "COMPLETADA") {
@@ -403,7 +403,7 @@ fun AgendaScreen(
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
                     Text(if (pestana == 0) "Seguimiento" else "Agenda",
-                        color = agendaAzul, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
+                        color = agendaAzul, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                     Text(if (pestana == 0) "Organiza visitas, notas y controles pendientes"
                         else "Organiza y consulta tus actividades de salud",
                         color = agendaSecundario, fontSize = 15.sp, lineHeight = 20.sp)
@@ -528,7 +528,7 @@ private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
                     )
                     Spacer(Modifier.width(9.dp))
                     Text(titulo, color = if (seleccionada == indice) Color.White else agendaSecundario,
-                        fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -561,7 +561,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
                     Column {
                         Text(dato.first, color = agendaSecundario, fontSize = 10.sp,
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(dato.second.toString(), color = agendaAzul, fontSize = 23.sp,
+                        Text(dato.second.toString(), color = agendaAzul, fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold)
                     }
                 }
@@ -573,7 +573,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
 @Composable
 private fun EncabezadoActividades(titulo: String, fecha: String) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 19.dp, vertical = 4.dp)) {
-        Text(titulo, color = agendaAzul, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Text(titulo, color = agendaAzul, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         Text(fecha, color = agendaSecundario, fontSize = 12.sp)
     }
 }
@@ -605,7 +605,7 @@ private fun PaginacionAgenda(
         TextButton(onClick = onAnterior, enabled = pagina > 0) {
             Text("Anterior", color = if (pagina > 0) agendaVerde else agendaSecundario)
         }
-        Text("${pagina + 1} de $total", color = agendaAzul, fontWeight = FontWeight.Bold)
+        Text("${pagina + 1} de $total", color = agendaAzul, fontWeight = FontWeight.SemiBold)
         TextButton(onClick = onSiguiente, enabled = pagina + 1 < total) {
             Text("Siguiente", color = if (pagina + 1 < total) agendaVerde else agendaSecundario)
         }
@@ -641,7 +641,7 @@ private fun CalendarioAgenda(
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(formato(mes.timeInMillis, "MMMM 'de' yyyy").replaceFirstChar { it.uppercase() },
-                    color = agendaAzul, fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
+                    color = agendaAzul, fontSize = 18.sp, fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f))
                 listOf(-1, 1).forEach { movimiento ->
                     Surface(
@@ -658,7 +658,7 @@ private fun CalendarioAgenda(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(if (movimiento < 0) "‹" else "›", color = agendaAzul,
-                                fontSize = 25.sp, fontWeight = FontWeight.Bold)
+                                fontSize = 25.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -882,7 +882,7 @@ private fun FormularioAgenda(
             }
             item {
                 Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text("Paciente o familia", color = agendaAzul, fontWeight = FontWeight.Bold)
+                    Text("Paciente o familia", color = agendaAzul, fontWeight = FontWeight.SemiBold)
                     CampoAgenda(
                         texto = if (personaModificada) persona?.apellidosNombres ?: "Actividad general"
                             else original?.persona?.takeIf { it.isNotBlank() } ?: "Actividad general",
@@ -894,7 +894,7 @@ private fun FormularioAgenda(
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 21.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f)) {
-                        Text("Fecha", color = agendaAzul, fontWeight = FontWeight.Bold)
+                        Text("Fecha", color = agendaAzul, fontWeight = FontWeight.SemiBold)
                         CampoAgenda(formato(fechaHora, "dd/MM/yyyy"), R.drawable.ruralitos_icono_agenda) {
                             val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
                             DatePickerDialog(context, { _, y, m, d ->
@@ -906,7 +906,7 @@ private fun FormularioAgenda(
                         }
                     }
                     Column(Modifier.weight(1f)) {
-                        Text("Hora", color = agendaAzul, fontWeight = FontWeight.Bold)
+                        Text("Hora", color = agendaAzul, fontWeight = FontWeight.SemiBold)
                         CampoAgenda(formato(fechaHora, "HH:mm"), R.drawable.ruralitos_icono_agenda) {
                             val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
                             TimePickerDialog(context, { _, h, m ->
@@ -922,7 +922,7 @@ private fun FormularioAgenda(
             }
             item {
                 Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text("Tipo de actividad", color = agendaAzul, fontWeight = FontWeight.Bold)
+                    Text("Tipo de actividad", color = agendaAzul, fontWeight = FontWeight.SemiBold)
                     Box {
                         CampoAgenda(tipo, iconoActividad(tipo)) {
                             if (original?.origen != "SEGUIMIENTO") elegirTipo = true
@@ -937,7 +937,7 @@ private fun FormularioAgenda(
             }
             item {
                 Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text("Notas (opcional)", color = agendaAzul, fontWeight = FontWeight.Bold)
+                    Text("Notas (opcional)", color = agendaAzul, fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(nota, { nota = it },
                         placeholder = { Text("Motivo de la visita, observaciones…") },
                         minLines = 3, modifier = Modifier.fillMaxWidth())
@@ -948,7 +948,7 @@ private fun FormularioAgenda(
                     Image(painterResource(R.drawable.ruralitos_icono_agenda), null, Modifier.size(26.dp))
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("Recordatorio", color = agendaAzul, fontWeight = FontWeight.Bold)
+                        Text("Recordatorio", color = agendaAzul, fontWeight = FontWeight.SemiBold)
                         Text("Aviso en este dispositivo a la hora indicada", color = agendaSecundario, fontSize = 11.sp)
                     }
                     Switch(checked = recordar, onCheckedChange = { activo ->
@@ -992,7 +992,7 @@ private fun FormularioAgenda(
                     enabled = !guardando,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = agendaVerde)
-                ) { Text(if (guardando) "Guardando…" else "Guardar actividad", fontWeight = FontWeight.Bold) }
+                ) { Text(if (guardando) "Guardando…" else "Guardar actividad", fontWeight = FontWeight.SemiBold) }
             }
             item { Spacer(Modifier.height(28.dp)) }
         }

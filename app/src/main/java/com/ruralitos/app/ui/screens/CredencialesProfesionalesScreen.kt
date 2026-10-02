@@ -704,8 +704,8 @@ private fun SelectorModoFirma(
                 } else {
                     AzulMarca
                 },
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(

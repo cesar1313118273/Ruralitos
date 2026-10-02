@@ -249,7 +249,7 @@ fun BotonVolverRuralitos(
             color = AzulClinicoOscuro,
             fontSize = 30.sp,
             lineHeight = 30.sp,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
     }
 }

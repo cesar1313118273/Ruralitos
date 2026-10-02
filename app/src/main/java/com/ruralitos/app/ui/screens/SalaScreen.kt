@@ -199,7 +199,7 @@ fun SalaScreen(
                             }
                         }
                     }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(
@@ -227,7 +227,7 @@ fun SalaScreen(
                         eaisEditandoId = null
                         numeroEais = ""
                     }
-                }) { Text("Sí, desactivar", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                }) { Text("Sí, desactivar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = { TextButton(enabled = !procesando, onClick = { eaisAEliminar = null }) { Text("Cancelar") } }
         )
@@ -334,7 +334,7 @@ fun SalaScreen(
                                             label = {
                                                 Text(
                                                     item.nombreCentroSalud.ifBlank { item.nombreSala },
-                                                    fontWeight = FontWeight.Bold
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
@@ -390,7 +390,7 @@ fun SalaScreen(
                                             label = {
                                                 Text(
                                                     item.nombre,
-                                                    fontWeight = FontWeight.Bold
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
@@ -523,7 +523,7 @@ fun SalaScreen(
                                             label = {
                                                 Text(
                                                     "${item.etiqueta}: ${item.nombre}",
-                                                    fontWeight = FontWeight.Bold
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
@@ -704,7 +704,7 @@ fun SalaScreen(
                                             label = {
                                                 Text(
                                                     etiqueta,
-                                                    fontWeight = FontWeight.Bold
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
@@ -732,7 +732,7 @@ fun SalaScreen(
                                             label = {
                                                 Text(
                                                     etiqueta,
-                                                    fontWeight = FontWeight.Bold
+                                                    fontWeight = FontWeight.SemiBold
                                                 )
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
@@ -932,7 +932,7 @@ private fun TabsSalaModernas(
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             },
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp
                         )
                     }

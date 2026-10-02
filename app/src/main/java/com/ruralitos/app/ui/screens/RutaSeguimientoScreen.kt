@@ -318,9 +318,9 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("SEGUIMIENTO EXTRAMURAL", color = Color(0xFF1565C0),
-                fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
             Text("Ruta de seguimiento", color = Color(0xFF0A2A5E),
-                fontWeight = FontWeight.SemiBold, fontSize = 24.sp)
+                fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
             Text(actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
                 ?: "Cargando ficha…", color = Color(0xFF5B7083), fontSize = 16.sp)
 
@@ -358,7 +358,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                     shape = RoundedCornerShape(16.dp), color = Color.White,
                                     shadowElevation = 1.dp) {
                                     Text("GPS en vivo · Solo consulta", Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                        color = AzulClinico, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        color = AzulClinico, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                 }
                                 Column(Modifier.align(Alignment.CenterEnd).padding(10.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -368,7 +368,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                     }, shape = RoundedCornerShape(10.dp),
                                         color = Color(0xEEFFFFFF), shadowElevation = 1.dp) {
                                         Text("◎", Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-                                            fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AzulClinico)
+                                            fontSize = 22.sp, fontWeight = FontWeight.SemiBold, color = AzulClinico)
                                     }
                                     listOf("+" to true, "−" to false).forEach { (etiqueta, acercar) ->
                                         Surface(onClick = {
@@ -378,7 +378,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                             color = Color(0xEEFFFFFF), shadowElevation = 1.dp) {
                                             Text(etiqueta, Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                                 style = MaterialTheme.typography.titleLarge,
-                                                fontWeight = FontWeight.Bold, color = AzulClinico)
+                                                fontWeight = FontWeight.SemiBold, color = AzulClinico)
                                         }
                                     }
                                 }
@@ -440,7 +440,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                     shadowElevation = 1.dp) {
                                     Text(etiqueta, Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                                         color = if (modo == valor) Color.White else AzulClinico,
-                                        fontWeight = FontWeight.Bold)
+                                        fontWeight = FontWeight.SemiBold)
                                 }
                             }
                     }

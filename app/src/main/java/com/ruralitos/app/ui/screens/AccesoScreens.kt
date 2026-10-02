@@ -212,7 +212,7 @@ private fun BurbujaMensajeMascota(
         Text(
             text = mensaje,
             color = Color(0xFF0A2A5E),
-            fontSize = 18.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(
@@ -482,7 +482,7 @@ fun LoginScreen(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Ruralitos", style = MaterialTheme.typography.headlineLarge, color = VerdeOscuro, fontWeight = FontWeight.Bold)
+        Text("Ruralitos", style = MaterialTheme.typography.headlineLarge, color = VerdeOscuro, fontWeight = FontWeight.SemiBold)
         Text("Ingreso del personal de salud", modifier = Modifier.padding(top = 6.dp, bottom = 24.dp))
         OutlinedTextField(
             value = cedula,
@@ -543,7 +543,7 @@ private fun FormularioAcceso(
             .padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text(titulo, style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.Bold)
+        Text(titulo, style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.SemiBold)
         Text(explicacion, modifier = Modifier.padding(top = 8.dp, bottom = 20.dp))
         OutlinedTextField(
             value = cedula,
@@ -693,7 +693,7 @@ fun GestionUsuariosScreen(
             .verticalScroll(rememberScrollState())
             .padding(20.dp)
     ) {
-        Text("Usuarios locales", style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.Bold)
+        Text("Usuarios locales", style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.SemiBold)
         Text("Solo el administrador puede crear o desactivar cuentas.", modifier = Modifier.padding(top = 6.dp, bottom = 14.dp))
         mensaje?.let { Text(it, color = VerdeOscuro, modifier = Modifier.padding(bottom = 10.dp)) }
         Button(onClick = { mensaje = null; mostrarFormulario = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 60.dp)) {
@@ -708,7 +708,7 @@ fun GestionUsuariosScreen(
                 Column(modifier = Modifier.fillMaxWidth().padding(14.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
-                            Text(usuario.nombres, fontWeight = FontWeight.Bold)
+                            Text(usuario.nombres, fontWeight = FontWeight.SemiBold)
                             Text("${usuario.cargo} · ${if (usuario.esAdministrador) "Administrador" else "Personal de salud"}")
                             Text("Cédula: ${usuario.cedula}", style = MaterialTheme.typography.bodySmall)
                         }
@@ -751,7 +751,7 @@ fun CambiarClaveScreen(
         modifier = Modifier.fillMaxSize().formularioSeguro().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Cambiar contraseña", style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.Bold)
+        Text("Cambiar contraseña", style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.SemiBold)
         Text(usuario.nombres, modifier = Modifier.padding(top = 6.dp, bottom = 16.dp))
         OutlinedTextField(
             value = actual,
@@ -831,7 +831,7 @@ private fun FormularioRestablecerClave(
         modifier = Modifier.fillMaxSize().formularioSeguro().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.Center
     ) {
-        Text(titulo, style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.Bold)
+        Text(titulo, style = MaterialTheme.typography.headlineMedium, color = VerdeOscuro, fontWeight = FontWeight.SemiBold)
         Text(descripcion, modifier = Modifier.padding(top = 6.dp, bottom = 16.dp))
         OutlinedTextField(
             value = clave,

@@ -212,7 +212,7 @@ fun FamiliogramaScreen(
                             mensaje = "Familiograma eliminado."
                         }
                     }
-                ) { Text("Sí, quitar imagen", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                ) { Text("Sí, quitar imagen", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { confirmarQuitar = false }) { Text("Conservar imagen") }
@@ -282,7 +282,7 @@ fun FamiliogramaScreen(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("▧", color = AzulClinico, style = MaterialTheme.typography.headlineLarge)
-                        Text("Sin imagen", fontWeight = FontWeight.Bold)
+                        Text("Sin imagen", fontWeight = FontWeight.SemiBold)
                         Text("PNG, JPG o WebP", style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -291,7 +291,7 @@ fun FamiliogramaScreen(
             if (imagenNueva != null) {
                 Text(
                     "Quitar fondo blanco · ${intensidadFondo.toInt()}%",
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     color = CianRuralitos,
                     modifier = Modifier.padding(top = 14.dp)
                 )
@@ -520,7 +520,7 @@ fun LugaresTratamientoScreen(
                             }
                         }
                     }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { eliminar = null }) { Text("Conservar registro") }

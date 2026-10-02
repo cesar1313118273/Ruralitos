@@ -119,7 +119,7 @@ fun GestionRiesgoScreen(
                             database.fichaContenidoDao().eliminarGestionRiesgo(seleccionado)
                         }
                     }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { eliminar = null }) { Text("Conservar seguimiento") }
@@ -326,7 +326,7 @@ private fun FormularioGestionRiesgoScreen(
                         label = {
                             Text(
                                 nombreCumplimiento(opcion),
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.SemiBold
                             )
                         },
                         modifier = Modifier.heightIn(min = 50.dp),

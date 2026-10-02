@@ -203,7 +203,7 @@ private fun TituloSeccionConIcono(
         Text(
             text = titulo,
             color = AzulTituloFicha,
-            fontSize = 20.sp,
+            fontSize = 18.sp,
             lineHeight = 24.sp,
             fontWeight = FontWeight.SemiBold
         )
@@ -245,7 +245,7 @@ fun ResumenUnidadOperativa(
                 Text(
                     text = establecimiento.nombreCentroSalud,
                     color = AzulTituloFicha,
-                    fontSize = 19.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold
                 )
 
@@ -373,7 +373,7 @@ private fun TarjetaNumeroFicha(
             Text(
                 text = numeroFichaFamiliar,
                 color = AzulTituloFicha,
-                fontSize = 25.sp,
+                fontSize = 22.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 2.dp)
             )
@@ -425,7 +425,7 @@ fun CampoFecha(
                 Text(
                     text = valor,
                     color = AzulTituloFicha,
-                    fontSize = 19.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 2.dp)
                 )

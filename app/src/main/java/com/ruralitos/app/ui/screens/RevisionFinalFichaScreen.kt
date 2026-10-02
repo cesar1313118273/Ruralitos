@@ -195,7 +195,7 @@ fun RevisionFinalFichaScreen(
                     Text("Se guardaron en Descargas/Ruralitos:")
                     Text(
                         archivosGenerados.joinToString("\n") { "• " + it.nombre },
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(top = 9.dp)
                     )
                     Text(
@@ -284,7 +284,7 @@ fun RevisionFinalFichaScreen(
                             )
                         }
                         Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                            Text(requisito.titulo, fontWeight = FontWeight.Bold)
+                            Text(requisito.titulo, fontWeight = FontWeight.SemiBold)
                             Text(
                                 when {
                                     requisito.cumplido -> "Información verificada"
@@ -392,7 +392,7 @@ fun RevisionFinalFichaScreen(
                     else -> "No se descargarán archivos."
                 },
                 color = AzulClinico,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
@@ -402,7 +402,7 @@ fun RevisionFinalFichaScreen(
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(color = AzulClinico)
                     Column(Modifier.padding(start = 14.dp)) {
-                        Text("Finalizando ficha…", fontWeight = FontWeight.Bold)
+                        Text("Finalizando ficha…", fontWeight = FontWeight.SemiBold)
                         Text("Guardando y preparando los archivos seleccionados.")
                     }
                 }

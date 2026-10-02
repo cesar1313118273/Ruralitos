@@ -132,7 +132,7 @@ fun RiesgoFamiliarScreen(
                             database.fichaContenidoDao().eliminarCalificacion(seleccionado)
                         }
                     }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { eliminar = null }) { Text("Conservar evaluación") }
@@ -393,7 +393,7 @@ private fun PreguntaRiesgo(
                         Text(
                             InstrumentoRiesgoFamiliar.etiqueta(opcion.valor),
                             color = AzulClinicoOscuro,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             opcion.descripcion,

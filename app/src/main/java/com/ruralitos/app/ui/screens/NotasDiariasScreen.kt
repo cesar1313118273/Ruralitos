@@ -251,7 +251,7 @@ fun NotasDiariasScreen(
                 Text(
                     text = "Notas Diarias",
                     color = AzulTituloNotas,
-                    fontSize = 32.sp,
+                    fontSize = 22.sp,
                     lineHeight = 36.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 4.dp)
@@ -317,7 +317,7 @@ fun NotasDiariasScreen(
                 Text(
                     text = "Personas · ${visibles.size}",
                     color = AzulEtiquetaNotas,
-                    fontSize = 19.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(
                         start = 18.dp,
@@ -487,7 +487,7 @@ private fun CampoFechaNotas(
                 Text(if (valor.isBlank()) "Elegir fecha" else
                     valor.substring(8, 10) + "/" + valor.substring(5, 7) + "/" + valor.substring(0, 4),
                     color = if (valor.isBlank()) GrisTextoNotas else AzulTituloNotas,
-                    fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1)
+                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
             }
         }
     }
@@ -531,7 +531,7 @@ private fun SelectorFechaNotasDialog(
                     Text(SimpleDateFormat("MMMM yyyy", Locale("es", "EC")).format(Date(mesActual))
                         .replaceFirstChar { it.uppercase() },
                         modifier = Modifier.weight(1f),
-                        color = AzulTituloNotas, fontWeight = FontWeight.Bold,
+                        color = AzulTituloNotas, fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center)
                     TextButton(onClick = {
                         mesActual = Calendar.getInstance().apply {
@@ -565,7 +565,7 @@ private fun SelectorFechaNotasDialog(
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(numero.toString(),
                                             color = if (valor == valorActual) Color.White else AzulTituloNotas,
-                                            fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                                     }
                                 }
                             }
@@ -629,7 +629,7 @@ private fun TarjetaSinNotas(
                 Text(
                     text = titulo,
                     color = AzulTituloNotas,
-                    fontSize = 24.sp,
+                    fontSize = 20.sp,
                     lineHeight = 28.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -676,7 +676,7 @@ private fun TarjetaNotaDiaria(
             Text(
                 text = persona.apellidosNombres.ifBlank { "Persona sin nombre" },
                 color = AzulTituloNotas,
-                fontSize = 17.sp,
+                fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -735,7 +735,7 @@ private fun PaginacionNotas(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         OutlinedButton(onClick = onAnterior, enabled = pagina > 0) { Text("Anterior") }
-        Text("${pagina + 1} de $total", color = AzulTituloNotas, fontWeight = FontWeight.Bold)
+        Text("${pagina + 1} de $total", color = AzulTituloNotas, fontWeight = FontWeight.SemiBold)
         OutlinedButton(onClick = onSiguiente, enabled = pagina + 1 < total) { Text("Siguiente") }
     }
 }
@@ -762,7 +762,7 @@ private fun DialogoNotaDiaria(
         title = {
             Column {
                 Text(persona.apellidosNombres.ifBlank { "Persona sin nombre" },
-                    color = AzulTituloNotas, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+                    color = AzulTituloNotas, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                 Text("Cédula: ${persona.cedula.ifBlank { "Sin registrar" }}",
                     color = GrisTextoNotas, fontSize = 13.sp)
             }
@@ -770,7 +770,7 @@ private fun DialogoNotaDiaria(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 if (notas.size > 1) {
-                    Text("Notas de este período", color = AzulEtiquetaNotas, fontWeight = FontWeight.Bold)
+                    Text("Notas de este período", color = AzulEtiquetaNotas, fontWeight = FontWeight.SemiBold)
                     LazyColumn(
                         modifier = Modifier.heightIn(max = 116.dp),
                         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -816,7 +816,7 @@ private fun DialogoNotaDiaria(
                             colors = CheckboxDefaults.colors(checkedColor = VerdeBotonNotas)
                         )
                         Column {
-                            Text("Realizada", color = AzulTituloNotas, fontWeight = FontWeight.Bold)
+                            Text("Realizada", color = AzulTituloNotas, fontWeight = FontWeight.SemiBold)
                             Text("Al marcarla se detienen los avisos.", color = GrisTextoNotas, fontSize = 12.sp)
                         }
                     }
@@ -864,7 +864,7 @@ private fun BotonVolverNotas(
         Text(
             text = "Volver al inicio",
             color = VerdeBotonNotas,
-            fontSize = 17.sp,
+            fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 12.dp)
         )

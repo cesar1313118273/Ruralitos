@@ -190,7 +190,7 @@ fun MiembrosFamiliaScreen(
             },
             text = {
                 Column {
-                    Text(integrante.apellidosNombres, fontWeight = FontWeight.Bold)
+                    Text(integrante.apellidosNombres, fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = textoNota,
                         onValueChange = { textoNota = it },
@@ -265,7 +265,7 @@ fun MiembrosFamiliaScreen(
                             }
                         }
                     }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.Bold) }
+                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
             },
             dismissButton = {
                 TextButton(onClick = { miembroEliminar = null }) { Text("Conservar integrante") }
@@ -919,7 +919,7 @@ private fun SelectorDesplegableMiembro(
             Text(
                 opciones.firstOrNull { it.first == seleccion }?.second ?: "Seleccionar",
                 color = color,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
         DropdownMenu(
@@ -989,7 +989,7 @@ private fun SelectorMultipleMiembro(
                     1 -> opciones.firstOrNull { it.first in seleccion }?.second.orEmpty()
                     else -> "${seleccion.size} grupos seleccionados"
                 },
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
         DropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {

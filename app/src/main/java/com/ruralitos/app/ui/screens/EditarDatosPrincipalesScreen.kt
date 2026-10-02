@@ -281,7 +281,7 @@ private fun CampoPersonal(
             text = etiqueta,
             style = MaterialTheme.typography.labelLarge,
             color = Color(0xFF5B7083),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
         OutlinedTextField(
             value = valor,
@@ -326,7 +326,7 @@ private fun CampoFechaPersonal(
             text = etiqueta,
             style = MaterialTheme.typography.labelLarge,
             color = Color(0xFF5B7083),
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
         Box(
             Modifier
@@ -338,7 +338,7 @@ private fun CampoFechaPersonal(
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
-                trailingIcon = { Text("▾", color = AzulClinico, fontWeight = FontWeight.Bold) },
+                trailingIcon = { Text("▾", color = AzulClinico, fontWeight = FontWeight.SemiBold) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AzulClinico,

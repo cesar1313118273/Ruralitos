@@ -1030,7 +1030,7 @@ private fun TarjetaFichaElegante(
                     text = "›",
                     color = AzulClinico,
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -1144,7 +1144,7 @@ private fun BotonRegresarBusqueda(
                 text = "←",
                 color = CianRuralitos,
                 fontSize = 28.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(

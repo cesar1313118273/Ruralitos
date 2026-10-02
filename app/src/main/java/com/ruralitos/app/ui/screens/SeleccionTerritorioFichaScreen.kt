@@ -261,7 +261,7 @@ private fun InfoTerritorio() {
                 Text(
                     text = "Territorio de la ficha",
                     color = AzulTitulo,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     lineHeight = 24.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -297,7 +297,7 @@ private fun SeccionSelector(
             Text(
                 text = titulo,
                 color = AzulTitulo,
-                fontSize = 17.sp,
+                fontSize = 16.sp,
                 lineHeight = 21.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 9.dp)
@@ -354,7 +354,7 @@ private fun <T> SelectorGenerico(
                     .padding(start = 12.dp),
                 color = if (enabled) VerdeTexto else GrisTexto,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -363,7 +363,7 @@ private fun <T> SelectorGenerico(
                 text = "⌄",
                 color = if (enabled) VerdeTexto else GrisTexto,
                 fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 8.dp)
             )
         }

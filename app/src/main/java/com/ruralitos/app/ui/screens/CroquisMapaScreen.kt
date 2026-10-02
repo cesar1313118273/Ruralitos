@@ -599,8 +599,8 @@ fun CroquisMapaScreen(
         Spacer(Modifier.height(16.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("UBICACIÓN EXACTA", color = Color(0xFF1565C0), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-        Text("Ubicación de vivienda", color = Color(0xFF0A2A5E), fontWeight = FontWeight.SemiBold, fontSize = 24.sp)
+        Text("UBICACIÓN EXACTA", color = Color(0xFF1565C0), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+        Text("Ubicación de vivienda", color = Color(0xFF0A2A5E), fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
         Text("Localiza la vivienda en el mapa.", color = Color(0xFF5B7083), fontSize = 16.sp)
         if (estiloDeRespaldo) Text(estadoOffline, color = NaranjaClinico, fontSize = 12.sp)
 
@@ -713,7 +713,7 @@ fun CroquisMapaScreen(
                                         etiqueta,
                                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                         style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.Bold,
+                                        fontWeight = FontWeight.SemiBold,
                                         color = AzulClinico
                                     )
                                 }
@@ -729,7 +729,7 @@ fun CroquisMapaScreen(
                                 Column(Modifier.padding(horizontal = 12.dp, vertical = 7.dp)) {
                                     Text("Vivienda",
                                         color = Color(0xFFDC2626),
-                                        fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
                                     Text("${"%.6f".format(Locale.US, latitud)}, " +
                                         "${"%.6f".format(Locale.US, longitud)} · " +
                                         (altitud?.let { "%.0f m".format(Locale.US, it) } ?: "Altitud sin dato"),
@@ -778,7 +778,7 @@ fun CroquisMapaScreen(
         if (mensaje == "Captura guardada") {
             Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFE3F4F7)) {
                 Text("✓  Captura guardada", Modifier.fillMaxWidth().padding(12.dp),
-                    color = CianRuralitos, fontWeight = FontWeight.Bold)
+                    color = CianRuralitos, fontWeight = FontWeight.SemiBold)
             }
         } else if (mensaje.startsWith("No") || mensaje.startsWith("Concede") ||
             mensaje.startsWith("Activa") || mensaje.startsWith("Buscando")) {
@@ -787,7 +787,7 @@ fun CroquisMapaScreen(
         }
         capturaAnterior?.let { captura ->
             Text("Captura guardada de esta vivienda", color = AzulClinico,
-                fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
             Image(bitmap = captura.asImageBitmap(), contentDescription = "Captura previa del mapa",
                 modifier = Modifier.fillMaxWidth().height(260.dp), contentScale = ContentScale.Fit)
         }
@@ -906,7 +906,7 @@ internal fun DatoCoordenada(
             Text(
                 valor,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 3.dp)
             )
         }

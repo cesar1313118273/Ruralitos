@@ -378,7 +378,7 @@ private fun ConfirmarEliminacionSalud(
         text = { Text("$descripcion Esta acción no se puede deshacer.") },
         confirmButton = {
             TextButton(onClick = onConfirmar) {
-                Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.Bold)
+                Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold)
             }
         },
         dismissButton = {
@@ -741,7 +741,7 @@ private fun OpcionSiNoSalud(
         FilterChip(
             selected = valor,
             onClick = { onCambio(true) },
-            label = { Text("Sí", fontWeight = FontWeight.Bold) },
+            label = { Text("Sí", fontWeight = FontWeight.SemiBold) },
             modifier = Modifier.heightIn(min = 48.dp),
             colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = CianRuralitos,
@@ -751,7 +751,7 @@ private fun OpcionSiNoSalud(
         FilterChip(
             selected = !valor,
             onClick = { onCambio(false) },
-            label = { Text("No", fontWeight = FontWeight.Bold) },
+            label = { Text("No", fontWeight = FontWeight.SemiBold) },
             modifier = Modifier.heightIn(min = 48.dp),
             colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = RojoClinico,

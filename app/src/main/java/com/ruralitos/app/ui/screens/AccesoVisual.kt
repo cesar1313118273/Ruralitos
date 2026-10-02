@@ -274,7 +274,7 @@ internal fun OpcionAccesoRuralitos(
                 text = titulo,
                 style = MaterialTheme.typography.titleSmall,
                 color = TextoClinico,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = descripcion,
@@ -287,7 +287,7 @@ internal fun OpcionAccesoRuralitos(
             text = "›",
             style = MaterialTheme.typography.headlineSmall,
             color = color,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -314,7 +314,7 @@ internal fun AvisoAccesoRuralitos(
             color = color
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(simbolo, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(simbolo, color = Color.White, fontWeight = FontWeight.SemiBold)
             }
         }
         Text(
@@ -364,7 +364,7 @@ internal fun TituloSeccionAcceso(
                 text = titulo,
                 style = MaterialTheme.typography.titleSmall,
                 color = TextoClinico,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = descripcion,

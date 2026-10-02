@@ -680,7 +680,7 @@ fun DispensarizacionScreen(
                                 Text(
                                     mensaje,
                                     color = RojoClinico,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             }
                         }
@@ -705,7 +705,7 @@ fun DispensarizacionScreen(
                         archivoExportado = null
                     }
                 ) {
-                    Text("Compartir ahora", fontWeight = FontWeight.Bold)
+                    Text("Compartir ahora", fontWeight = FontWeight.SemiBold)
                 }
             },
             dismissButton = {
@@ -741,7 +741,7 @@ private fun SelectorFichas(
                     ?: "Elegir ficha familiar",
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.SemiBold
             )
         }
         DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
@@ -819,7 +819,7 @@ private fun SelectorIdentificadoUnico(
             Text(
                 text = etiquetaActual ?: textoVacio,
                 modifier = Modifier.weight(1f),
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1139,7 +1139,7 @@ private fun TarjetaSeleccionActual(
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 10.dp),
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1180,7 +1180,7 @@ private fun TarjetaResumenPoblacion(
                         text = personas.toString(),
                         color = AzulClinico,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 20.sp
+                        fontSize = 18.sp
                     )
                 }
             }
@@ -1205,7 +1205,7 @@ private fun TarjetaResumenPoblacion(
                 Text(
                     text = personas.toString(),
                     color = AzulClinico,
-                    fontSize = 28.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
@@ -1946,7 +1946,7 @@ private fun TarjetaPersonaDispensarizada(
                 Text(
                     "Pendiente: ${persona.resultado.camposPendientes.joinToString()}",
                     color = NaranjaClinico,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 9.dp)
                 )
             }

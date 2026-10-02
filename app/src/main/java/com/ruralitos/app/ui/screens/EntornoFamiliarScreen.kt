@@ -133,24 +133,24 @@ fun EntornoFamiliarScreen(
 
     LazyColumn(Modifier.fillMaxSize().formularioSeguro().padding(24.dp)) {
         item {
-            Text("Familiograma y entorno", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text("Familiograma y entorno", fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
             Text("Hoja 4 · Imágenes, contaminación y lugares de tratamiento.", modifier = Modifier.padding(top = 4.dp, bottom = 12.dp))
 
-            Text("Familiograma", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Familiograma", fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
             Text(if (adjuntos.any { it.tipo == "FAMILIOGRAMA" }) "Imagen seleccionada" else "Sin imagen")
             Button(
                 onClick = { selectorFamiliograma.launch(arrayOf("image/png", "image/jpeg")) },
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
             ) { Text("Seleccionar imagen del familiograma") }
 
-            Text("Croquis de vivienda y contaminación", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+            Text("Croquis de vivienda y contaminación", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 16.dp))
             Text(if (adjuntos.any { it.tipo == "CROQUIS" }) "Imagen seleccionada" else "Sin imagen")
             Button(
                 onClick = { selectorCroquis.launch(arrayOf("image/png", "image/jpeg")) },
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
             ) { Text("Seleccionar imagen del croquis") }
 
-            Text("Contaminación ambiental", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 18.dp))
+            Text("Contaminación ambiental", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 18.dp))
             Button(
                 onClick = {
                     contaminacionEditando = null
@@ -166,7 +166,7 @@ fun EntornoFamiliarScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(Modifier.padding(14.dp)) {
-                    Text(item.fechaInforme, fontWeight = FontWeight.Bold)
+                    Text(item.fechaInforme, fontWeight = FontWeight.SemiBold)
                     Text(item.tipoContaminanteDescripcion, maxLines = 2)
                     Text("Causante: ${item.causanteContaminacion.ifBlank { "Sin registrar" }}")
                     Row {
@@ -187,7 +187,7 @@ fun EntornoFamiliarScreen(
         }
 
         item {
-            Text("Lugar o persona a la que acuden para tratamiento", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+            Text("Lugar o persona a la que acuden para tratamiento", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 16.dp))
             OutlinedTextField(
                 value = lugarTexto,
                 onValueChange = { lugarTexto = it },

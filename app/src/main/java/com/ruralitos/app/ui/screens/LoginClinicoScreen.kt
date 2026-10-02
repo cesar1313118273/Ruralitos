@@ -151,7 +151,7 @@ private fun Caracteristica(simbolo: String, texto: String) {
         Box(
             modifier = Modifier.size(34.dp).background(Color.White, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
-        ) { Text(simbolo, color = CianRuralitos, fontWeight = FontWeight.Bold) }
+        ) { Text(simbolo, color = CianRuralitos, fontWeight = FontWeight.SemiBold) }
         Text(texto, color = AzulClinicoOscuro, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp))
     }
 }

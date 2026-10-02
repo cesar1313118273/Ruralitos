@@ -439,7 +439,7 @@ fun InicioRuralitosScreen(
                             Text(
                                 text = saludo,
                                 color = AzulTitulo,
-                                fontSize = 28.sp,
+                                fontSize = 22.sp,
                                 lineHeight = 33.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 2,
@@ -472,7 +472,7 @@ fun InicioRuralitosScreen(
                     Text(
                         text = "Herramientas",
                         color = AzulTitulo,
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         lineHeight = 29.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(
