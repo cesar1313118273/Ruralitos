@@ -234,6 +234,7 @@ fun NotasDiariasScreen(
         )
         LazyColumn(
             modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 

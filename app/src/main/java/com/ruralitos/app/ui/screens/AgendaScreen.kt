@@ -417,6 +417,7 @@ fun AgendaScreen(
       Box(Modifier.weight(1f).fillMaxWidth()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp),
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
             item { PestanasAgenda(pestana, onSeleccionar = { pestana = it }) }
