@@ -130,8 +130,8 @@ fun GestionRiesgoScreen(
     PantallaListaRuralitos(
         titulo = "Plan y seguimiento del riesgo",
         descripcion = "Registra los compromisos de la familia y del equipo de salud, luego evalúa su cumplimiento.",
-        paso = 6,
-        totalPasos = 10,
+        paso = 5,
+        totalPasos = 9,
         etiquetaPaso = "Salud y evaluación",
         onVolver = onSalir,
         barraAccion = {

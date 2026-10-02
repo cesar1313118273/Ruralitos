@@ -194,8 +194,8 @@ fun SaludFamiliarScreen(
     PantallaListaRuralitos(
         titulo = "Embarazo y mortalidad",
         descripcion = "Registra por separado los embarazos actuales y los fallecimientos familiares de los últimos cinco años.",
-        paso = 4,
-        totalPasos = 10,
+        paso = 3,
+        totalPasos = 9,
         etiquetaPaso = "Salud y evaluación",
         onVolver = onSalir,
         barraAccion = {

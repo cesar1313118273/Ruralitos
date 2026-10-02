@@ -1,5 +1,8 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import com.ruralitos.app.ui.components.TipoIconoTerritorio
 import com.ruralitos.app.ui.components.IconoTerritorioRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -80,7 +83,7 @@ private val FondoInfo = Color(0xFFE3F4F7)
 fun SeleccionTerritorioFichaScreen(
     database: RuralitosDatabase,
     organizacionActiva: String?,
-    onContinuar: (SalaEntity, EaisSalaEntity, TerritorioSalaEntity) -> Unit,
+    onContinuar: (SalaEntity, EaisSalaEntity, TerritorioSalaEntity, String) -> Unit,
     onConfigurarSala: () -> Unit,
     onRegresar: () -> Unit
 ) {
@@ -91,6 +94,20 @@ fun SeleccionTerritorioFichaScreen(
     var salaId by remember { mutableStateOf("") }
     var eaisId by remember { mutableStateOf("") }
     var territorioId by remember { mutableStateOf("") }
+
+    // Control de la ficha: número que se asignará al barrio elegido y fecha de llenado.
+    var numeroFicha by remember { mutableStateOf("—") }
+    var fechaFicha by remember {
+        mutableStateOf(java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date()))
+    }
+    var mostrarCalendario by remember { mutableStateOf(false) }
+    LaunchedEffect(territorioId) {
+        numeroFicha = if (territorioId.isBlank()) {
+            "—"
+        } else {
+            database.fichaFamiliarDao().siguienteNumeroFichaBarrio(territorioId).toString()
+        }
+    }
 
     LaunchedEffect(Unit) {
         salas = database.salaDao().listarSalas()
@@ -132,7 +149,7 @@ fun SeleccionTerritorioFichaScreen(
                 color = CianRuralitos,
                 onClick = {
                     if (sala != null && eaisElegido != null && territorio != null) {
-                        onContinuar(sala, eaisElegido, territorio)
+                        onContinuar(sala, eaisElegido, territorio, fechaFicha)
                     }
                 }
             )
@@ -144,6 +161,23 @@ fun SeleccionTerritorioFichaScreen(
         }
     ) {
         InfoTerritorio()
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            TarjetaControlFicha(
+                etiqueta = "N° Ficha",
+                valor = numeroFicha,
+                modifier = Modifier.weight(1f)
+            )
+            TarjetaControlFicha(
+                etiqueta = "Fecha",
+                valor = fechaFicha,
+                modifier = Modifier.weight(1f),
+                onClick = { mostrarCalendario = true }
+            )
+        }
 
         SeccionSelector(
             titulo = "Centro de salud"
@@ -231,7 +265,19 @@ fun SeleccionTerritorioFichaScreen(
             )
         }
     }
+
+    if (mostrarCalendario) {
+        SelectorFechaDialog(
+            fechaInicial = fechaFicha,
+            onFechaSeleccionada = {
+                fechaFicha = it
+                mostrarCalendario = false
+            },
+            onCerrar = { mostrarCalendario = false }
+        )
+    }
 }
+
 
 @Composable
 private fun InfoTerritorio() {
@@ -333,6 +379,45 @@ private fun <T> SelectorGenerico(
                     }
                 )
             }
+        }
+    }
+}
+
+
+@Composable
+private fun TarjetaControlFicha(
+    etiqueta: String,
+    valor: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    val forma = RoundedCornerShape(12.dp)
+    Row(
+        modifier = modifier
+            .clip(forma)
+            .background(Color.White)
+            .border(1.dp, Color(0xFFE2ECF1), forma)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = etiqueta,
+                color = VerdeTexto,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                text = valor,
+                color = AzulTitulo,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        if (onClick != null) {
+            FlechaDesplegable(color = VerdeTexto)
         }
     }
 }

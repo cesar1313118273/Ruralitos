@@ -18,7 +18,7 @@ object ValidadorFicha {
     ): List<RequisitoFicha> = listOf(
         RequisitoFicha(
             "datos",
-            "Datos principales y responsable",
+            "Jefe o jefa de familia: cédula y nombre",
             ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(ficha.cedulaJefeHogar) &&
                 ficha.nombreApellidoJefeFamilia.isNotBlank() &&
                 ficha.numeroFichaFamiliar.isNotBlank() &&

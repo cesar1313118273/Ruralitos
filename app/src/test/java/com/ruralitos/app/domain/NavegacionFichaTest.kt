@@ -13,6 +13,12 @@ class NavegacionFichaTest {
     }
 
     @Test
+    fun `regresar desde la primera seccion nunca avanza y vuelve al panel`() {
+        assertEquals("menuFicha", NavegacionFicha.regresar("ubicacion", false, false))
+        assertEquals("revisionFicha", NavegacionFicha.regresar("ubicacion", false, true))
+    }
+
+    @Test
     fun `editar ficha continua a siguiente seccion y regresar vuelve al panel`() {
         assertEquals("saludFamiliar", NavegacionFicha.avanzar("miembros", false))
         assertEquals("menuFicha", NavegacionFicha.regresar("miembros", true, false))

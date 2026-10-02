@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -108,6 +109,9 @@ fun MiembrosFamiliaScreen(
     val miembros by database.fichaContenidoDao()
         .listarMiembros(fichaId)
         .collectAsState(initial = emptyList())
+    val fichaActual by database.fichaFamiliarDao()
+        .observarPorId(fichaId)
+        .collectAsState(initial = null)
     var mostrandoFormulario by remember { mutableStateOf(false) }
     var miembroEditando by remember { mutableStateOf<MiembroFamiliaEntity?>(null) }
     var miembroEliminar by remember { mutableStateOf<MiembroFamiliaEntity?>(null) }
@@ -225,7 +229,9 @@ fun MiembrosFamiliaScreen(
         FormularioMiembroScreen(
             fichaId = fichaId,
             miembro = miembroEditando,
-            onGuardar = { miembro ->
+            telefonoJefeInicial = fichaActual?.numeroTelefono.orEmpty(),
+            sugerirJefe = miembros.none { it.parentesco == "JEFE/A DE FAMILIA" },
+            onGuardar = { miembro, telefonoJefe ->
                 scope.launch {
                     runCatching {
                         withContext(Dispatchers.IO) {
@@ -233,6 +239,26 @@ fun MiembrosFamiliaScreen(
                                 database.fichaContenidoDao().guardarMiembro(miembro)
                             } else {
                                 database.fichaContenidoDao().actualizarMiembro(miembro)
+                            }
+                            // El jefe o jefa de familia define la cédula, el nombre y el
+                            // teléfono con los que se identifica la ficha.
+                            if (miembro.parentesco == "JEFE/A DE FAMILIA") {
+                                val ficha = database.fichaFamiliarDao().buscarPorId(fichaId)
+                                if (ficha != null) {
+                                    database.fichaFamiliarDao().actualizarDatosPrincipales(
+                                        fichaId = fichaId,
+                                        cedula = miembro.cedula.trim(),
+                                        nombre = miembro.apellidosNombres.trim(),
+                                        telefono = telefonoJefe,
+                                        numeroFicha = ficha.numeroFichaFamiliar,
+                                        fecha = ficha.fechaLlenado,
+                                        carpeta = ficha.numeroCarpeta,
+                                        responsableNombre = ficha.responsableNombre,
+                                        responsableCodigo = ficha.responsableCodigo,
+                                        usuarioId = usuarioId.takeIf { it != 0L }
+                                    )
+                                    database.fichaFamiliarDao().marcarPendiente(fichaId)
+                                }
                             }
                         }
                     }.onSuccess {
@@ -279,8 +305,8 @@ fun MiembrosFamiliaScreen(
     PantallaListaRuralitos(
         titulo = "Integrantes de la familia",
         descripcion = "Registra a cada persona del hogar. La edad determina automáticamente qué campos aplican en la ficha.",
-        paso = 3,
-        totalPasos = 10,
+        paso = 2,
+        totalPasos = 9,
         etiquetaPaso = "Información del hogar",
         onVolver = onSalir,
         barraAccion = {
@@ -316,7 +342,7 @@ fun MiembrosFamiliaScreen(
             item {
                 MensajeEstadoRuralitos(
                     titulo = "Aún no hay integrantes",
-                    descripcion = "Usa el botón verde para registrar la primera persona de la familia.",
+                    descripcion = "Empieza registrando al jefe o jefa de familia: su cédula y su teléfono identifican la ficha.",
                     color = MoradoClinico,
                     simbolo = "+"
                 )
@@ -367,11 +393,16 @@ fun MiembrosFamiliaScreen(
 private fun FormularioMiembroScreen(
     fichaId: Long,
     miembro: MiembroFamiliaEntity?,
-    onGuardar: (MiembroFamiliaEntity) -> Unit,
+    telefonoJefeInicial: String,
+    sugerirJefe: Boolean,
+    onGuardar: (MiembroFamiliaEntity, String) -> Unit,
     onCancelar: () -> Unit
 ) {
+    var telefonoJefe by remember { mutableStateOf(telefonoJefeInicial) }
     var nombres by remember { mutableStateOf(miembro?.apellidosNombres.orEmpty()) }
-    var parentesco by remember { mutableStateOf(miembro?.parentesco.orEmpty().ifBlank { "HIJO/A" }) }
+    var parentesco by remember {
+        mutableStateOf(miembro?.parentesco.orEmpty().ifBlank { if (sugerirJefe) "JEFE/A DE FAMILIA" else "HIJO/A" })
+    }
     var fechaNacimiento by remember { mutableStateOf(miembro?.fechaNacimiento.orEmpty()) }
     var ocupacion by remember { mutableStateOf(miembro?.ocupacion.orEmpty()) }
     var sexo by remember { mutableStateOf(miembro?.sexo.orEmpty().ifBlank { "H" }) }
@@ -537,7 +568,8 @@ private fun FormularioMiembroScreen(
                                 numeroHistoriaClinica = cedula.trim(),
                                 cedula = cedula.trim(),
                                 syncId = miembro?.syncId ?: UUID.randomUUID().toString()
-                            )
+                            ),
+                            telefonoJefe.trim()
                         )
                     }
                 }
@@ -558,6 +590,18 @@ private fun FormularioMiembroScreen(
                 parentesco,
                 MoradoClinico
             ) { parentesco = it }
+            if (parentesco == "JEFE/A DE FAMILIA") {
+                OutlinedTextField(
+                    value = telefonoJefe,
+                    onValueChange = { telefonoJefe = it.filter { c -> c.isDigit() || c in "+ -" }.take(20) },
+                    label = { Text("Número de teléfono") },
+                    supportingText = { Text("Contacto de la familia. Solo se pide al jefe o jefa.") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+                )
+            }
             OutlinedTextField(
                 value = cedula,
                 onValueChange = { cedula = it.filter(Char::isDigit).take(13) },

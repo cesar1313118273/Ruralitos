@@ -18,7 +18,7 @@ object NavegacionFicha {
     )
 
     private val anterior = mapOf(
-        "ubicacion" to "editarDatos",
+        "ubicacion" to "menuFicha",
         "miembros" to "ubicacion",
         "saludFamiliar" to "miembros",
         "riesgos" to "saludFamiliar",

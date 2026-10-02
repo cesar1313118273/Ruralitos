@@ -92,29 +92,28 @@ fun FichaSeccionesScreen(
             "1. Información del hogar",
             "Identificación, dirección y personas que integran la familia.",
             listOf(
-                SeccionFicha("datos", "1", "Datos personales y de la ficha", "Jefe de familia, teléfono, fecha, número de ficha y responsable.", AzulClinico),
-                SeccionFicha("ubicacion", "2", "Dirección y vivienda", "Sector, barrio, referencias y número de casa. El GPS está en Croquis.", CianRuralitos),
-                SeccionFicha("miembros", "3", "Integrantes de la familia", "Añade o corrige los datos de cada miembro del hogar.", MoradoClinico)
+                SeccionFicha("ubicacion", "1", "Dirección y vivienda", "Sector, barrio, referencias y número de casa. El GPS está en Croquis.", CianRuralitos),
+                SeccionFicha("miembros", "2", "Integrantes de la familia", "Registra al jefe o jefa del hogar y a cada miembro; la cédula y el teléfono del jefe identifican la ficha.", MoradoClinico)
             )
         ),
         GrupoFicha(
             "2. Salud y evaluación familiar",
             "Registro clínico, calificación de riesgos y compromisos de seguimiento.",
             listOf(
-                SeccionFicha("salud", "4", "Embarazo y mortalidad", "Registra embarazadas y antecedentes de mortalidad familiar.", NaranjaClinico),
+                SeccionFicha("salud", "3", "Embarazo y mortalidad", "Registra embarazadas y antecedentes de mortalidad familiar.", NaranjaClinico),
                 SeccionFicha("dispensarizacion", "🩺", "Registro general", "Grupos, indicadores y Excel de esta familia.", AzulClinico),
-                SeccionFicha("riesgos", "5", "Calificación del riesgo familiar", "Escoge descripciones claras; Ruralitos calcula la puntuación numérica.", RojoClinico),
-                SeccionFicha("gestion", "6", "Plan y seguimiento del riesgo", "Compromisos, evaluación del cumplimiento y observaciones.", AzulClinico)
+                SeccionFicha("riesgos", "4", "Calificación del riesgo familiar", "Escoge descripciones claras; Ruralitos calcula la puntuación numérica.", RojoClinico),
+                SeccionFicha("gestion", "5", "Plan y seguimiento del riesgo", "Compromisos, evaluación del cumplimiento y observaciones.", AzulClinico)
             )
         ),
         GrupoFicha(
             "3. Evidencias y entorno",
             "Imágenes, ubicación exacta y condiciones ambientales de la familia.",
             listOf(
-                SeccionFicha("familiograma", "7", "Imagen del familiograma", "Sube o reemplaza la imagen que aparecerá en Excel y PDF.", CianRuralitos),
-                SeccionFicha("croquis", "8", "Croquis, GPS y mapa", "Obtén latitud, longitud y altitud; mueve el punto y guarda el croquis.", AzulClinico),
-                SeccionFicha("contaminacion", "9", "Contaminación ambiental", "Fecha, tipo, descripción y causante de la contaminación.", NaranjaClinico),
-                SeccionFicha("tratamiento", "10", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", CianRuralitos)
+                SeccionFicha("familiograma", "6", "Imagen del familiograma", "Sube o reemplaza la imagen que aparecerá en Excel y PDF.", CianRuralitos),
+                SeccionFicha("croquis", "7", "Croquis, GPS y mapa", "Obtén latitud, longitud y altitud; mueve el punto y guarda el croquis.", AzulClinico),
+                SeccionFicha("contaminacion", "8", "Contaminación ambiental", "Fecha, tipo, descripción y causante de la contaminación.", NaranjaClinico),
+                SeccionFicha("tratamiento", "9", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", CianRuralitos)
             )
         ),
         GrupoFicha(

@@ -75,7 +75,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import com.ruralitos.app.ui.screens.BuscarUnidadOperativaScreen
 import com.ruralitos.app.data.local.entity.EstablecimientoSaludEntity
-import com.ruralitos.app.ui.screens.DatosFamiliaScreen
 import com.ruralitos.app.ui.screens.UbicacionFamiliaScreen
 import com.ruralitos.app.ui.screens.MiembrosFamiliaScreen
 import com.ruralitos.app.ui.screens.SaludFamiliarScreen
@@ -87,7 +86,6 @@ import com.ruralitos.app.ui.screens.FamiliogramaScreen
 import com.ruralitos.app.ui.screens.LugaresTratamientoScreen
 import com.ruralitos.app.ui.screens.BuscarFichasScreen
 import com.ruralitos.app.ui.screens.FichaSeccionesScreen
-import com.ruralitos.app.ui.screens.EditarDatosPrincipalesScreen
 import com.ruralitos.app.ui.screens.UbicacionFamiliaForm
 import com.ruralitos.app.ui.screens.CargandoAccesoScreen
 import com.ruralitos.app.ui.screens.AccesoConCargaMinima
@@ -275,7 +273,6 @@ fun RuralitosApp() {
     var fichaIdRuta by remember { mutableStateOf<Long?>(null) }
     var fichaAbiertaDesdeAgenda by remember { mutableStateOf(false) }
     var fichaSeleccionada by remember { mutableStateOf<FichaFamiliarEntity?>(null) }
-    var numeroFichaNueva by remember { mutableStateOf("") }
     var modoEdicion by remember { mutableStateOf(false) }
     var desdeRevision by remember { mutableStateOf(false) }
     var establecimientoSeleccionado by remember {
@@ -334,7 +331,10 @@ fun RuralitosApp() {
     }
 
     fun regresarFicha(desde: String) {
-        pantallaActual = NavegacionFicha.regresar(desde, modoEdicion, desdeRevision)
+        val destino = NavegacionFicha.regresar(desde, modoEdicion, desdeRevision)
+        // El panel de la ficha siempre funciona como modo de edición.
+        if (destino == "menuFicha") modoEdicion = true
+        pantallaActual = destino
         desdeRevision = false
     }
 
@@ -841,7 +841,6 @@ fun RuralitosApp() {
                             modoEdicion = false
                             fichaSeleccionada = null
                             fichaIdActual = null
-                            numeroFichaNueva = ""
                             pantallaActual = "seleccionarTerritorio"
                         },
                         onBuscarFicha = {
@@ -1177,17 +1176,87 @@ fun RuralitosApp() {
                     SeleccionTerritorioFichaScreen(
                         database = database,
                         organizacionActiva = supabase.organizacionGuardada(),
-                        onContinuar = { sala, eais, territorio ->
+                        onContinuar = { sala, eais, territorio, fechaLlenado ->
                             salaSeleccionada = sala
                             eaisSeleccionado = eais
                             territorioSeleccionado = territorio
                             supabase.guardarOrganizacionActiva(sala.organizacionId)
-                            establecimientoSeleccionado = sala.comoEstablecimientoLocal()
+                            val establecimiento = sala.comoEstablecimientoLocal()
+                            establecimientoSeleccionado = establecimiento
                             scope.launch {
-                                numeroFichaNueva = withContext(Dispatchers.IO) {
-                                    database.fichaFamiliarDao().siguienteNumeroFichaBarrio(territorio.id).toString()
+                                try {
+                                    val ahora = System.currentTimeMillis()
+                                    val fichaGuardada = withContext(Dispatchers.IO) {
+                                        database.withTransaction {
+                                            val usuario = checkNotNull(usuarioActual)
+                                            val numeroAsignado = database.fichaFamiliarDao()
+                                                .siguienteNumeroFichaBarrio(territorio.id).toString()
+                                            val id = database.fichaFamiliarDao().guardarFicha(
+                                                FichaFamiliarEntity(
+                                                    // El jefe o jefa se registra en Integrantes de la familia.
+                                                    cedulaJefeHogar = "",
+                                                    institucionSistema = establecimiento.institucionSistema,
+                                                    unidadOperativa = establecimiento.nombreCentroSalud,
+                                                    codigoUo = establecimiento.codigoUo,
+                                                    areaNumero = establecimiento.areaNumero,
+                                                    codigoLocalizacion = listOf(
+                                                        establecimiento.parroquiaCodigoLocalizacion,
+                                                        establecimiento.cantonCodigoLocalizacion,
+                                                        establecimiento.provinciaCodigoLocalizacion
+                                                    ).joinToString(""),
+                                                    parroquiaCodigoLocalizacion = establecimiento.parroquiaCodigoLocalizacion,
+                                                    cantonCodigoLocalizacion = establecimiento.cantonCodigoLocalizacion,
+                                                    provinciaCodigoLocalizacion = establecimiento.provinciaCodigoLocalizacion,
+                                                    numeroFichaFamiliar = numeroAsignado,
+                                                    provincia = establecimiento.provincia,
+                                                    canton = establecimiento.canton,
+                                                    parroquia = establecimiento.parroquia,
+                                                    sector = establecimiento.sector,
+                                                    manzana = "",
+                                                    numeroFamilia = "",
+                                                    direccionHabitualFamilia = "",
+                                                    barrio = territorio.nombre,
+                                                    numeroCasa = "",
+                                                    comunidad = "",
+                                                    grupoCultural = "",
+                                                    nombreApellidoJefeFamilia = "",
+                                                    numeroTelefono = "",
+                                                    fechaLlenado = fechaLlenado,
+                                                    numeroCarpeta = eais.numero.toString(),
+                                                    responsableNombre = usuario.nombres,
+                                                    responsableCodigo = usuario.codigoSenescyt,
+                                                    firmaUri = usuario.firmaUri,
+                                                    creadoEn = ahora,
+                                                    actualizadoEn = ahora,
+                                                    creadoPorUsuarioId = usuario.id,
+                                                    actualizadoPorUsuarioId = usuario.id,
+                                                    organizacionId = sala.organizacionId
+                                                        .ifBlank { usuario.organizacionId },
+                                                    establecimientoRemotoId = sala.establecimientoId,
+                                                    eaisId = eais.id,
+                                                    territorioId = territorio.id
+                                                )
+                                            )
+                                            registrarEvento(
+                                                database, id, numeroAsignado, usuario,
+                                                "FICHA_CREADA"
+                                            )
+                                            checkNotNull(
+                                                database.fichaFamiliarDao().buscarPorId(id)
+                                            ) { "La ficha no quedó disponible después de guardarla." }
+                                        }
+                                    }
+                                    modoEdicion = false
+                                    fichaIdActual = fichaGuardada.id
+                                    fichaSeleccionada = fichaGuardada
+                                    pantallaActual = "ubicacion"
+                                } catch (_: Exception) {
+                                    Toast.makeText(
+                                        context,
+                                        "No se pudo guardar el borrador.",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                                 }
-                                pantallaActual = "datosFamilia"
                             }
                         },
                         onConfigurarSala = { pantallaActual = "sala" },
@@ -1259,7 +1328,7 @@ fun RuralitosApp() {
                             ficha = ficha,
                             onAbrirSeccion = { seccion ->
                                 pantallaActual = when (seccion) {
-                                    "datos" -> "editarDatos"
+                                    "datos" -> "miembros"
                                     "ubicacion" -> "editarUbicacion"
                                     "miembros" -> "miembros"
                                     "salud" -> "saludFamiliar"
@@ -1399,94 +1468,6 @@ fun RuralitosApp() {
                     }
                 }
 
-                "editarDatos" -> {
-                    val ficha = fichaSeleccionada
-                    if (ficha != null) {
-                        EditarDatosPrincipalesScreen(
-                            ficha = ficha,
-                            onGuardar = { datos ->
-                                scope.launch {
-                                    val carpetaEais = withContext(Dispatchers.IO) {
-                                        val responsable = checkNotNull(usuarioActual)
-                                        val carpeta = database.salaDao().buscarEais(ficha.eaisId)
-                                            ?.numero?.toString() ?: ficha.numeroCarpeta
-                                        database.fichaFamiliarDao().actualizarDatosPrincipales(
-                                            fichaId = ficha.id,
-                                            cedula = datos.cedula,
-                                            nombre = datos.nombre,
-                                            telefono = datos.telefono,
-                                            numeroFicha = datos.numeroFicha,
-                                            fecha = datos.fecha,
-                                            carpeta = carpeta,
-                                            responsableNombre = responsable.nombres,
-                                            responsableCodigo = responsable.codigoSenescyt,
-                                            usuarioId = usuarioActual?.id
-                                        )
-                                        val jefe = database.fichaContenidoDao().buscarJefeFamilia(ficha.id)
-                                        if (jefe == null) {
-                                            database.fichaContenidoDao().guardarMiembro(
-                                                MiembroFamiliaEntity(
-                                                    fichaId = ficha.id,
-                                                    grupoEdad = "",
-                                                    apellidosNombres = datos.nombre,
-                                                    parentesco = "JEFE/A DE FAMILIA",
-                                                    fechaNacimiento = "",
-                                                    ocupacion = "",
-                                                    sexo = "",
-                                                    escolaridad = "",
-                                                    numeroHistoriaClinica = datos.cedula,
-                                                    cedula = datos.cedula
-                                                )
-                                            )
-                                        } else {
-                                            database.fichaContenidoDao().actualizarMiembro(
-                                                jefe.copy(
-                                                    apellidosNombres = datos.nombre,
-                                                    numeroHistoriaClinica = datos.cedula,
-                                                    cedula = datos.cedula
-                                                )
-                                            )
-                                        }
-                                        registrarEvento(
-                                            database, ficha.id, datos.numeroFicha,
-                                            usuarioActual, "DATOS_PRINCIPALES_MODIFICADOS"
-                                        )
-                                        carpeta
-                                    }
-                                    fichaSeleccionada = ficha.copy(
-                                        cedulaJefeHogar = datos.cedula,
-                                        nombreApellidoJefeFamilia = datos.nombre,
-                                        numeroTelefono = datos.telefono,
-                                        numeroFichaFamiliar = datos.numeroFicha,
-                                        fechaLlenado = datos.fecha,
-                                        numeroCarpeta = carpetaEais,
-                                        responsableNombre = usuarioActual?.nombres.orEmpty(),
-                                        responsableCodigo = usuarioActual?.codigoSenescyt.orEmpty(),
-                                        actualizadoPorUsuarioId = usuarioActual?.id,
-                                        actualizadoEn = System.currentTimeMillis()
-                                    )
-                                    pantallaActual = when {
-                                        desdeRevision -> "revisionFicha"
-                                        modoEdicion -> "menuFicha"
-                                        else -> "ubicacion"
-                                    }
-                                    desdeRevision = false
-                                }
-                            },
-                            onCancelar = {
-                                // Regresar nunca avanza: si la ficha ya existe se vuelve a su panel.
-                                pantallaActual = when {
-                                    desdeRevision -> "revisionFicha"
-                                    else -> "menuFicha"
-                                }
-                                desdeRevision = false
-                            }
-                        )
-                    } else {
-                        pantallaActual = "buscarFichas"
-                    }
-                }
-
                 "editarUbicacion" -> {
                     val ficha = fichaSeleccionada
                     if (ficha != null) {
@@ -1547,133 +1528,6 @@ fun RuralitosApp() {
                         )
                     } else {
                         pantallaActual = "buscarFichas"
-                    }
-                }
-
-                "buscarUnidad" -> {
-                    BuscarUnidadOperativaScreen(
-                        onEstablecimientoSeleccionado = { establecimiento ->
-                            establecimientoSeleccionado = establecimiento
-                            pantallaActual = "datosFamilia"
-                        },
-                        onRegresar = { pantallaActual = "inicio" }
-                    )
-                }
-
-                "datosFamilia" -> {
-                    val establecimiento = establecimientoSeleccionado
-
-                    if (establecimiento != null) {
-                        DatosFamiliaScreen(
-                            establecimiento = establecimiento,
-                            numeroFichaAutomatico = numeroFichaNueva,
-                            onGuardar = { cedula, nombre, telefono, numeroFicha, fecha ->
-                                if (!ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
-                                    Toast.makeText(
-                                        context,
-                                        "La identificación debe contener exactamente 10 o 13 números.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                } else if (nombre.isBlank() || numeroFicha.isBlank()) {
-                                    Toast.makeText(context, "Completa el nombre y número de ficha.", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    scope.launch {
-                                        try {
-                                            val ahora = System.currentTimeMillis()
-                                            val fichaGuardada = withContext(Dispatchers.IO) {
-                                                database.withTransaction {
-                                                    val usuario = checkNotNull(usuarioActual)
-                                                    val barrioElegido = checkNotNull(territorioSeleccionado) { "Selecciona un barrio." }
-                                                    val eaisElegido = checkNotNull(eaisSeleccionado) { "Selecciona un EAIS." }
-                                                    val numeroAsignado = database.fichaFamiliarDao()
-                                                        .siguienteNumeroFichaBarrio(barrioElegido.id).toString()
-                                                    val id = database.fichaFamiliarDao().guardarFicha(
-                                                        FichaFamiliarEntity(
-                                                        cedulaJefeHogar = cedula.trim(),
-                                                        institucionSistema = establecimiento.institucionSistema,
-                                                        unidadOperativa = establecimiento.nombreCentroSalud,
-                                                        codigoUo = establecimiento.codigoUo,
-                                                        areaNumero = establecimiento.areaNumero,
-                                                        codigoLocalizacion = listOf(
-                                                            establecimiento.parroquiaCodigoLocalizacion,
-                                                            establecimiento.cantonCodigoLocalizacion,
-                                                            establecimiento.provinciaCodigoLocalizacion
-                                                        ).joinToString(""),
-                                                        parroquiaCodigoLocalizacion = establecimiento.parroquiaCodigoLocalizacion,
-                                                        cantonCodigoLocalizacion = establecimiento.cantonCodigoLocalizacion,
-                                                        provinciaCodigoLocalizacion = establecimiento.provinciaCodigoLocalizacion,
-                                                        numeroFichaFamiliar = numeroAsignado,
-                                                        provincia = establecimiento.provincia,
-                                                        canton = establecimiento.canton,
-                                                        parroquia = establecimiento.parroquia,
-                                                        sector = establecimiento.sector,
-                                                        manzana = "",
-                                                        numeroFamilia = "",
-                                                        direccionHabitualFamilia = "",
-                                                        barrio = barrioElegido.nombre,
-                                                        numeroCasa = "",
-                                                        comunidad = "",
-                                                        grupoCultural = "",
-                                                        nombreApellidoJefeFamilia = nombre.trim(),
-                                                        numeroTelefono = telefono.trim(),
-                                                        fechaLlenado = fecha,
-                                                        numeroCarpeta = eaisElegido.numero.toString(),
-                                                        responsableNombre = usuario.nombres,
-                                                        responsableCodigo = usuario.codigoSenescyt,
-                                                        firmaUri = usuario.firmaUri,
-                                                        creadoEn = ahora,
-                                                        actualizadoEn = ahora,
-                                                        creadoPorUsuarioId = usuario.id,
-                                                        actualizadoPorUsuarioId = usuario.id,
-                                                        organizacionId = salaSeleccionada?.organizacionId
-                                                            ?: usuario.organizacionId,
-                                                        establecimientoRemotoId = salaSeleccionada?.establecimientoId,
-                                                        eaisId = eaisElegido.id,
-                                                        territorioId = barrioElegido.id
-                                                        )
-                                                    )
-                                                    database.fichaContenidoDao().guardarMiembro(
-                                                        MiembroFamiliaEntity(
-                                                            fichaId = id,
-                                                            grupoEdad = "",
-                                                            apellidosNombres = nombre.trim(),
-                                                            parentesco = "JEFE/A DE FAMILIA",
-                                                            fechaNacimiento = "",
-                                                            ocupacion = "",
-                                                            sexo = "",
-                                                            escolaridad = "",
-                                                            numeroHistoriaClinica = cedula.trim(),
-                                                            cedula = cedula.trim()
-                                                        )
-                                                    )
-                                                    registrarEvento(
-                                                        database, id, numeroAsignado, usuario,
-                                                        "FICHA_CREADA"
-                                                    )
-                                                    checkNotNull(
-                                                        database.fichaFamiliarDao().buscarPorId(id)
-                                                    ) { "La ficha no quedó disponible después de guardarla." }
-                                                }
-                                            }
-                                            fichaIdActual = fichaGuardada.id
-                                            fichaSeleccionada = fichaGuardada
-                                            pantallaActual = "ubicacion"
-                                        } catch (_: Exception) {
-                                            Toast.makeText(
-                                                context,
-                                                "No se pudo guardar el borrador.",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    }
-                                }
-                            },
-                            onRegresar = {
-                                pantallaActual = "seleccionarTerritorio"
-                            }
-                        )
-                    } else {
-                        pantallaActual = "seleccionarTerritorio"
                     }
                 }
 
@@ -1762,8 +1616,22 @@ fun RuralitosApp() {
                         MiembrosFamiliaScreen(
                             fichaId = fichaId,
                             usuarioId = usuarioActual?.id ?: 0L,
-                            onContinuar = { avanzarFicha("miembros") },
-                            onSalir = { regresarFicha("miembros") },
+                            onContinuar = {
+                                scope.launch {
+                                    fichaSeleccionada = withContext(Dispatchers.IO) {
+                                        database.fichaFamiliarDao().buscarPorId(fichaId)
+                                    } ?: fichaSeleccionada
+                                    avanzarFicha("miembros")
+                                }
+                            },
+                            onSalir = {
+                                scope.launch {
+                                    fichaSeleccionada = withContext(Dispatchers.IO) {
+                                        database.fichaFamiliarDao().buscarPorId(fichaId)
+                                    } ?: fichaSeleccionada
+                                    regresarFicha("miembros")
+                                }
+                            },
                             textoRegresar = NavegacionFicha.textoRegresar(modoEdicion, desdeRevision),
                             descripcionRegresar = NavegacionFicha.descripcionRegresar(modoEdicion, desdeRevision)
                         )
@@ -1888,7 +1756,7 @@ fun RuralitosApp() {
                                     }
                                     desdeRevision = true
                                     pantallaActual = when (seccion) {
-                                        "datos" -> "editarDatos"
+                                        "datos" -> "miembros"
                                         "ubicacion" -> "editarUbicacion"
                                         "miembros" -> "miembros"
                                         "salud" -> "saludFamiliar"

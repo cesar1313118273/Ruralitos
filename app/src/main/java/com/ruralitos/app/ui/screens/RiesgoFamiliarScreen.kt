@@ -143,8 +143,8 @@ fun RiesgoFamiliarScreen(
     PantallaListaRuralitos(
         titulo = "Calificación del riesgo familiar",
         descripcion = "Selecciona descripciones comprensibles. Ruralitos calcula internamente el puntaje y el nivel de riesgo.",
-        paso = 5,
-        totalPasos = 10,
+        paso = 4,
+        totalPasos = 9,
         etiquetaPaso = "Salud y evaluación",
         onVolver = onSalir,
         barraAccion = {
