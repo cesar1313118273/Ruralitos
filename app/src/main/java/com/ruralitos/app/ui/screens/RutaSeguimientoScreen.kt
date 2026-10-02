@@ -65,6 +65,7 @@ import com.ruralitos.app.data.mapa.GestorMapaCampo
 import com.ruralitos.app.data.mapa.GestorMapaDetalle
 import com.ruralitos.app.data.mapa.GestorRutasOffline
 import com.ruralitos.app.data.mapa.RutaCalculada
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -310,20 +311,28 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
     }
 
     val actual = ficha
-    Column(Modifier.fillMaxSize().formularioSeguro()
-        .verticalScroll(rememberScrollState(), enabled = !mapaEnUso)
-        .background(Color(0xFFF6F9FB))) {
-        CabeceraAgenda(onRegresar)
-        Spacer(Modifier.height(16.dp))
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("SEGUIMIENTO EXTRAMURAL", color = Color(0xFF1565C0),
-                fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-            Text("Ruta de seguimiento", color = Color(0xFF0A2A5E),
-                fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
-            Text(actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
-                ?: "Cargando ficha…", color = Color(0xFF5B7083), fontSize = 16.sp)
-
+    PantallaRuralitos(
+        titulo = "Ruta de seguimiento",
+        subtitulo = actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
+            ?: "Cargando ficha…",
+        onVolver = onRegresar,
+        scrollHabilitado = !mapaEnUso,
+        barraAccion = {
+            if (actual?.latitud != null && actual.longitud != null) {
+                BotonPrincipalRuralitos(texto = "Abrir navegación externa", color = CianRuralitos,
+                    onClick = {
+                        val coordenadas = "${actual.latitud},${actual.longitud}"
+                        val navegacion = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$coordenadas"))
+                            .setPackage("com.google.android.apps.maps")
+                        val ubicacion = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$coordenadas"))
+                        runCatching { context.startActivity(navegacion) }
+                            .recoverCatching { context.startActivity(ubicacion) }
+                            .onFailure { mensaje = "No hay una aplicación de navegación disponible en este dispositivo." }
+                    })
+            }
+            BotonSecundarioRuralitos(texto = "Abrir ficha familiar", onClick = onAbrirFicha)
+        }
+    ) {
             if (actual?.latitud != null && actual.longitud != null) {
                 SeccionFormularioRuralitos(
                     titulo = "1. Recorre la ruta",
@@ -451,23 +460,10 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     Text("Comprueba el estado real de los caminos antes de viajar.",
                         Modifier.padding(top = 10.dp), color = Color(0xFF5B7083), fontSize = 12.sp)
                 }
-                BotonPrincipalRuralitos(texto = "Abrir navegación externa", color = CianRuralitos,
-                    onClick = {
-                        val coordenadas = "${actual.latitud},${actual.longitud}"
-                        val navegacion = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$coordenadas"))
-                            .setPackage("com.google.android.apps.maps")
-                        val ubicacion = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$coordenadas"))
-                        runCatching { context.startActivity(navegacion) }
-                            .recoverCatching { context.startActivity(ubicacion) }
-                            .onFailure { mensaje = "No hay una aplicación de navegación disponible en este dispositivo." }
-                    })
             } else {
                 Text("Esta ficha todavía no tiene coordenadas. Abre la ficha para guardar la vivienda en el mapa.",
                     color = Color(0xFF5B7083))
             }
-            BotonSecundarioRuralitos(texto = "Abrir ficha familiar", onClick = onAbrirFicha,
-                modifier = Modifier.padding(bottom = 24.dp))
-        }
     }
 }
 

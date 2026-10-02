@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.TextoSecundario
+import androidx.compose.material3.HorizontalDivider
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.ui.theme.FondoClinico
@@ -259,12 +261,9 @@ private fun GrupoFichaDesplegable(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = color.copy(alpha = 0.05f),
+        color = Color.White,
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            1.dp,
-            color.copy(alpha = 0.16f)
-        )
+        border = BorderStroke(1.dp, BordeClinico)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -273,20 +272,20 @@ private fun GrupoFichaDesplegable(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable(onClick = onAlternar)
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.size(54.dp),
-                    color = color.copy(alpha = 0.11f),
-                    shape = RoundedCornerShape(16.dp)
+                    modifier = Modifier.size(40.dp),
+                    color = color.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = grupo.titulo.substringBefore(".").ifBlank { "•" },
                             color = color,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 20.sp
+                            fontSize = 16.sp
                         )
                     }
                 }
@@ -298,60 +297,42 @@ private fun GrupoFichaDesplegable(
                 ) {
                     Text(
                         text = grupo.titulo.substringAfter(". ").ifBlank { grupo.titulo },
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFF0A2A5E),
-                        fontWeight = FontWeight.SemiBold
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AzulClinicoOscuro,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = grupo.descripcion,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp)
+                        modifier = Modifier.padding(top = 3.dp)
                     )
                 }
 
                 Text(
                     text = if (abierto) "⌃" else "⌄",
                     color = color,
-                    fontSize = 24.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold
                 )
             }
 
             if (abierto) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = 14.dp,
-                            end = 14.dp,
-                            bottom = 14.dp
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    BoxWithConstraints(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        val columnas = if (maxWidth >= 720.dp) 2 else 1
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            grupo.secciones.chunked(columnas).forEach { fila ->
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    fila.forEach { seccion ->
-                                        TarjetaSeccionRedisenada(
-                                            seccion = seccion,
-                                            modifier = Modifier.weight(1f),
-                                            onAbrir = onAbrirSeccion
-                                        )
-                                    }
-                                    repeat(columnas - fila.size) {
-                                        Spacer(Modifier.weight(1f))
-                                    }
-                                }
-                            }
+                HorizontalDivider(color = BordeClinico)
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    grupo.secciones.forEachIndexed { indice, seccion ->
+                        TarjetaSeccionRedisenada(
+                            seccion = seccion,
+                            modifier = Modifier.fillMaxWidth(),
+                            onAbrir = onAbrirSeccion
+                        )
+                        if (indice < grupo.secciones.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(start = 70.dp),
+                                color = BordeClinico
+                            )
                         }
                     }
                 }
@@ -405,7 +386,7 @@ private fun PanelAdministracionFicha(
                 ) {
                     Text(
                         text = "Administración de la ficha",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF0A2A5E)
                     )
@@ -511,72 +492,56 @@ private fun TarjetaSeccionRedisenada(
     modifier: Modifier,
     onAbrir: (String) -> Unit
 ) {
-    Card(
+    Row(
         modifier = modifier
-            .heightIn(min = 92.dp)
-            .clickable { onAbrir(seccion.id) },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.98f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = BorderStroke(
-            1.dp,
-            seccion.color.copy(alpha = 0.14f)
-        )
+            .clickable { onAbrir(seccion.id) }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Surface(
+            modifier = Modifier.size(40.dp),
+            shape = RoundedCornerShape(12.dp),
+            color = seccion.color.copy(alpha = 0.12f)
         ) {
-            Surface(
-                modifier = Modifier.size(56.dp),
-                shape = RoundedCornerShape(16.dp),
-                color = seccion.color.copy(alpha = 0.12f)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = seccion.simbolo,
-                        color = seccion.color,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 20.sp
-                    )
-                }
-            }
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 14.dp)
-            ) {
+            Box(contentAlignment = Alignment.Center) {
                 Text(
-                    text = seccion.titulo,
-                    style = MaterialTheme.typography.titleLarge,
+                    text = seccion.simbolo,
+                    color = seccion.color,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF0A2A5E),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = seccion.descripcion,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 3.dp),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    fontSize = 15.sp
                 )
             }
+        }
 
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .padding(start = 14.dp)
+        ) {
             Text(
-                text = "›",
-                color = seccion.color,
-                fontSize = 28.sp,
+                text = seccion.titulo,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 10.dp)
+                color = AzulClinicoOscuro,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = seccion.descripcion,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 3.dp),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
+
+        Text(
+            text = "›",
+            color = TextoSecundario,
+            fontSize = 22.sp,
+            modifier = Modifier.padding(start = 10.dp)
+        )
     }
 }
 

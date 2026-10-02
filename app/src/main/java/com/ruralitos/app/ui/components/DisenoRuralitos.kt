@@ -342,6 +342,7 @@ fun PantallaRuralitos(
     totalPasos: Int? = null,
     etiquetaPaso: String = "",
     onVolver: (() -> Unit)? = null,
+    scrollHabilitado: Boolean = true,
     barraAccion: (@Composable ColumnScope.() -> Unit)? = null,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
@@ -356,7 +357,7 @@ fun PantallaRuralitos(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(rememberScrollState(), enabled = scrollHabilitado)
                 .padding(RuralitosSpacing.base),
             verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
         ) {
