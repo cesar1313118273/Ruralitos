@@ -782,7 +782,7 @@ private fun TarjetaBusquedaFichas(
                     .fillMaxWidth()
                     .padding(top = 16.dp)
                     .height(62.dp),
-                color = Color(0xFF0786EF),
+                color = Color(0xFF1565C0),
                 shape = RoundedCornerShape(16.dp),
                 shadowElevation = 5.dp
             ) {

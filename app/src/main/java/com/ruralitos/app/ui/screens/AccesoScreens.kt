@@ -259,14 +259,14 @@ private fun MascotaMedicoPixel(
         val cabelloLuz = Color(0xFF6E4437)
         val piel = Color(0xFFFFC18C)
         val pielSombra = Color(0xFFF29A68)
-        val blanco = Color(0xFFF7FBFF)
-        val blancoSombra = Color(0xFFD9EAF7)
-        val verde = Color(0xFF08A98C)
-        val verdeOscuro = Color(0xFF087E70)
-        val azul = Color(0xFF0A73C9)
+        val blanco = Color(0xFFF6F9FB)
+        val blancoSombra = Color(0xFFE2ECF1)
+        val verde = Color(0xFF0889A0)
+        val verdeOscuro = Color(0xFF066B7E)
+        val azul = Color(0xFF1565C0)
         val zapato = Color(0xFF30323D)
         val marron = Color(0xFF8B552E)
-        val papel = Color(0xFFEAF6FF)
+        val papel = Color(0xFFE8EFFA)
 
         // Sombra en el piso.
         drawOval(

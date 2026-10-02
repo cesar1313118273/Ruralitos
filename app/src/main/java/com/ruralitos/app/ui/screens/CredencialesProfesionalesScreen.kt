@@ -246,7 +246,7 @@ Box(
                                     .fillMaxWidth()
                                     .aspectRatio(3f)
                                     .background(
-                                        Color(0xFFFBFDFF),
+                                        Color(0xFFF6F9FB),
                                         RoundedCornerShape(16.dp)
                                     )
                                     .border(
@@ -533,9 +533,9 @@ Box(
     }
 }
 
-private val AzulMarca = Color(0xFF0078E8)
-private val AzulMarcaOscuro = Color(0xFF08295F)
-private val AzulMarcaMuyClaro = Color(0xFFE7F4FF)
+private val AzulMarca = Color(0xFF1565C0)
+private val AzulMarcaOscuro = Color(0xFF0A2A5E)
+private val AzulMarcaMuyClaro = Color(0xFFE8EFFA)
 
 @Composable
 private fun CabeceraIdentidadProfesional() {
@@ -609,7 +609,7 @@ private fun CabeceraIdentidadProfesional() {
 
             drawPath(
                 path = ola,
-                color = Color(0xFFF7FCFF)
+                color = Color(0xFFF6F9FB)
             )
         }
 
@@ -641,7 +641,7 @@ private fun CabeceraIdentidadProfesional() {
             Text(
                 text =
                     "Configura una sola vez el código y la firma que se colocarán automáticamente en tus fichas.",
-                color = Color(0xFF59739A),
+                color = Color(0xFF5B7083),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 5.dp)
             )
@@ -747,7 +747,7 @@ private fun EncabezadoTarjetaCredencial(
 
             Text(
                 text = descripcion,
-                color = Color(0xFF5F7698),
+                color = Color(0xFF5B7083),
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 2.dp)
             )
@@ -823,7 +823,7 @@ private fun EstadoFirmaProtegida(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color(0xFFE5FAF4),
+        color = Color(0xFFE3F4F7),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.dp,
@@ -868,7 +868,7 @@ private fun EstadoFirmaProtegida(
                 Text(
                     text =
                         "Si no dibujas ni subes otra, se conservará la firma guardada.",
-                    color = Color(0xFF5E7698),
+                    color = Color(0xFF5B7083),
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 2.dp)
                 )

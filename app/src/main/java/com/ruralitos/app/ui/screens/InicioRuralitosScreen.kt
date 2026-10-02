@@ -93,18 +93,18 @@ import kotlinx.coroutines.launch
  * Solo se modifica la presentación visual.
  */
 
-private val FondoPantalla = Color(0xFFFDFEFF)
+private val FondoPantalla = Color(0xFFF6F9FB)
 private val AzulTitulo = Color(0xFF0A2A5E)
-private val AzulSecundario = Color(0xFF6D809E)
-private val VerdePrincipal = Color(0xFF00AD8C)
-private val VerdeSuave = Color(0xFFE7F8F3)
+private val AzulSecundario = Color(0xFF5B7083)
+private val VerdePrincipal = Color(0xFF0889A0)
+private val VerdeSuave = Color(0xFFE3F4F7)
 private val NaranjaPrincipal = Color(0xFFF7941D)
 private val NaranjaFondo = Color(0xFFFFF8EF)
 private val NaranjaBorde = Color(0xFFFFD7A3)
 private val BordeTarjeta = Color(0xFFE2ECF1)
-private val Montana1 = Color(0xFFEDF7FD)
-private val Montana2 = Color(0xFFE2F1FA)
-private val Montana3 = Color(0xFFD5EAF7)
+private val Montana1 = Color(0xFFF6F9FB)
+private val Montana2 = Color(0xFFE8EFFA)
+private val Montana3 = Color(0xFFE2ECF1)
 
 @Composable
 fun InicioRuralitosScreen(
@@ -176,7 +176,7 @@ fun InicioRuralitosScreen(
                     modifier = Modifier
                         .fillMaxHeight()
                         .fillMaxWidth()
-                        .background(Color(0xFFDCEEFF))
+                        .background(Color(0xFFE8EFFA))
                 ) {
                     FondoMenuLateralAzul(
                         modifier = Modifier.fillMaxSize()
@@ -907,7 +907,7 @@ private fun FondoMenuLateralAzul(
 
         drawPath(
             path = capaInferiorSuave,
-            color = Color(0xFFB8DFFF).copy(alpha = 0.38f)
+            color = Color(0xFFE2ECF1).copy(alpha = 0.38f)
         )
     }
 }

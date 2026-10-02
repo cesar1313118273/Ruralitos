@@ -268,7 +268,7 @@ private fun BannerFichaPanel(
                     text = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha familiar" },
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF0B2556),
+                    color = Color(0xFF0A2A5E),
                     modifier = Modifier.padding(top = 4.dp)
                 )
 

@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.horizontalScroll
@@ -176,6 +179,144 @@ fun EncabezadoRuralitos(
             }
         }
     }
+}
+
+/** Barra de avance segmentada: un bloque por paso. */
+@Composable
+fun BarraAvanceRuralitos(
+    paso: Int,
+    total: Int,
+    etiqueta: String,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+            for (i in 1..total) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(
+                            when {
+                                i < paso -> MaterialTheme.colorScheme.primary
+                                i == paso -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                else -> BordeClinico
+                            }
+                        )
+                )
+            }
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                etiqueta,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "$paso de $total",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * Estructura común de una pantalla: encabezado blanco con título y avance,
+ * contenido con desplazamiento y barra de acciones fija abajo.
+ * Solo organiza el diseño; las acciones las define cada pantalla.
+ */
+@Composable
+fun PantallaRuralitos(
+    titulo: String,
+    modifier: Modifier = Modifier,
+    subtitulo: String? = null,
+    paso: Int? = null,
+    totalPasos: Int? = null,
+    etiquetaPaso: String = "",
+    barraAccion: (@Composable ColumnScope.() -> Unit)? = null,
+    contenido: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(FondoRuralitosWeb)
+            .formularioSeguro()
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .statusBarsPadding()
+                .padding(horizontal = RuralitosSpacing.base)
+                .padding(top = RuralitosSpacing.md, bottom = RuralitosSpacing.md)
+        ) {
+            Text(
+                titulo,
+                style = MaterialTheme.typography.titleLarge,
+                color = AzulClinicoOscuro,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            subtitulo?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            if (paso != null && totalPasos != null) {
+                BarraAvanceRuralitos(
+                    paso, totalPasos, etiquetaPaso,
+                    Modifier.padding(top = RuralitosSpacing.md)
+                )
+            }
+        }
+        HorizontalDivider(color = BordeClinico)
+        Column(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(RuralitosSpacing.base),
+            verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md),
+            content = contenido
+        )
+        if (barraAccion != null) {
+            HorizontalDivider(color = BordeClinico)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .padding(horizontal = RuralitosSpacing.base, vertical = RuralitosSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.sm),
+                content = barraAccion
+            )
+        }
+    }
+}
+
+/** Tarjeta blanca de bordes finos para agrupar campos dentro de una pantalla. */
+@Composable
+fun TarjetaFormularioRuralitos(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(RuralitosRadius.card))
+            .background(Color.White)
+            .border(1.dp, BordeClinico, RoundedCornerShape(RuralitosRadius.card))
+            .padding(RuralitosSpacing.base),
+        verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md),
+        content = content
+    )
 }
 
 @Composable

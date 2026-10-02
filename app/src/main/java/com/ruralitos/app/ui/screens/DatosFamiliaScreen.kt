@@ -55,18 +55,20 @@ import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
 import com.ruralitos.app.data.local.entity.EstablecimientoSaludEntity
 import com.ruralitos.app.ui.components.formularioSeguro
+import com.ruralitos.app.ui.components.PantallaRuralitos
+import com.ruralitos.app.ui.components.TarjetaFormularioRuralitos
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-private val FondoFichaDatos = Color(0xFFF2FAFD)
+private val FondoFichaDatos = Color(0xFFF6F9FB)
 private val AzulTituloFicha = Color(0xFF0A2A5E)
-private val AzulAccionFicha = Color(0xFF187CD1)
-private val GrisTextoFicha = Color(0xFF6C7F9A)
-private val VerdeAccionFicha = Color(0xFF0BAF8E)
-private val BordeCampoFicha = Color(0xFFBCD4E6)
-private val AzulSuaveFicha = Color(0xFFEAF6FF)
+private val AzulAccionFicha = Color(0xFF1565C0)
+private val GrisTextoFicha = Color(0xFF5B7083)
+private val VerdeAccionFicha = Color(0xFF0889A0)
+private val BordeCampoFicha = Color(0xFFCFDDE5)
+private val AzulSuaveFicha = Color(0xFFE8EFFA)
 
 @Composable
 fun DatosFamiliaScreen(
@@ -95,115 +97,76 @@ fun DatosFamiliaScreen(
     }
     var mostrarCalendario by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .background(FondoFichaDatos)
-            .verticalScroll(rememberScrollState())
+    PantallaRuralitos(
+        titulo = "Datos personales de la familia",
+        subtitulo = "Registra al jefe o jefa del hogar.",
+        paso = 1,
+        totalPasos = 10,
+        etiquetaPaso = "Información del hogar",
+        barraAccion = {
+            BotonGuardarYContinuar(
+                onClick = {
+                    onGuardar(
+                        cedulaJefeHogar,
+                        nombreJefeFamilia,
+                        numeroTelefono,
+                        numeroFichaFamiliar,
+                        fechaLlenado
+                    )
+                }
+            )
+            BotonVolverCentroSalud(onClick = onRegresar)
+        }
     ) {
-        // Misma cabecera rural del diseño, de borde a borde.
-        Image(
-            painter = painterResource(
-                id = R.drawable.fichadatos_cabecera_paisaje_rural_centro_salud_2026
-            ),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(941f / 215f),
-            contentScale = ContentScale.Crop
-        )
-
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp)
-                .offset(y = (-16).dp),
-            shape = RoundedCornerShape(24.dp),
-            color = Color.White,
-            shadowElevation = 2.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(18.dp)
-            ) {
-                CabeceraDatosFamilia()
-
-                TituloSeccionConIcono(
-                    titulo = "Unidad operativa seleccionada",
-                    iconoRes = R.drawable.fichadatos_icono_ubicacion_unidad_operativa_2026
-                )
-
-                ResumenUnidadOperativa(establecimiento)
-
-                TituloSeccionConIcono(
-                    titulo = "Jefe o jefa del hogar",
-                    iconoRes = R.drawable.fichadatos_icono_jefe_hogar_persona_principal_2026
-                )
-
-                CampoTextoFichaVisual(
-                    valor = cedulaJefeHogar,
-                    onValorChange = {
-                        cedulaJefeHogar = it.filter(Char::isDigit).take(13)
-                    },
-                    etiqueta = "Cédula o identificación",
-                    iconoRes = R.drawable.fichadatos_icono_cedula_identificacion_personal_2026,
-                    keyboardType = KeyboardType.Number
-                )
-
-                CampoTextoFichaVisual(
-                    valor = nombreJefeFamilia,
-                    onValorChange = { nombreJefeFamilia = it },
-                    etiqueta = "Apellidos y nombres completos",
-                    iconoRes = R.drawable.fichadatos_icono_nombres_apellidos_usuario_2026
-                )
-
-                CampoTextoFichaVisual(
-                    valor = numeroTelefono,
-                    onValorChange = { numeroTelefono = it },
-                    etiqueta = "Número de teléfono",
-                    iconoRes = R.drawable.fichadatos_icono_numero_telefono_contacto_2026,
-                    keyboardType = KeyboardType.Phone
-                )
-
-                TituloSeccionConIcono(
-                    titulo = "Control de la ficha",
-                    iconoRes = R.drawable.fichadatos_icono_control_numero_ficha_documento_2026
-                )
-
-                TarjetaNumeroFicha(
-                    numeroFichaFamiliar = numeroFichaFamiliar
-                )
-
-                CampoFecha(
-                    valor = fechaLlenado,
-                    etiqueta = "Fecha de llenado",
-                    onClick = { mostrarCalendario = true }
-                )
-
-                BotonGuardarYContinuar(
-                    onClick = {
-                        onGuardar(
-                            cedulaJefeHogar,
-                            nombreJefeFamilia,
-                            numeroTelefono,
-                            numeroFichaFamiliar,
-                            fechaLlenado
-                        )
-                    }
-                )
-
-                BotonVolverCentroSalud(
-                    onClick = onRegresar
-                )
-
-                Spacer(Modifier.height(2.dp))
-            }
+        TarjetaFormularioRuralitos {
+            TituloSeccionConIcono(
+                titulo = "Unidad operativa seleccionada",
+                iconoRes = R.drawable.fichadatos_icono_ubicacion_unidad_operativa_2026
+            )
+            ResumenUnidadOperativa(establecimiento)
         }
 
-        Spacer(Modifier.height(12.dp))
+        TarjetaFormularioRuralitos {
+            TituloSeccionConIcono(
+                titulo = "Jefe o jefa del hogar",
+                iconoRes = R.drawable.fichadatos_icono_jefe_hogar_persona_principal_2026
+            )
+            CampoTextoFichaVisual(
+                valor = cedulaJefeHogar,
+                onValorChange = {
+                    cedulaJefeHogar = it.filter(Char::isDigit).take(13)
+                },
+                etiqueta = "Cédula o identificación",
+                iconoRes = R.drawable.fichadatos_icono_cedula_identificacion_personal_2026,
+                keyboardType = KeyboardType.Number
+            )
+            CampoTextoFichaVisual(
+                valor = nombreJefeFamilia,
+                onValorChange = { nombreJefeFamilia = it },
+                etiqueta = "Apellidos y nombres completos",
+                iconoRes = R.drawable.fichadatos_icono_nombres_apellidos_usuario_2026
+            )
+            CampoTextoFichaVisual(
+                valor = numeroTelefono,
+                onValorChange = { numeroTelefono = it },
+                etiqueta = "Número de teléfono",
+                iconoRes = R.drawable.fichadatos_icono_numero_telefono_contacto_2026,
+                keyboardType = KeyboardType.Phone
+            )
+        }
+
+        TarjetaFormularioRuralitos {
+            TituloSeccionConIcono(
+                titulo = "Control de la ficha",
+                iconoRes = R.drawable.fichadatos_icono_control_numero_ficha_documento_2026
+            )
+            TarjetaNumeroFicha(numeroFichaFamiliar = numeroFichaFamiliar)
+            CampoFecha(
+                valor = fechaLlenado,
+                etiqueta = "Fecha de llenado",
+                onClick = { mostrarCalendario = true }
+            )
+        }
     }
 
     if (mostrarCalendario) {
@@ -214,38 +177,6 @@ fun DatosFamiliaScreen(
                 mostrarCalendario = false
             },
             onCerrar = { mostrarCalendario = false }
-        )
-    }
-}
-
-@Composable
-private fun CabeceraDatosFamilia() {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "INICIO DE LA FICHA · SECCIÓN 1",
-            color = AzulAccionFicha,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Text(
-            text = "Datos personales de la familia",
-            color = AzulTituloFicha,
-            fontSize = 29.sp,
-            lineHeight = 33.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 5.dp)
-        )
-
-        // Se deja una sola descripción breve, como pediste.
-        Text(
-            text = "Registra al jefe o jefa del hogar.",
-            color = GrisTextoFicha,
-            fontSize = 16.sp,
-            lineHeight = 20.sp,
-            modifier = Modifier.padding(top = 5.dp)
         )
     }
 }
@@ -286,8 +217,8 @@ fun ResumenUnidadOperativa(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = Color(0xFFF8FCFF),
-        border = BorderStroke(1.dp, Color(0xFFC7E2F4)),
+        color = Color(0xFFF6F9FB),
+        border = BorderStroke(1.dp, Color(0xFFE2ECF1)),
         shadowElevation = 0.5.dp
     ) {
         Row(
@@ -400,9 +331,9 @@ private fun CampoTextoFichaVisual(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp),
+            .heightIn(min = 56.dp),
         singleLine = true,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = AzulAccionFicha,
             unfocusedBorderColor = BordeCampoFicha,
@@ -423,7 +354,7 @@ private fun TarjetaNumeroFicha(
         color = AzulSuaveFicha,
         border = BorderStroke(
             width = 1.dp,
-            color = Color(0xFFCBE5F8)
+            color = Color(0xFFE2ECF1)
         )
     ) {
         Column(
@@ -460,7 +391,7 @@ fun CampoFecha(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeCampoFicha)
     ) {
@@ -518,8 +449,8 @@ private fun BotonGuardarYContinuar(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 60.dp),
-        shape = RoundedCornerShape(16.dp),
+            .heightIn(min = 52.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = VerdeAccionFicha,
             contentColor = Color.White
@@ -577,8 +508,8 @@ private fun BotonVolverCentroSalud(
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 58.dp),
-        shape = RoundedCornerShape(16.dp),
+            .heightIn(min = 48.dp),
+        shape = RoundedCornerShape(12.dp),
         border = BorderStroke(
             width = 1.5.dp,
             color = VerdeAccionFicha

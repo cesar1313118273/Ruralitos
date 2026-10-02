@@ -81,13 +81,13 @@ import java.util.Date
 import java.util.Locale
 
 private val agendaAzul = Color(0xFF0A2A5E)
-private val agendaVerde = Color(0xFF009E82)
+private val agendaVerde = Color(0xFF0889A0)
 private val agendaBorde = Color(0xFFE2ECF1)
 private val agendaSecundario = Color(0xFF5B7083)
-private val agendaFondo = Color(0xFFFDFEFF)
-private val agendaAzulPunto = Color(0xFF168BE8)
+private val agendaFondo = Color(0xFFF6F9FB)
+private val agendaAzulPunto = Color(0xFF1565C0)
 private val agendaNaranja = Color(0xFFEF790F)
-private val agendaVerdeEstado = Color(0xFF0BAD78)
+private val agendaVerdeEstado = Color(0xFF0889A0)
 private val agendaRojoAtraso = Color(0xFFC7474B)
 private val agendaTipos = listOf(
     "Visita domiciliaria", "Control prenatal", "Seguimiento", "Vacunación", "Otra actividad"
@@ -525,7 +525,7 @@ internal fun CabeceraAgenda(onRegresar: () -> Unit) {
 private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)
-            .background(Color(0xFFEDF4F9), RoundedCornerShape(24.dp)),
+            .background(Color(0xFFE8EFFA), RoundedCornerShape(24.dp)),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         listOf("Seguimiento", "Agenda").forEachIndexed { indice, titulo ->
@@ -671,7 +671,7 @@ private fun CalendarioAgenda(
                         },
                         modifier = Modifier.padding(start = 6.dp).size(35.dp),
                         shape = CircleShape,
-                        color = Color(0xFFEEF5FA)
+                        color = Color(0xFFE8EFFA)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(if (movimiento < 0) "‹" else "›", color = agendaAzul,
@@ -704,7 +704,7 @@ private fun CalendarioAgenda(
                             onClick = { onSeleccionarDia(dia) },
                             modifier = Modifier.weight(1f).height(40.dp),
                             shape = RoundedCornerShape(7.dp),
-                            color = if (elegido) agendaVerde else if (delMes) Color.White else Color(0xFFF7FAFC),
+                            color = if (elegido) agendaVerde else if (delMes) Color.White else Color(0xFFF6F9FB),
                             border = if (elegido) null else BorderStroke(1.dp, agendaBorde)
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally,
@@ -763,7 +763,7 @@ private fun TarjetaActividadAgenda(
         "Realizado" -> Color(0xFFE1F5E9)
         "Por confirmar" -> Color(0xFFFFEFDE)
         "Atrasada" -> Color(0xFFFFEBEC)
-        else -> Color(0xFFE5F4FF)
+        else -> Color(0xFFE8EFFA)
     }
     Surface(
         onClick = onAbrir,
@@ -781,7 +781,7 @@ private fun TarjetaActividadAgenda(
             Box(Modifier.width(3.dp).height(52.dp).background(acento, RoundedCornerShape(2.dp)))
             Spacer(Modifier.width(8.dp))
             Surface(shape = RoundedCornerShape(11.dp),
-                color = if (acento == agendaAzulPunto) Color(0xFFE5F4FF) else Color(0xFFE1F7EF)) {
+                color = if (acento == agendaAzulPunto) Color(0xFFE8EFFA) else Color(0xFFE3F4F7)) {
                 Box(Modifier.size(39.dp), contentAlignment = Alignment.Center) {
                     Image(painterResource(icono), null, Modifier.size(27.dp))
                 }
@@ -1022,7 +1022,7 @@ private fun CampoAgenda(texto: String, icono: Int, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().padding(top = 7.dp).height(56.dp),
         shape = RoundedCornerShape(11.dp),
-        color = Color(0xFFF9FCFF),
+        color = Color(0xFFF6F9FB),
         border = BorderStroke(1.dp, agendaBorde)
     ) {
         Row(Modifier.padding(horizontal = 11.dp), verticalAlignment = Alignment.CenterVertically) {

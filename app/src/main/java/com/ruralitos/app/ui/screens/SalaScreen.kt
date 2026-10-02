@@ -241,7 +241,7 @@ fun SalaScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF7FBFF))
+            .background(Color(0xFFF6F9FB))
     ) {
         Column(
             modifier = Modifier
@@ -264,7 +264,7 @@ fun SalaScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .offset(y = (-24).dp),
-                color = Color(0xFFF9FCFF),
+                color = Color(0xFFF6F9FB),
                 shape = RoundedCornerShape(
                     topStart = 30.dp,
                     topEnd = 30.dp,

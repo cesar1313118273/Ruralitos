@@ -307,9 +307,9 @@ private fun CampoPersonal(
                 focusedBorderColor = AzulClinico,
                 unfocusedBorderColor = BordeClinico,
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = if (soloLectura) Color(0xFFEAF4FF) else Color.White,
-                focusedTextColor = if (soloLectura) Color(0xFF164D99) else MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = if (soloLectura) Color(0xFF164D99) else MaterialTheme.colorScheme.onSurface
+                unfocusedContainerColor = if (soloLectura) Color(0xFFE8EFFA) else Color.White,
+                focusedTextColor = if (soloLectura) Color(0xFF1565C0) else MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = if (soloLectura) Color(0xFF1565C0) else MaterialTheme.colorScheme.onSurface
             ),
             modifier = Modifier
                 .fillMaxWidth()

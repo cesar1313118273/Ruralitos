@@ -247,7 +247,7 @@ fun PerfilScreen(
 
         mensaje?.let {
             Surface(
-                color = if (esError) Color(0xFFFFECEF) else Color(0xFFEAF9F3),
+                color = if (esError) Color(0xFFFFECEF) else Color(0xFFE3F4F7),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -380,9 +380,9 @@ private fun CampoPerfilSeparado(
                 focusedBorderColor = AzulClinico,
                 unfocusedBorderColor = BordeClinico,
                 focusedContainerColor = Color.White,
-                unfocusedContainerColor = if (soloLectura) Color(0xFFEAF4FF) else Color.White,
-                focusedTextColor = if (soloLectura) Color(0xFF164D99) else MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = if (soloLectura) Color(0xFF164D99) else MaterialTheme.colorScheme.onSurface
+                unfocusedContainerColor = if (soloLectura) Color(0xFFE8EFFA) else Color.White,
+                focusedTextColor = if (soloLectura) Color(0xFF1565C0) else MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = if (soloLectura) Color(0xFF1565C0) else MaterialTheme.colorScheme.onSurface
             ),
             modifier = Modifier
                 .fillMaxWidth()

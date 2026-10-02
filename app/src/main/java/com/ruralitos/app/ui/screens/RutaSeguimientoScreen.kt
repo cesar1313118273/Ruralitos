@@ -311,7 +311,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
     val actual = ficha
     Column(Modifier.fillMaxSize().formularioSeguro()
         .verticalScroll(rememberScrollState(), enabled = !mapaEnUso)
-        .background(Color(0xFFFDFEFF))) {
+        .background(Color(0xFFF6F9FB))) {
         Box(Modifier.fillMaxWidth().height(164.dp)) {
             Image(painter = painterResource(R.drawable.ruralitos_paisaje_cabecera),
                 contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
@@ -323,7 +323,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     lineTo(0f, size.height)
                     close()
                 }
-                drawPath(curva, Color(0xFFFDFEFF))
+                drawPath(curva, Color(0xFFF6F9FB))
             }
             Surface(onClick = onRegresar, modifier = Modifier.padding(16.dp).size(48.dp),
                 shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
@@ -336,7 +336,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("SEGUIMIENTO EXTRAMURAL", color = Color(0xFF1565C0),
                 fontWeight = FontWeight.Bold, fontSize = 12.sp)
-            Text("Ruta de seguimiento", color = Color(0xFF071C4B),
+            Text("Ruta de seguimiento", color = Color(0xFF0A2A5E),
                 fontWeight = FontWeight.SemiBold, fontSize = 30.sp)
             Text(actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
                 ?: "Cargando ficha…", color = Color(0xFF5B7083), fontSize = 16.sp)

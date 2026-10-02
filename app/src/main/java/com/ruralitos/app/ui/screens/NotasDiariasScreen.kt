@@ -81,13 +81,13 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private val FondoNotasDiarias = Color(0xFFF7FBFE)
+private val FondoNotasDiarias = Color(0xFFF6F9FB)
 private val AzulTituloNotas = Color(0xFF0A2A5E)
-private val AzulEtiquetaNotas = Color(0xFF1678D2)
-private val GrisTextoNotas = Color(0xFF667B99)
-private val BordeCampoNotas = Color(0xFFC4DFF1)
-private val FondoTarjetaNotas = Color(0xFFF2FAFF)
-private val VerdeBotonNotas = Color(0xFF0BAF76)
+private val AzulEtiquetaNotas = Color(0xFF1565C0)
+private val GrisTextoNotas = Color(0xFF5B7083)
+private val BordeCampoNotas = Color(0xFFE2ECF1)
+private val FondoTarjetaNotas = Color(0xFFF6F9FB)
+private val VerdeBotonNotas = Color(0xFF0889A0)
 
 @Composable
 fun NotasDiariasScreen(
@@ -650,7 +650,7 @@ private fun TarjetaSinNotas(
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = Color(0xFFCBE6F6)
+            color = Color(0xFFE2ECF1)
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 1.dp
@@ -714,7 +714,7 @@ private fun TarjetaNotaDiaria(
         ),
         border = BorderStroke(
             width = 1.dp,
-            color = Color(0xFFD2E6F3)
+            color = Color(0xFFE2ECF1)
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.5.dp

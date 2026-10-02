@@ -592,7 +592,7 @@ fun CroquisMapaScreen(
             .fillMaxSize()
             .formularioSeguro()
             .verticalScroll(scrollPantalla, enabled = !mapaEnUso)
-            .background(Color(0xFFFDFEFF))
+            .background(Color(0xFFF6F9FB))
     ) {
         Box(Modifier.fillMaxWidth().height(164.dp)) {
             Image(
@@ -608,7 +608,7 @@ fun CroquisMapaScreen(
                     lineTo(0f, size.height)
                     close()
                 }
-                drawPath(curva, Color(0xFFFDFEFF))
+                drawPath(curva, Color(0xFFF6F9FB))
             }
             Surface(onClick = onRegresar, modifier = Modifier.padding(16.dp).size(48.dp),
                 shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
@@ -620,7 +620,7 @@ fun CroquisMapaScreen(
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text("UBICACIÓN EXACTA", color = Color(0xFF1565C0), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-        Text("Ubicación de vivienda", color = Color(0xFF071C4B), fontWeight = FontWeight.SemiBold, fontSize = 30.sp)
+        Text("Ubicación de vivienda", color = Color(0xFF0A2A5E), fontWeight = FontWeight.SemiBold, fontSize = 30.sp)
         Text("Localiza la vivienda en el mapa.", color = Color(0xFF5B7083), fontSize = 16.sp)
         if (estiloDeRespaldo) Text(estadoOffline, color = NaranjaClinico, fontSize = 12.sp)
 
@@ -796,7 +796,7 @@ fun CroquisMapaScreen(
         }
 
         if (mensaje == "Captura guardada") {
-            Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFE4F8F0)) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFE3F4F7)) {
                 Text("✓  Captura guardada", Modifier.fillMaxWidth().padding(12.dp),
                     color = CianRuralitos, fontWeight = FontWeight.Bold)
             }

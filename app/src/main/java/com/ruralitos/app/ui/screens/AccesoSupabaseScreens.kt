@@ -209,11 +209,11 @@ fun AccesoSupabaseScreen(
     }
 }
 
-private val AzulLoginNuevo = Color(0xFF087BEA)
+private val AzulLoginNuevo = Color(0xFF1565C0)
 private val AzulLoginNuevoOscuro = Color(0xFF0A2A5E)
-private val VerdeLoginNuevo = Color(0xFF08B895)
-private val TextoLoginNuevoSecundario = Color(0xFF60789B)
-private val BordeLoginNuevo = Color(0xFFCBE2F5)
+private val VerdeLoginNuevo = Color(0xFF0889A0)
+private val TextoLoginNuevoSecundario = Color(0xFF5B7083)
+private val BordeLoginNuevo = Color(0xFFE2ECF1)
 
 @Composable
 private fun CabeceraLoginRuralitos() {
@@ -628,7 +628,7 @@ private fun AvisoLocalLogin(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = Color(0xFFE5FAF4),
+        color = Color(0xFFE3F4F7),
         shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
@@ -736,7 +736,7 @@ private fun FondoAbstractoLogin(
 
         drawPath(
             path = izquierda,
-            color = Color(0xFF2E9EEB).copy(alpha = 0.22f)
+            color = Color(0xFF1565C0).copy(alpha = 0.22f)
         )
 
         val inferior = Path().apply {

@@ -58,14 +58,14 @@ import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.CianRuralitos
 
 private val FondoPantalla = Color(0xFFEFFBFD)
-private val FondoTarjeta = Color(0xFFFDFEFF)
-private val AzulTitulo = Color(0xFF09295A)
-private val AzulAccion = Color(0xFF1979BC)
-private val VerdeAccion = Color(0xFF0BAF8E)
-private val VerdeTexto = Color(0xFF08AA88)
-private val GrisTexto = Color(0xFF71839D)
-private val BordeSelector = Color(0xFFB9D8ED)
-private val FondoInfo = Color(0xFFEAF9F6)
+private val FondoTarjeta = Color(0xFFF6F9FB)
+private val AzulTitulo = Color(0xFF0A2A5E)
+private val AzulAccion = Color(0xFF1565C0)
+private val VerdeAccion = Color(0xFF0889A0)
+private val VerdeTexto = Color(0xFF0889A0)
+private val GrisTexto = Color(0xFF5B7083)
+private val BordeSelector = Color(0xFFCFDDE5)
+private val FondoInfo = Color(0xFFE3F4F7)
 
 @Composable
 fun SeleccionTerritorioFichaScreen(
@@ -308,7 +308,7 @@ private fun InfoTerritorio() {
             .background(
                 brush = Brush.horizontalGradient(
                     colors = listOf(
-                        Color(0xFFE8F9F6),
+                        Color(0xFFE3F4F7),
                         Color(0xFFEAF8FC)
                     )
                 ),
@@ -402,14 +402,14 @@ private fun <T> SelectorGenerico(
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(
                 width = 1.dp,
-                color = if (enabled) BordeSelector else Color(0xFFDDE8EF)
+                color = if (enabled) BordeSelector else Color(0xFFE2ECF1)
             ),
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 62.dp),
             colors = ButtonDefaults.outlinedButtonColors(
                 containerColor = Color.White,
-                disabledContainerColor = Color(0xFFF8FBFD)
+                disabledContainerColor = Color(0xFFF6F9FB)
             )
         ) {
             Image(
