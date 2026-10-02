@@ -52,6 +52,7 @@ import com.ruralitos.app.data.local.entity.EaisSalaEntity
 import com.ruralitos.app.data.local.entity.SalaEntity
 import com.ruralitos.app.data.local.entity.TerritorioSalaEntity
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
@@ -111,192 +112,122 @@ fun SeleccionTerritorioFichaScreen(
     val eaisElegido = eais.firstOrNull { it.id == eaisId }
     val territorio = territorios.firstOrNull { it.id == territorioId }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(FondoPantalla)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .formularioSeguro()
-                .verticalScroll(rememberScrollState())
-        ) {
-            Image(
-                painter = painterResource(R.drawable.rural_header_ubicacion),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(941f / 236f),
-                contentScale = ContentScale.Crop
-            )
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp)
-                    .offset(y = (-14).dp),
-                shape = RoundedCornerShape(24.dp),
-                color = FondoTarjeta,
-                shadowElevation = 1.dp
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 18.dp, vertical = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CabeceraPagina()
-
-                    InfoTerritorio()
-
-                    SeccionSelector(
-                        titulo = "Centro de salud"
-                    ) {
-                        SelectorGenerico(
-                            texto = sala?.let {
-                                it.nombreCentroSalud.ifBlank { it.nombreSala }
-                            }.orEmpty().ifBlank { "Seleccionar centro de salud" },
-                            opciones = salas,
-                            etiqueta = { item ->
-                                item.nombreCentroSalud.ifBlank { item.nombreSala }
-                            },
-                            enabled = salas.isNotEmpty(),
-                            iconoRes = R.drawable.icon_centro_salud,
-                            onElegir = { salaId = it.organizacionId }
-                        )
-
-                        sala?.let {
-                            val referencia = listOf(
-                                it.codigoUo,
-                                it.canton,
-                                it.parroquia
-                            )
-                                .filter(String::isNotBlank)
-                                .joinToString(" · ")
-
-                            if (referencia.isNotBlank()) {
-                                Text(
-                                    text = referencia,
-                                    color = GrisTexto,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(top = 8.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    SeccionSelector(
-                        titulo = "Equipo EAIS"
-                    ) {
-                        SelectorGenerico(
-                            texto = eaisElegido?.nombre ?: "Seleccionar EAIS",
-                            opciones = eais,
-                            etiqueta = { it.nombre },
-                            enabled = sala != null,
-                            iconoRes = R.drawable.icon_eais,
-                            onElegir = { eaisId = it.id }
-                        )
-                    }
-
-                    SeccionSelector(
-                        titulo = "Barrio"
-                    ) {
-                        SelectorGenerico(
-                            texto = territorio?.let { "${it.etiqueta}: ${it.nombre}" }
-                                ?: "Seleccionar barrio",
-                            opciones = territorios,
-                            etiqueta = { "${it.etiqueta}: ${it.nombre}" },
-                            enabled = eaisElegido != null,
-                            iconoRes = R.drawable.icon_barrio,
-                            onElegir = { territorioId = it.id }
-                        )
-                    }
-
-                    when {
-                        salas.isEmpty() -> MensajeEstadoRuralitos(
-                            titulo = "Aún no tienes una Sala",
-                            descripcion = "Agrega tu centro de salud para empezar a organizar fichas.",
-                            color = NaranjaClinico,
-                            simbolo = "1"
-                        )
-
-                        eais.isEmpty() -> MensajeEstadoRuralitos(
-                            titulo = "Falta crear el EAIS",
-                            descripcion = "Entra a Sala y agrega el número de tu equipo.",
-                            color = MoradoClinico,
-                            simbolo = "2"
-                        )
-
-                        territorios.isEmpty() -> MensajeEstadoRuralitos(
-                            titulo = "Falta un barrio",
-                            descripcion = "Agrégalo dentro del EAIS antes de crear la ficha.",
-                            color = CianRuralitos,
-                            simbolo = "3"
-                        )
-                    }
-
-                    BotonPrincipal(
-                        texto = "Continuar con los datos de la familia",
-                        enabled = sala != null && eaisElegido != null && territorio != null,
-                        onClick = {
-                            if (sala != null && eaisElegido != null && territorio != null) {
-                                onContinuar(sala, eaisElegido, territorio)
-                            }
-                        }
-                    )
-
-                    BotonSecundario(
-                        texto = "Administrar mis Salas",
-                        iconoRes = R.drawable.seleccion_territorio_ajustes,
-                        onClick = onConfigurarSala
-                    )
-
-                    BotonSecundario(
-                        texto = "Regresar al inicio",
-                        iconoRes = R.drawable.seleccion_territorio_inicio,
-                        onClick = onRegresar
-                    )
-
-                    Spacer(Modifier.height(4.dp))
+    PantallaRuralitos(
+        titulo = "Ubicación organizativa",
+        descripcion = "Selecciona el territorio de la nueva familia.",
+        subtitulo = "Nueva ficha · paso 1",
+        barraAccion = {
+        BotonPrincipal(
+            texto = "Continuar con los datos de la familia",
+            enabled = sala != null && eaisElegido != null && territorio != null,
+            onClick = {
+                if (sala != null && eaisElegido != null && territorio != null) {
+                    onContinuar(sala, eaisElegido, territorio)
                 }
             }
+        )
 
-            Spacer(Modifier.height(16.dp))
+        BotonSecundario(
+            texto = "Administrar mis Salas",
+            iconoRes = R.drawable.seleccion_territorio_ajustes,
+            onClick = onConfigurarSala
+        )
+
+        BotonSecundario(
+            texto = "Regresar al inicio",
+            iconoRes = R.drawable.seleccion_territorio_inicio,
+            onClick = onRegresar
+        )
         }
-    }
-}
-
-@Composable
-private fun CabeceraPagina() {
-    Column(
-        modifier = Modifier.fillMaxWidth()
     ) {
-        Text(
-            text = "NUEVA FICHA · PASO 1",
-            color = AzulAccion,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.2.sp
-        )
+        InfoTerritorio()
 
-        Text(
-            text = "Ubicación organizativa",
-            color = AzulTitulo,
-            fontSize = 30.sp,
-            lineHeight = 34.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(top = 4.dp)
-        )
+        SeccionSelector(
+            titulo = "Centro de salud"
+        ) {
+            SelectorGenerico(
+                texto = sala?.let {
+                    it.nombreCentroSalud.ifBlank { it.nombreSala }
+                }.orEmpty().ifBlank { "Seleccionar centro de salud" },
+                opciones = salas,
+                etiqueta = { item ->
+                    item.nombreCentroSalud.ifBlank { item.nombreSala }
+                },
+                enabled = salas.isNotEmpty(),
+                iconoRes = R.drawable.icon_centro_salud,
+                onElegir = { salaId = it.organizacionId }
+            )
 
-        Text(
-            text = "Selecciona el territorio de la nueva familia.",
-            color = GrisTexto,
-            fontSize = 16.sp,
-            lineHeight = 21.sp,
-            modifier = Modifier.padding(top = 5.dp)
-        )
+            sala?.let {
+                val referencia = listOf(
+                    it.codigoUo,
+                    it.canton,
+                    it.parroquia
+                )
+                    .filter(String::isNotBlank)
+                    .joinToString(" · ")
+
+                if (referencia.isNotBlank()) {
+                    Text(
+                        text = referencia,
+                        color = GrisTexto,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+            }
+        }
+
+        SeccionSelector(
+            titulo = "Equipo EAIS"
+        ) {
+            SelectorGenerico(
+                texto = eaisElegido?.nombre ?: "Seleccionar EAIS",
+                opciones = eais,
+                etiqueta = { it.nombre },
+                enabled = sala != null,
+                iconoRes = R.drawable.icon_eais,
+                onElegir = { eaisId = it.id }
+            )
+        }
+
+        SeccionSelector(
+            titulo = "Barrio"
+        ) {
+            SelectorGenerico(
+                texto = territorio?.let { "${it.etiqueta}: ${it.nombre}" }
+                    ?: "Seleccionar barrio",
+                opciones = territorios,
+                etiqueta = { "${it.etiqueta}: ${it.nombre}" },
+                enabled = eaisElegido != null,
+                iconoRes = R.drawable.icon_barrio,
+                onElegir = { territorioId = it.id }
+            )
+        }
+
+        when {
+            salas.isEmpty() -> MensajeEstadoRuralitos(
+                titulo = "Aún no tienes una Sala",
+                descripcion = "Agrega tu centro de salud para empezar a organizar fichas.",
+                color = NaranjaClinico,
+                simbolo = "1"
+            )
+
+            eais.isEmpty() -> MensajeEstadoRuralitos(
+                titulo = "Falta crear el EAIS",
+                descripcion = "Entra a Sala y agrega el número de tu equipo.",
+                color = MoradoClinico,
+                simbolo = "2"
+            )
+
+            territorios.isEmpty() -> MensajeEstadoRuralitos(
+                titulo = "Falta un barrio",
+                descripcion = "Agrégalo dentro del EAIS antes de crear la ficha.",
+                color = CianRuralitos,
+                simbolo = "3"
+            )
+        }
     }
 }
 

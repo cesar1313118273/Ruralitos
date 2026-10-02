@@ -229,7 +229,7 @@ fun BarraAvanceRuralitos(
 }
 
 @Composable
-private fun EncabezadoPantallaRuralitos(
+fun EncabezadoPantallaRuralitos(
     titulo: String,
     subtitulo: String?,
     paso: Int?,
@@ -270,7 +270,7 @@ private fun EncabezadoPantallaRuralitos(
 }
 
 @Composable
-private fun BarraAccionPantallaRuralitos(barraAccion: @Composable ColumnScope.() -> Unit) {
+fun BarraAccionPantallaRuralitos(barraAccion: @Composable ColumnScope.() -> Unit) {
     HorizontalDivider(color = BordeClinico)
     Column(
         Modifier

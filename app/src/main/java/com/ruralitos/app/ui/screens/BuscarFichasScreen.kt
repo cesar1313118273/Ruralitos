@@ -64,6 +64,8 @@ import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.BarraAccionPantallaRuralitos
+import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -219,40 +221,25 @@ fun BuscarFichasScreen(
         }
     }
 
-Box(
+Column(
         modifier = Modifier
             .fillMaxSize()
             .background(FondoClinico)
             .formularioSeguro()
     ) {
-        FondoDecorativoBusqueda(
-            modifier = Modifier.fillMaxSize()
+        EncabezadoPantallaRuralitos(
+            titulo = "Buscar y modificar fichas",
+            subtitulo = "Encuentra una familia por cualquiera de sus integrantes.",
+            paso = null,
+            totalPasos = null,
+            etiquetaPaso = ""
         )
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 28.dp),
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            item(key = "cabecera_ilustrada") {
-                Image(
-                    painter = painterResource(
-                        R.drawable.ruralitos_buscar_fichas_cabecera
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
-                    contentScale = ContentScale.Crop
-                )
-            }
-
-            item(key = "encabezado") {
-                TarjetaEncabezadoBusqueda(
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-            }
-
             item(key = "busqueda") {
                 TarjetaBusquedaFichas(
                     texto = texto,
@@ -397,19 +384,13 @@ Box(
                     )
                 }
             }
+        }
 
-            item(key = "regresar") {
-                BotonRegresarBusqueda(
-                    onClick = onRegresar,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                )
-            }
-
-            item(key = "espacio_final") {
-                Spacer(Modifier.height(70.dp))
-            }
+        BarraAccionPantallaRuralitos {
+            BotonRegresarBusqueda(
+                onClick = onRegresar,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
