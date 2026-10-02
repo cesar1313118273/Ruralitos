@@ -1,0 +1,47 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Compilación y caché
+build/
+**/build/
+.gradle/
+.kotlin/
+.idea/
+*.apk
+*.aab
+*.hprof
+
+# Claves y configuración local
+local.properties
+*.jks
+*.keystore
+.env*
+
+# Carpetas de trabajo y salidas temporales
+tmp/
+work/
+output/
+outputs/
+.codex-work/
+.agents/
+
+# Datos reales de pacientes / planillas de trabajo
+Registro Comunitario.xlsx
+
+# Mapas pesados (más de 100 MB): se copian a mano, ver docs/MAPAS.md
+app/src/main/assets/ecuador_base.mbtiles
+app/src/main/assets/ecuador_valhalla_tiles.tar
+app/src/main/assets/ecuador_zoom15.pmtiles

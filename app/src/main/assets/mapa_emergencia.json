@@ -1,0 +1,11 @@
+{
+  "version": 8,
+  "name": "Ruralitos - Ubicación sin imágenes",
+  "layers": [
+    {
+      "id": "fondo-local",
+      "type": "background",
+      "paint": { "background-color": "#DCEAE5" }
+    }
+  ]
+}

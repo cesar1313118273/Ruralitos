@@ -1,0 +1,919 @@
+package com.ruralitos.app.data.remote
+
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import android.net.Uri
+import com.ruralitos.app.BuildConfig
+import com.ruralitos.app.data.security.SesionSupabase
+import com.ruralitos.app.data.security.SesionSupabaseCifrada
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.IOException
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URI
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+
+data class RegistroRemotoResultado(
+    val requiereConfirmarCorreo: Boolean,
+    val usuarioId: String?
+)
+
+data class PerfilRemoto(
+    val id: String,
+    val cedula: String,
+    val nombres: String,
+    val cargo: String,
+    val correo: String,
+    val telefono: String,
+    val codigoSenescyt: String
+)
+
+data class MembresiaRemota(
+    val organizacionId: String,
+    val rol: String,
+    val activo: Boolean,
+    val establecimientoId: Long?
+)
+
+data class InvitacionRemota(
+    val codigo: String,
+    val expiraEn: String
+)
+
+data class SalaRemota(
+    val organizacionId: String,
+    val establecimientoId: Long?,
+    val nombreSala: String,
+    val codigoSala: String,
+    val rol: String,
+    val permiso: String,
+    val codigoUo: String,
+    val nombreCentroSalud: String,
+    val institucionSistema: String,
+    val provinciaCodigoLocalizacion: String,
+    val provincia: String,
+    val cantonCodigoLocalizacion: String,
+    val canton: String,
+    val parroquiaCodigoLocalizacion: String,
+    val parroquia: String,
+    val sector: String,
+    val areaNumero: String
+)
+
+data class EaisRemoto(
+    val id: String,
+    val organizacionId: String,
+    val numero: Int,
+    val activo: Boolean
+)
+
+data class TerritorioRemoto(
+    val id: String,
+    val organizacionId: String,
+    val eaisId: String,
+    val tipo: String,
+    val nombre: String,
+    val activo: Boolean
+)
+
+data class CodigoAccesoRemoto(
+    val codigo: String,
+    val expiraEn: String
+)
+
+class ErrorSupabase(message: String, val codigoHttp: Int? = null) : IOException(message)
+
+class SupabaseApi(context: Context) {
+    private val appContext = context.applicationContext
+    private val sesionSegura = SesionSupabaseCifrada(appContext)
+    private val mutexRefresh = Mutex()
+    private val baseUrl = BuildConfig.SUPABASE_URL.trimEnd('/')
+    private val clavePublicable = BuildConfig.SUPABASE_PUBLISHABLE_KEY
+
+    init {
+        require(baseUrl.startsWith("https://")) { "Falta configurar supabase.url" }
+        require(clavePublicable.isNotBlank()) { "Falta configurar supabase.publishableKey" }
+    }
+
+    fun hayInternet(): Boolean {
+        val connectivity = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val red = connectivity.activeNetwork ?: return false
+        val capacidades = connectivity.getNetworkCapabilities(red) ?: return false
+        return capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+            capacidades.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+
+    fun sesionGuardada(): SesionSupabase? = sesionSegura.obtener()
+    fun organizacionGuardada(): String? = sesionSegura.organizacionId()
+    fun guardarOrganizacionActiva(id: String?) = sesionSegura.guardarOrganizacion(id)
+    fun recuperacionPendiente(): Boolean = sesionSegura.recuperacionPendiente()
+    fun finalizarRecuperacion() = sesionSegura.marcarRecuperacion(false)
+
+    suspend fun registrar(
+        correo: String,
+        clave: String,
+        cedula: String,
+        nombres: String,
+        cargo: String,
+        telefono: String,
+        codigoSenescyt: String
+    ): RegistroRemotoResultado {
+        val data = JSONObject()
+            .put("cedula", cedula)
+            .put("nombres", nombres)
+            .put("cargo", cargo)
+            .put("telefono", telefono)
+            .put("codigo_senescyt", codigoSenescyt.uppercase())
+        val cuerpo = JSONObject()
+            .put("email", correo.lowercase())
+            .put("password", clave)
+            .put("data", data)
+        val respuesta = solicitar(
+            metodo = "POST",
+            ruta = "/auth/v1/signup?redirect_to=${codificar(REDIRECT_AUTH)}",
+            cuerpo = cuerpo
+        ).jsonObjeto()
+        guardarSesionSiExiste(respuesta)
+        val usuario = respuesta.optJSONObject("user")
+        return RegistroRemotoResultado(
+            requiereConfirmarCorreo = respuesta.optString("access_token").isBlank(),
+            usuarioId = usuario?.optString("id")
+        )
+    }
+
+    suspend fun iniciarSesion(correo: String, clave: String): SesionSupabase {
+        val respuesta = solicitar(
+            metodo = "POST",
+            ruta = "/auth/v1/token?grant_type=password",
+            cuerpo = JSONObject().put("email", correo.lowercase()).put("password", clave)
+        ).jsonObjeto()
+        return guardarSesion(respuesta)
+    }
+
+    suspend fun enviarRecuperacion(correo: String) {
+        solicitar(
+            metodo = "POST",
+            ruta = "/auth/v1/recover?redirect_to=${codificar(REDIRECT_AUTH)}",
+            cuerpo = JSONObject().put("email", correo.lowercase())
+        )
+    }
+
+    suspend fun enviarCodigoEliminacion() {
+        solicitar(
+            metodo = "GET",
+            ruta = "/auth/v1/reauthenticate",
+            accessToken = tokenValido()
+        )
+    }
+
+    suspend fun eliminarCuenta(codigo: String) {
+        require(codigo.matches(Regex("[0-9]{6,8}"))) {
+            "Ingresa el código completo recibido por correo."
+        }
+        solicitar(
+            metodo = "POST",
+            ruta = "/functions/v1/eliminar-cuenta",
+            cuerpo = JSONObject().put("codigo", codigo),
+            accessToken = tokenValido()
+        )
+        sesionSegura.limpiar()
+    }
+
+    fun limpiarSesionLocal() {
+        sesionSegura.limpiar()
+    }
+    suspend fun actualizarClave(nuevaClave: String) {
+        val token = tokenValido()
+        solicitar(
+            metodo = "PUT",
+            ruta = "/auth/v1/user",
+            cuerpo = JSONObject().put("password", nuevaClave),
+            accessToken = token
+        )
+        sesionSegura.marcarRecuperacion(false)
+    }
+
+    suspend fun cambiarClave(correo: String, claveActual: String, nuevaClave: String) {
+        iniciarSesion(correo, claveActual)
+        actualizarClave(nuevaClave)
+    }
+
+    suspend fun cerrarSesion() {
+        val token = sesionSegura.obtener()?.accessToken
+        runCatching {
+            if (!token.isNullOrBlank()) solicitar("POST", "/auth/v1/logout", accessToken = token)
+        }
+        sesionSegura.limpiar()
+    }
+
+    fun procesarCallback(uri: Uri?): Boolean {
+        if (uri?.scheme != "ruralitos" || uri.host != "auth-callback") return false
+        val parametros = mutableMapOf<String, String>()
+        uri.fragment?.split('&')?.forEach { parte ->
+            val (clave, valor) = parte.split('=', limit = 2).let {
+                it.first() to it.getOrElse(1) { "" }
+            }
+            parametros[clave] = Uri.decode(valor)
+        }
+        uri.queryParameterNames.forEach { parametros[it] = uri.getQueryParameter(it).orEmpty() }
+        val access = parametros["access_token"].orEmpty()
+        if (access.isBlank()) return false
+        val refresh = parametros["refresh_token"].orEmpty()
+        val expira = parametros["expires_at"]?.toLongOrNull()
+            ?: (ahoraSegundos() + (parametros["expires_in"]?.toLongOrNull() ?: 3600L))
+        val anterior = sesionSegura.obtener()
+        sesionSegura.guardar(
+            SesionSupabase(
+                accessToken = access,
+                refreshToken = refresh.ifBlank { anterior?.refreshToken.orEmpty() },
+                expiraEnSegundos = expira,
+                usuarioId = extraerSubjectJwt(access).ifBlank { anterior?.usuarioId.orEmpty() },
+                correo = anterior?.correo.orEmpty()
+            )
+        )
+        if (parametros["type"] == "recovery") sesionSegura.marcarRecuperacion(true)
+        return true
+    }
+
+    suspend fun obtenerPerfil(): PerfilRemoto? {
+        val token = tokenValido()
+        val usuarioId = checkNotNull(sesionSegura.obtener()?.usuarioId.takeUnless { it.isNullOrBlank() })
+        val arreglo = solicitar(
+            "GET",
+            "/rest/v1/perfiles?id=eq.${codificar(usuarioId)}&select=id,cedula,nombres,cargo,correo,telefono,codigo_senescyt",
+            accessToken = token
+        ).jsonArreglo()
+        if (arreglo.length() == 0) return null
+        return arreglo.getJSONObject(0).let {
+            PerfilRemoto(
+                id = it.getString("id"),
+                cedula = it.optString("cedula"),
+                nombres = it.optString("nombres"),
+                cargo = it.optString("cargo"),
+                correo = it.optString("correo"),
+                telefono = it.optString("telefono"),
+                codigoSenescyt = it.optString("codigo_senescyt")
+            )
+        }
+    }
+
+    suspend fun obtenerMembresia(): MembresiaRemota? {
+        val token = tokenValido()
+        val usuarioId = checkNotNull(sesionSegura.obtener()?.usuarioId.takeUnless { it.isNullOrBlank() })
+        val arreglo = solicitar(
+            "GET",
+            "/rest/v1/miembros_organizacion?usuario_id=eq.${codificar(usuarioId)}&activo=eq.true" +
+                "&select=organizacion_id,rol,activo,establecimiento_id&limit=1",
+            accessToken = token
+        ).jsonArreglo()
+        if (arreglo.length() == 0) return null
+        return arreglo.getJSONObject(0).let {
+            MembresiaRemota(
+                organizacionId = it.getString("organizacion_id"),
+                rol = it.optString("rol", "MEDICO"),
+                activo = it.optBoolean("activo", true),
+                establecimientoId = if (it.isNull("establecimiento_id")) null else it.optLong("establecimiento_id")
+            ).also { membresia -> sesionSegura.guardarOrganizacion(membresia.organizacionId) }
+        }
+    }
+
+    suspend fun obtenerSalas(): List<SalaRemota> {
+        val token = tokenValido()
+        val usuarioId = checkNotNull(sesionSegura.obtener()?.usuarioId.takeUnless { it.isNullOrBlank() })
+        val membresias = solicitar(
+            "GET",
+            "/rest/v1/miembros_organizacion?usuario_id=eq.${codificar(usuarioId)}&activo=eq.true" +
+                "&select=organizacion_id,rol,activo,establecimiento_id&order=creado_en.asc",
+            accessToken = token
+        ).jsonArreglo()
+        val resultado = mutableListOf<SalaRemota>()
+        for (indice in 0 until membresias.length()) {
+            val miembro = membresias.getJSONObject(indice)
+            val organizacionId = miembro.getString("organizacion_id")
+            val organizaciones = solicitar(
+                "GET",
+                "/rest/v1/organizaciones?id=eq.${codificar(organizacionId)}" +
+                    "&select=id,nombre,codigo,establecimiento_id&limit=1",
+                accessToken = token
+            ).jsonArreglo()
+            if (organizaciones.length() == 0) continue
+            val organizacion = organizaciones.getJSONObject(0)
+            val establecimientoId = when {
+                !organizacion.isNull("establecimiento_id") -> organizacion.optLong("establecimiento_id")
+                !miembro.isNull("establecimiento_id") -> miembro.optLong("establecimiento_id")
+                else -> null
+            }
+            val establecimiento = if (establecimientoId != null) {
+                solicitar(
+                    "GET",
+                    "/rest/v1/establecimientos_salud?id=eq.$establecimientoId" +
+                        "&select=id,codigo_uo,nombre_centro_salud,institucion_sistema," +
+                        "provincia_codigo_localizacion,provincia,canton_codigo_localizacion,canton," +
+                        "parroquia_codigo_localizacion,parroquia,sector,area_numero&limit=1",
+                    accessToken = token
+                ).jsonArreglo().let { if (it.length() == 0) null else it.getJSONObject(0) }
+            } else null
+            val accesos = solicitar(
+                "GET",
+                "/rest/v1/accesos_sala?organizacion_id=eq.${codificar(organizacionId)}" +
+                    "&usuario_id=eq.${codificar(usuarioId)}&activo=eq.true&select=permiso",
+                accessToken = token
+            ).jsonArreglo()
+            var permiso = if (miembro.optString("rol").equals("ADMINISTRADOR", true)) {
+                "ADMINISTRADOR"
+            } else {
+                "LECTOR"
+            }
+            for (accesoIndice in 0 until accesos.length()) {
+                val candidato = accesos.getJSONObject(accesoIndice).optString("permiso", "LECTOR")
+                if (rangoPermiso(candidato) > rangoPermiso(permiso)) permiso = candidato
+            }
+            resultado += SalaRemota(
+                organizacionId = organizacionId,
+                establecimientoId = establecimientoId,
+                nombreSala = organizacion.optString("nombre").ifBlank {
+                    establecimiento?.optString("nombre_centro_salud").orEmpty().ifBlank { "Sala Ruralitos" }
+                },
+                codigoSala = organizacion.optString("codigo"),
+                rol = miembro.optString("rol", "MEDICO"),
+                permiso = permiso,
+                codigoUo = establecimiento?.optString("codigo_uo").orEmpty(),
+                nombreCentroSalud = establecimiento?.optString("nombre_centro_salud").orEmpty(),
+                institucionSistema = establecimiento?.optString("institucion_sistema").orEmpty(),
+                provinciaCodigoLocalizacion = establecimiento?.optString("provincia_codigo_localizacion").orEmpty(),
+                provincia = establecimiento?.optString("provincia").orEmpty(),
+                cantonCodigoLocalizacion = establecimiento?.optString("canton_codigo_localizacion").orEmpty(),
+                canton = establecimiento?.optString("canton").orEmpty(),
+                parroquiaCodigoLocalizacion = establecimiento?.optString("parroquia_codigo_localizacion").orEmpty(),
+                parroquia = establecimiento?.optString("parroquia").orEmpty(),
+                sector = establecimiento?.optString("sector").orEmpty(),
+                areaNumero = establecimiento?.optString("area_numero").orEmpty()
+            )
+        }
+        val activa = organizacionGuardada()
+        if (activa == null || resultado.none { it.organizacionId == activa }) {
+            guardarOrganizacionActiva(resultado.firstOrNull()?.organizacionId)
+        }
+        return resultado
+    }
+    suspend fun obtenerEais(organizacionId: String): List<EaisRemoto> =
+        seleccionarPaginado(
+            "eais?organizacion_id=eq.${codificar(organizacionId)}&activo=eq.true" +
+                "&select=id,organizacion_id,numero,activo&order=numero.asc"
+        ).map {
+            EaisRemoto(
+                id = it.getString("id"),
+                organizacionId = it.getString("organizacion_id"),
+                numero = it.optInt("numero"),
+                activo = it.optBoolean("activo", true)
+            )
+        }
+
+    suspend fun obtenerTerritorios(organizacionId: String): List<TerritorioRemoto> =
+        seleccionarPaginado(
+            "territorios?organizacion_id=eq.${codificar(organizacionId)}&activo=eq.true" +
+                "&select=id,organizacion_id,eais_id,tipo,nombre,activo&order=tipo.asc,nombre.asc"
+        ).map {
+            TerritorioRemoto(
+                id = it.getString("id"),
+                organizacionId = it.getString("organizacion_id"),
+                eaisId = it.getString("eais_id"),
+                tipo = it.optString("tipo", "BARRIO"),
+                nombre = it.optString("nombre"),
+                activo = it.optBoolean("activo", true)
+            )
+        }
+
+    suspend fun crearSala(codigoUo: String): String {
+        require(codigoUo.isNotBlank()) { "El centro de salud no tiene código UO." }
+        val respuesta = rpc(
+            "crear_sala",
+            JSONObject().put("p_codigo_uo", codigoUo)
+        )
+        val id = respuesta.texto.trim().trim('"')
+        require(id.isNotBlank()) { "Supabase no devolvio la Sala creada." }
+        guardarOrganizacionActiva(id)
+        return id
+    }
+
+    suspend fun crearEais(organizacionId: String, numero: Int): EaisRemoto {
+        require(numero > 0) { "El numero de EAIS debe ser mayor que cero." }
+        val remoto = upsert(
+            tabla = "eais",
+            objeto = JSONObject()
+                .put("id", java.util.UUID.randomUUID().toString())
+                .put("organizacion_id", organizacionId)
+                .put("numero", numero)
+                .put("activo", true),
+            conflicto = "organizacion_id,numero"
+        ) ?: throw ErrorSupabase("No se pudo crear el EAIS.")
+        return EaisRemoto(
+            id = remoto.getString("id"),
+            organizacionId = remoto.getString("organizacion_id"),
+            numero = remoto.optInt("numero"),
+            activo = remoto.optBoolean("activo", true)
+        )
+    }
+    suspend fun actualizarEais(organizacionId: String, eaisId: String, numero: Int): EaisRemoto {
+        require(numero in 1..999) { "El número de EAIS debe estar entre 1 y 999." }
+        val modificados = solicitar(
+            "PATCH",
+            "/rest/v1/eais?id=eq.${codificar(eaisId)}&organizacion_id=eq.${codificar(organizacionId)}",
+            cuerpo = JSONObject().put("numero", numero),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        if (modificados.length() == 0) throw ErrorSupabase("No se pudo modificar el EAIS. Comprueba tu permiso de administrador.")
+        val item = modificados.getJSONObject(0)
+        return EaisRemoto(item.getString("id"), item.getString("organizacion_id"), item.getInt("numero"), item.optBoolean("activo", true))
+    }
+
+    /** Desactivación reversible: las fichas y los barrios conservan sus claves históricas. */
+    suspend fun desactivarEais(organizacionId: String, eaisId: String): EaisRemoto {
+        val modificados = solicitar(
+            "PATCH",
+            "/rest/v1/eais?id=eq.${codificar(eaisId)}&organizacion_id=eq.${codificar(organizacionId)}",
+            cuerpo = JSONObject().put("activo", false),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        if (modificados.length() == 0) throw ErrorSupabase("No se pudo eliminar el EAIS. Comprueba tu permiso de administrador.")
+        val item = modificados.getJSONObject(0)
+        return EaisRemoto(item.getString("id"), item.getString("organizacion_id"), item.getInt("numero"), item.optBoolean("activo", false))
+    }
+    suspend fun crearTerritorio(
+        organizacionId: String,
+        eaisId: String,
+        tipo: String,
+        nombre: String
+    ): TerritorioRemoto {
+        val tipoNormalizado = tipo.uppercase()
+        require(tipoNormalizado == "BARRIO") {
+            "Solo se pueden crear barrios."
+        }
+        require(nombre.trim().length >= 2) { "Escribe el nombre del territorio." }
+        val remoto = upsert(
+            tabla = "territorios",
+            objeto = JSONObject()
+                .put("id", java.util.UUID.randomUUID().toString())
+                .put("organizacion_id", organizacionId)
+                .put("eais_id", eaisId)
+                .put("tipo", tipoNormalizado)
+                .put("nombre", nombre.trim())
+                .put("activo", true),
+            conflicto = "eais_id,tipo,nombre"
+        ) ?: throw ErrorSupabase("No se pudo crear el barrio.")
+        return TerritorioRemoto(
+            id = remoto.getString("id"),
+            organizacionId = remoto.getString("organizacion_id"),
+            eaisId = remoto.getString("eais_id"),
+            tipo = remoto.optString("tipo"),
+            nombre = remoto.optString("nombre"),
+            activo = remoto.optBoolean("activo", true)
+        )
+    }
+
+    suspend fun actualizarTerritorio(
+        organizacionId: String,
+        territorioId: String,
+        tipo: String,
+        nombre: String
+    ): TerritorioRemoto {
+        val tipoNormalizado = tipo.uppercase()
+        require(tipoNormalizado == "BARRIO") {
+            "Solo se pueden guardar barrios."
+        }
+        val nombreNormalizado = nombre.trim()
+        require(nombreNormalizado.length >= 2) { "Escribe el nombre del territorio." }
+        val modificados = solicitar(
+            "PATCH",
+            "/rest/v1/territorios?id=eq.${codificar(territorioId)}" +
+                "&organizacion_id=eq.${codificar(organizacionId)}",
+            cuerpo = JSONObject()
+                .put("tipo", tipoNormalizado)
+                .put("nombre", nombreNormalizado),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        if (modificados.length() == 0) {
+            throw ErrorSupabase(
+                "No se pudo editar el barrio. Comprueba tu permiso de administrador."
+            )
+        }
+        return modificados.getJSONObject(0).aTerritorioRemoto()
+    }
+
+    /**
+     * Oculta el territorio para nuevas fichas sin borrar las relaciones históricas.
+     * Si se vuelve a crear con el mismo nombre, el upsert existente puede reactivarlo.
+     */
+    suspend fun desactivarTerritorio(
+        organizacionId: String,
+        territorioId: String
+    ): TerritorioRemoto {
+        val modificados = solicitar(
+            "PATCH",
+            "/rest/v1/territorios?id=eq.${codificar(territorioId)}" +
+                "&organizacion_id=eq.${codificar(organizacionId)}",
+            cuerpo = JSONObject().put("activo", false),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        if (modificados.length() == 0) {
+            throw ErrorSupabase(
+                "No se pudo eliminar el barrio. Comprueba tu permiso de administrador."
+            )
+        }
+        return modificados.getJSONObject(0).aTerritorioRemoto()
+    }
+    suspend fun crearCodigoAcceso(
+        organizacionId: String,
+        alcance: String,
+        eaisId: String?,
+        territorioId: String?,
+        permiso: String,
+        correo: String = ""
+    ): CodigoAccesoRemoto {
+        val arreglo = rpc(
+            "crear_codigo_acceso",
+            JSONObject()
+                .put("p_organizacion_id", organizacionId)
+                .put("p_alcance", alcance.uppercase())
+                .put("p_eais_id", eaisId?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("p_territorio_id", territorioId?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
+                .put("p_permiso", permiso.uppercase())
+                .put("p_correo", correo.trim().lowercase().ifBlank { JSONObject.NULL })
+                .put("p_horas_vigencia", 168)
+        ).jsonArreglo()
+        if (arreglo.length() == 0) throw ErrorSupabase("Supabase no devolvio el codigo de acceso.")
+        return arreglo.getJSONObject(0).let {
+            CodigoAccesoRemoto(
+                codigo = it.getString("codigo"),
+                expiraEn = it.optString("expira_en")
+            )
+        }
+    }
+    suspend fun actualizarPerfil(perfil: PerfilRemoto) {
+        solicitar(
+            metodo = "PATCH",
+            ruta = "/rest/v1/perfiles?id=eq.${codificar(perfil.id)}",
+            cuerpo = JSONObject()
+                .put("cedula", perfil.cedula)
+                .put("nombres", perfil.nombres)
+                .put("cargo", perfil.cargo)
+                .put("telefono", perfil.telefono)
+                .put("codigo_senescyt", perfil.codigoSenescyt.uppercase()),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=minimal")
+        )
+    }
+
+    suspend fun crearOrganizacion(nombre: String, codigo: String): String {
+        val respuesta = rpc(
+            "crear_organizacion_inicial",
+            JSONObject()
+                .put("p_nombre", nombre)
+                .put("p_codigo", codigo.uppercase())
+                .put("p_establecimiento_id", JSONObject.NULL)
+        )
+        val id = respuesta.texto.trim().trim('"')
+        require(id.isNotBlank()) { "Supabase no devolvio la organizacion." }
+        sesionSegura.guardarOrganizacion(id)
+        return id
+    }
+
+    suspend fun aceptarInvitacion(codigo: String): String {
+        val respuesta = rpc("aceptar_invitacion", JSONObject().put("p_codigo", codigo.uppercase()))
+        val id = respuesta.texto.trim().trim('"')
+        require(id.isNotBlank()) { "Supabase no devolvio la organizacion." }
+        sesionSegura.guardarOrganizacion(id)
+        return id
+    }
+
+    suspend fun crearInvitacion(
+        organizacionId: String,
+        correo: String,
+        rol: String
+    ): InvitacionRemota {
+        val arreglo = rpc(
+            "crear_invitacion",
+            JSONObject()
+                .put("p_organizacion_id", organizacionId)
+                .put("p_correo", correo.lowercase().ifBlank { JSONObject.NULL })
+                .put("p_rol", rol.uppercase())
+                .put("p_establecimiento_id", JSONObject.NULL)
+                .put("p_horas_vigencia", 168)
+        ).jsonArreglo()
+        if (arreglo.length() == 0) throw ErrorSupabase("Supabase no devolvió el código de invitación.")
+        return arreglo.getJSONObject(0).let {
+            InvitacionRemota(
+                codigo = it.getString("codigo"),
+                expiraEn = it.optString("expira_en")
+            )
+        }
+    }
+
+    suspend fun rpc(nombre: String, cuerpo: JSONObject): RespuestaHttp =
+        solicitar("POST", "/rest/v1/rpc/$nombre", cuerpo, tokenValido())
+
+    suspend fun seleccionar(rutaConConsulta: String): JSONArray =
+        solicitar("GET", "/rest/v1/$rutaConConsulta", accessToken = tokenValido()).jsonArreglo()
+
+    suspend fun seleccionarPaginado(rutaConConsulta: String, tamanoPagina: Int = 500): List<JSONObject> {
+        val resultado = mutableListOf<JSONObject>()
+        var offset = 0
+        while (true) {
+            val separador = if (rutaConConsulta.contains('?')) "&" else "?"
+            val pagina = seleccionar("$rutaConConsulta${separador}limit=$tamanoPagina&offset=$offset")
+            for (indice in 0 until pagina.length()) resultado += pagina.getJSONObject(indice)
+            if (pagina.length() < tamanoPagina) break
+            offset += pagina.length()
+        }
+        return resultado
+    }
+
+    suspend fun upsert(tabla: String, objeto: JSONObject, conflicto: String = "id"): JSONObject? {
+        val respuesta = solicitar(
+            "POST",
+            "/rest/v1/$tabla?on_conflict=${codificar(conflicto)}",
+            cuerpo = objeto,
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "resolution=merge-duplicates,return=representation")
+        ).jsonArreglo()
+        return if (respuesta.length() > 0) respuesta.getJSONObject(0) else null
+    }
+
+    /** Inserta solo si el identificador no existe; una fila vacía señala conflicto. */
+    suspend fun insertarPrivadoNuevo(tabla: String, objeto: JSONObject): JSONObject? {
+        val filas = solicitar(
+            "POST", "/rest/v1/$tabla?on_conflict=id", cuerpo = objeto,
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "resolution=ignore-duplicates,return=representation")
+        ).jsonArreglo()
+        return if (filas.length() > 0) filas.getJSONObject(0) else null
+    }
+
+    /** Actualización condicional: evita que otro dispositivo pierda cambios ya enviados. */
+    suspend fun actualizarPrivadoSiVersion(
+        tabla: String, id: String, version: Long, cambios: JSONObject
+    ): JSONObject? {
+        val filas = solicitar(
+            "PATCH", "/rest/v1/$tabla?id=eq.${codificar(id)}&version=eq.$version",
+            cuerpo = cambios, accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        return if (filas.length() > 0) filas.getJSONObject(0) else null
+    }
+
+    suspend fun upsertVarios(tabla: String, objetos: List<JSONObject>, conflicto: String = "id") {
+        objetos.chunked(100).forEach { lote ->
+            solicitar(
+                "POST",
+                "/rest/v1/$tabla?on_conflict=${codificar(conflicto)}",
+                cuerpo = JSONArray().apply { lote.forEach(::put) },
+                accessToken = tokenValido(),
+                headers = mapOf("Prefer" to "resolution=merge-duplicates,return=minimal")
+            )
+        }
+    }
+
+    suspend fun insertarIgnorando(tabla: String, objeto: JSONObject, conflicto: String = "id") {
+        solicitar(
+            "POST",
+            "/rest/v1/$tabla?on_conflict=${codificar(conflicto)}",
+            cuerpo = objeto,
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal")
+        )
+    }
+
+    suspend fun insertarIgnorandoVarios(tabla: String, objetos: List<JSONObject>) {
+        objetos.chunked(100).forEach { lote ->
+            solicitar(
+                "POST",
+                "/rest/v1/$tabla?on_conflict=id",
+                cuerpo = JSONArray().apply { lote.forEach(::put) },
+                accessToken = tokenValido(),
+                headers = mapOf("Prefer" to "resolution=ignore-duplicates,return=minimal")
+            )
+        }
+    }
+
+    suspend fun marcarEliminado(tabla: String, id: String) {
+        val modificados = solicitar(
+            "PATCH",
+            "/rest/v1/$tabla?id=eq.${codificar(id)}",
+            cuerpo = JSONObject().put("deleted_at", fechaHoraIso()),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        if (modificados.length() == 0) {
+            val existente = seleccionar("$tabla?id=eq.${codificar(id)}&select=id&limit=1")
+            if (existente.length() > 0) {
+                throw ErrorSupabase("Supabase no permitió eliminar el registro. Revisa los permisos del grupo.")
+            }
+        }
+    }
+
+    suspend fun subirAdjunto(uri: Uri, rutaStorage: String, mimeType: String): Long =
+        withContext(Dispatchers.IO) {
+            val token = tokenValido()
+            val ruta = rutaStorage.split('/').joinToString("/") { codificar(it) }
+            val conexion = URI.create("$baseUrl/storage/v1/object/fichas-adjuntos/$ruta")
+                .toURL().openConnection() as HttpURLConnection
+            try {
+                conexion.requestMethod = "POST"
+                conexion.connectTimeout = 20_000
+                conexion.readTimeout = 60_000
+                conexion.doOutput = true
+                conexion.setChunkedStreamingMode(64 * 1024)
+                conexion.setRequestProperty("apikey", clavePublicable)
+                conexion.setRequestProperty("Authorization", "Bearer $token")
+                conexion.setRequestProperty("Content-Type", mimeType)
+                conexion.setRequestProperty("x-upsert", "true")
+                var total = 0L
+                appContext.contentResolver.openInputStream(uri)?.use { entrada ->
+                    conexion.outputStream.use { salida ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            val leidos = entrada.read(buffer)
+                            if (leidos < 0) break
+                            salida.write(buffer, 0, leidos)
+                            total += leidos
+                        }
+                    }
+                } ?: throw ErrorSupabase("No se pudo leer el archivo adjunto.")
+                val codigo = conexion.responseCode
+                if (codigo !in 200..299) {
+                    val texto = conexion.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                    throw ErrorSupabase(mensajeError(texto, codigo), codigo)
+                }
+                total
+            } finally {
+                conexion.disconnect()
+            }
+        }
+
+    suspend fun descargarAdjunto(rutaStorage: String, destino: File): Uri = withContext(Dispatchers.IO) {
+        val token = tokenValido()
+        val ruta = rutaStorage.split('/').joinToString("/") { codificar(it) }
+        val conexion = URI.create("$baseUrl/storage/v1/object/fichas-adjuntos/$ruta")
+            .toURL().openConnection() as HttpURLConnection
+        try {
+            conexion.requestMethod = "GET"
+            conexion.connectTimeout = 20_000
+            conexion.readTimeout = 60_000
+            conexion.setRequestProperty("apikey", clavePublicable)
+            conexion.setRequestProperty("Authorization", "Bearer $token")
+            val codigo = conexion.responseCode
+            if (codigo !in 200..299) {
+                val texto = conexion.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+                throw ErrorSupabase(mensajeError(texto, codigo), codigo)
+            }
+            val directorio = checkNotNull(destino.parentFile) {
+                "El adjunto debe guardarse dentro de un directorio."
+            }.apply { mkdirs() }
+            val temporal = File(directorio, "${destino.name}.tmp")
+            conexion.inputStream.use { entrada ->
+                temporal.outputStream().use { salida -> entrada.copyTo(salida, 64 * 1024) }
+            }
+            if (destino.exists() && !destino.delete()) throw IOException("No se pudo reemplazar el adjunto local.")
+            if (!temporal.renameTo(destino)) {
+                temporal.copyTo(destino, overwrite = true)
+                temporal.delete()
+            }
+            Uri.fromFile(destino)
+        } finally {
+            conexion.disconnect()
+        }
+    }
+
+    suspend fun tokenValido(): String = mutexRefresh.withLock {
+        val actual = sesionSegura.obtener() ?: throw ErrorSupabase("No existe una sesion iniciada.", 401)
+        if (actual.expiraEnSegundos > ahoraSegundos() + 90) return@withLock actual.accessToken
+        if (actual.refreshToken.isBlank()) throw ErrorSupabase("La sesion vencio. Inicia sesion nuevamente.", 401)
+        val respuesta = solicitar(
+            "POST",
+            "/auth/v1/token?grant_type=refresh_token",
+            JSONObject().put("refresh_token", actual.refreshToken)
+        ).jsonObjeto()
+        guardarSesion(respuesta).accessToken
+    }
+
+    private fun guardarSesionSiExiste(respuesta: JSONObject): SesionSupabase? =
+        if (respuesta.optString("access_token").isBlank()) null else guardarSesion(respuesta)
+
+    private fun guardarSesion(respuesta: JSONObject): SesionSupabase {
+        val access = respuesta.getString("access_token")
+        val usuario = respuesta.optJSONObject("user")
+        val sesion = SesionSupabase(
+            accessToken = access,
+            refreshToken = respuesta.optString("refresh_token"),
+            expiraEnSegundos = respuesta.optLong("expires_at").takeIf { it > 0 }
+                ?: (ahoraSegundos() + respuesta.optLong("expires_in", 3600L)),
+            usuarioId = usuario?.optString("id").orEmpty().ifBlank { extraerSubjectJwt(access) },
+            correo = usuario?.optString("email").orEmpty()
+        )
+        sesionSegura.guardar(sesion)
+        return sesion
+    }
+
+    private suspend fun solicitar(
+        metodo: String,
+        ruta: String,
+        cuerpo: Any? = null,
+        accessToken: String? = null,
+        headers: Map<String, String> = emptyMap()
+    ): RespuestaHttp = withContext(Dispatchers.IO) {
+        val conexion = URI.create(baseUrl + ruta).toURL().openConnection() as HttpURLConnection
+        try {
+            conexion.requestMethod = metodo
+            conexion.connectTimeout = 15_000
+            conexion.readTimeout = 30_000
+            conexion.setRequestProperty("apikey", clavePublicable)
+            conexion.setRequestProperty("Accept", "application/json")
+            conexion.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            if (!accessToken.isNullOrBlank()) conexion.setRequestProperty("Authorization", "Bearer $accessToken")
+            headers.forEach(conexion::setRequestProperty)
+            if (cuerpo != null) {
+                conexion.doOutput = true
+                conexion.outputStream.use { it.write(cuerpo.toString().toByteArray(Charsets.UTF_8)) }
+            }
+            val codigo = conexion.responseCode
+            val flujo = if (codigo in 200..299) conexion.inputStream else conexion.errorStream
+            val texto = flujo?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+            if (codigo !in 200..299) throw ErrorSupabase(mensajeError(texto, codigo), codigo)
+            RespuestaHttp(codigo, texto)
+        } finally {
+            conexion.disconnect()
+        }
+    }
+
+    private fun JSONObject.aTerritorioRemoto(): TerritorioRemoto = TerritorioRemoto(
+        id = getString("id"),
+        organizacionId = getString("organizacion_id"),
+        eaisId = getString("eais_id"),
+        tipo = optString("tipo", "BARRIO"),
+        nombre = optString("nombre"),
+        activo = optBoolean("activo", true)
+    )
+    private fun mensajeError(texto: String, codigo: Int): String {
+        val remoto = runCatching {
+            JSONObject(texto).let {
+                it.optString("msg").ifBlank {
+                    it.optString("message").ifBlank { it.optString("error_description") }
+                }
+            }
+        }.getOrNull().orEmpty()
+        val traducido = when {
+            codigo == 400 && remoto.contains("Invalid login", true) -> "Correo o contraseña incorrectos."
+            codigo == 400 && remoto.contains("Email not confirmed", true) -> "Confirma primero el correo electrónico."
+            codigo == 422 && remoto.contains("already", true) -> "Este correo ya esta registrado."
+            codigo == 429 -> "Demasiados intentos. Espera un momento y vuelve a intentar."
+            codigo >= 500 -> "Supabase no está disponible temporalmente."
+            else -> remoto.ifBlank { "Error de comunicación con Supabase ($codigo)." }
+        }
+        return traducido
+    }
+
+    private fun extraerSubjectJwt(jwt: String): String = runCatching {
+        val parte = jwt.split('.')[1]
+        val json = String(android.util.Base64.decode(parte, android.util.Base64.URL_SAFE or android.util.Base64.NO_WRAP))
+        JSONObject(json).optString("sub")
+    }.getOrDefault("")
+
+    private fun rangoPermiso(permiso: String): Int = when (permiso.uppercase()) {
+        "ADMINISTRADOR" -> 3
+        "EDITOR" -> 2
+        else -> 1
+    }
+    private fun codificar(valor: String): String =
+        URLEncoder.encode(valor, StandardCharsets.UTF_8.name())
+
+    private fun ahoraSegundos(): Long = System.currentTimeMillis() / 1000L
+
+    private fun fechaHoraIso(): String = SimpleDateFormat(
+        "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+        Locale.US
+    ).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
+
+    companion object {
+        const val REDIRECT_AUTH = "ruralitos://auth-callback"
+    }
+}
+
+data class RespuestaHttp(val codigo: Int, val texto: String) {
+    fun jsonObjeto(): JSONObject = if (texto.isBlank()) JSONObject() else JSONObject(texto)
+    fun jsonArreglo(): JSONArray = if (texto.isBlank()) JSONArray() else JSONArray(texto)
+}

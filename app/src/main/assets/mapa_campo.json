@@ -1,0 +1,38 @@
+{
+  "version": 8,
+  "name": "Ruralitos · mapa de campo",
+  "glyphs": "asset://fonts/{fontstack}/{range}.pbf",
+  "sources": {
+    "ecuador": {
+      "type": "vector",
+      "url": "__MAPA_LOCAL__",
+      "attribution": "© OpenStreetMap contributors · Protomaps"
+    }
+  },
+  "layers": [
+    {"id":"fondo-local","type":"background","paint":{"background-color":"#e5eee9"}},
+    {"id":"tierra","type":"fill","source":"ecuador","source-layer":"earth","paint":{"fill-color":"#f2f1e9"}},
+    {"id":"zonas-residenciales","type":"fill","source":"ecuador","source-layer":"landuse","filter":["==",["get","kind"],"residential"],"paint":{"fill-color":"#f6f2e9","fill-opacity":0.75}},
+    {"id":"cultivos","type":"fill","source":"ecuador","source-layer":"landuse","filter":["in",["get","kind"],["literal",["farmland","farmyard","orchard"]]],"paint":{"fill-color":"#e9edd3","fill-opacity":0.8}},
+    {"id":"bosques","type":"fill","source":"ecuador","source-layer":"landcover","filter":["==",["get","kind"],"forest"],"paint":{"fill-color":"#d4e9cf","fill-opacity":0.85}},
+    {"id":"parques","type":"fill","source":"ecuador","source-layer":"landuse","filter":["in",["get","kind"],["literal",["park","nature_reserve","national_park","forest","wood"]]],"paint":{"fill-color":"#cce4c5","fill-opacity":0.85}},
+    {"id":"agua","type":"fill","source":"ecuador","source-layer":"water","paint":{"fill-color":"#a8d6ed"}},
+    {"id":"rios","type":"line","source":"ecuador","source-layer":"water","paint":{"line-color":"#72b9dc","line-width":["interpolate",["linear"],["zoom"],7,1,15,3]}},
+    {"id":"calles-contorno","type":"line","source":"ecuador","source-layer":"roads","filter":["in",["get","kind"],["literal",["minor_road","major_road","highway"]]],"paint":{"line-color":"#a9b2af","line-width":["interpolate",["linear"],["zoom"],8,1,14,4.5,17,9]}},
+    {"id":"calles","type":"line","source":"ecuador","source-layer":"roads","filter":["in",["get","kind"],["literal",["minor_road","major_road","highway"]]],"paint":{"line-color":"#fffdf7","line-width":["interpolate",["linear"],["zoom"],8,0.6,14,3,17,7]}},
+    {"id":"senderos","type":"line","source":"ecuador","source-layer":"roads","filter":["==",["get","kind"],"path"],"paint":{"line-color":"#af9770","line-width":["interpolate",["linear"],["zoom"],12,1.2,17,3],"line-dasharray":[2,2]}},
+    {"id":"ferrocarril","type":"line","source":"ecuador","source-layer":"roads","minzoom":11,"filter":["==",["get","kind"],"rail"],"paint":{"line-color":"#737f84","line-width":1.5,"line-dasharray":[3,2]}},
+    {"id":"edificios","type":"fill","source":"ecuador","source-layer":"buildings","minzoom":13,"filter":["==",["get","kind"],"building"],"paint":{"fill-color":"#f7e7d5","fill-outline-color":"#8d8e85","fill-opacity":0.95}},
+    {"id":"numeros-vivienda","type":"symbol","source":"ecuador","source-layer":"buildings","minzoom":17,"filter":["==",["get","kind"],"address"],"layout":{"text-field":["get","addr_housenumber"],"text-font":["Noto Sans Regular"],"text-size":9,"text-optional":true},"paint":{"text-color":"#596b74","text-halo-color":"#fffdf7","text-halo-width":1}},
+    {"id":"etiquetas-provincias","type":"symbol","source":"ecuador","source-layer":"places","minzoom":5,"maxzoom":10,"filter":["==",["get","kind"],"region"],"layout":{"text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":["interpolate",["linear"],["zoom"],5,11,9,15],"text-letter-spacing":0.08,"text-max-width":10},"paint":{"text-color":"#55747d","text-halo-color":"#f2f1e9","text-halo-width":2}},
+    {"id":"etiquetas-localidades","type":"symbol","source":"ecuador","source-layer":"places","minzoom":8,"filter":["in",["get","kind_detail"],["literal",["village","hamlet","locality","farm","isolated_dwelling"]]],"layout":{"text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":["interpolate",["linear"],["zoom"],8,10,14,13],"text-max-width":10,"text-optional":true},"paint":{"text-color":"#345268","text-halo-color":"#fffdf7","text-halo-width":1.5}},
+    {"id":"etiquetas-barrios","type":"symbol","source":"ecuador","source-layer":"places","minzoom":12,"filter":["in",["get","kind_detail"],["literal",["neighbourhood","quarter","allotments"]]],"layout":{"text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":11,"text-max-width":9,"text-optional":true},"paint":{"text-color":"#487183","text-halo-color":"#fffdf7","text-halo-width":1.5}},
+    {"id":"etiquetas-ciudades","type":"symbol","source":"ecuador","source-layer":"places","minzoom":5,"filter":["in",["get","kind_detail"],["literal",["city","town"]]],"layout":{"text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":["interpolate",["linear"],["zoom"],5,12,10,16,14,20],"text-max-width":10},"paint":{"text-color":"#123d61","text-halo-color":"#fffdf7","text-halo-width":2}},
+    {"id":"etiquetas-vias-principales","type":"symbol","source":"ecuador","source-layer":"roads","minzoom":9,"filter":["in",["get","kind"],["literal",["highway","major_road"]]],"layout":{"symbol-placement":"line","text-field":["coalesce",["get","name:es"],["get","name"],["get","ref"]],"text-font":["Noto Sans Regular"],"text-size":["interpolate",["linear"],["zoom"],9,10,15,13],"text-max-angle":30,"symbol-spacing":350,"text-optional":true},"paint":{"text-color":"#536476","text-halo-color":"#fffdf7","text-halo-width":2}},
+    {"id":"etiquetas-calles","type":"symbol","source":"ecuador","source-layer":"roads","minzoom":13,"filter":["==",["get","kind"],"minor_road"],"layout":{"symbol-placement":"line","text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":["interpolate",["linear"],["zoom"],13,10,17,12],"text-max-angle":30,"symbol-spacing":300,"text-optional":true},"paint":{"text-color":"#5b6570","text-halo-color":"#fffdf7","text-halo-width":1.8}},
+    {"id":"etiquetas-senderos","type":"symbol","source":"ecuador","source-layer":"roads","minzoom":15,"filter":["==",["get","kind"],"path"],"layout":{"symbol-placement":"line","text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":10,"symbol-spacing":350,"text-optional":true},"paint":{"text-color":"#826f57","text-halo-color":"#fffdf7","text-halo-width":1.5}},
+    {"id":"etiquetas-rios","type":"symbol","source":"ecuador","source-layer":"water","minzoom":10,"filter":["has","name"],"layout":{"symbol-placement":"line","text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":11,"symbol-spacing":400,"text-optional":true},"paint":{"text-color":"#397ca2","text-halo-color":"#e7f6fc","text-halo-width":1.5}},
+    {"id":"etiquetas-salud","type":"symbol","source":"ecuador","source-layer":"pois","minzoom":13,"filter":["in",["get","kind"],["literal",["hospital","clinic","doctors","dentist"]]],"layout":{"text-field":["concat","+  ",["coalesce",["get","name:es"],["get","name"]]],"text-font":["Noto Sans Regular"],"text-size":11,"text-max-width":12,"text-optional":true},"paint":{"text-color":"#0a8b7e","text-halo-color":"#fffdf7","text-halo-width":1.7}},
+    {"id":"etiquetas-servicios","type":"symbol","source":"ecuador","source-layer":"pois","minzoom":14,"filter":["in",["get","kind"],["literal",["school","college","university","bus_stop","station","townhall","pharmacy","fuel","drinking_water","supermarket"]]],"layout":{"text-field":["coalesce",["get","name:es"],["get","name"]],"text-font":["Noto Sans Regular"],"text-size":10,"text-max-width":10,"text-optional":true},"paint":{"text-color":"#546877","text-halo-color":"#fffdf7","text-halo-width":1.5}}
+  ]
+}

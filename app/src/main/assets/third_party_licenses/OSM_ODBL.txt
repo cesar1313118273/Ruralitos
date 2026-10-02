@@ -1,0 +1,8 @@
+Map and routing data: © OpenStreetMap contributors.
+Source and license: https://www.openstreetmap.org/copyright
+Open Database License (ODbL) 1.0: https://opendatacommons.org/licenses/odbl/1-0/
+
+Ecuador road extract: Geofabrik, https://download.geofabrik.de/south-america/ecuador.html
+Ecuador map tiles: Protomaps basemap, https://protomaps.com/
+The map tiles and local Valhalla routing graph are derived from OpenStreetMap data.
+Ruralitos does not claim exclusive rights over the underlying OpenStreetMap data.
