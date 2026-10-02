@@ -31,7 +31,7 @@ import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.launch
 
 @Composable
@@ -109,7 +109,7 @@ fun EliminarCuentaScreen(
             texto = "Crear o revisar mi respaldo",
             descripcion = "Ir a Seguridad y respaldos antes de eliminar",
             onClick = onCrearRespaldo,
-            color = VerdeClinico
+            color = CianRuralitos
         )
 
         SeccionFormularioRuralitos(
@@ -178,7 +178,7 @@ fun EliminarCuentaScreen(
             MensajeEstadoRuralitos(
                 titulo = if (it.startsWith("Código enviado")) "Verificación iniciada" else "Revisa el proceso",
                 descripcion = it,
-                color = if (it.startsWith("Código enviado")) VerdeClinico else RojoClinico,
+                color = if (it.startsWith("Código enviado")) CianRuralitos else RojoClinico,
                 simbolo = if (it.startsWith("Código enviado")) "✓" else "!"
             )
         }

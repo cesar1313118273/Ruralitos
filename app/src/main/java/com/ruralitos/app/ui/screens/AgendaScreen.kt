@@ -80,10 +80,10 @@ import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
-private val agendaAzul = Color(0xFF0B2D5B)
+private val agendaAzul = Color(0xFF0A2A5E)
 private val agendaVerde = Color(0xFF009E82)
-private val agendaBorde = Color(0xFFDCEAF5)
-private val agendaSecundario = Color(0xFF60748E)
+private val agendaBorde = Color(0xFFE2ECF1)
+private val agendaSecundario = Color(0xFF5B7083)
 private val agendaFondo = Color(0xFFFDFEFF)
 private val agendaAzulPunto = Color(0xFF168BE8)
 private val agendaNaranja = Color(0xFFEF790F)
@@ -152,7 +152,7 @@ fun AgendaScreen(
     visitaPorConfirmar?.let { actividad ->
         AlertDialog(
             onDismissRequest = { visitaPorConfirmar = null },
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(16.dp),
             containerColor = Color.White,
             title = { Text("Registrar visita familiar", color = agendaAzul) },
             text = { Text("Confirma la atención del hogar. Las próximas visitas se calcularán nuevamente según el grupo de riesgo de cada integrante.", color = agendaSecundario) },
@@ -180,7 +180,7 @@ fun AgendaScreen(
     eliminar?.let { grupo ->
         AlertDialog(
             onDismissRequest = { eliminar = null },
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(16.dp),
             containerColor = Color.White,
             title = { Text("Eliminar actividad", color = agendaAzul) },
             text = { Text("¿Eliminar esta actividad? Un seguimiento automático no volverá a aparecer hasta la siguiente ronda de visitas.", color = agendaSecundario) },
@@ -331,10 +331,10 @@ fun AgendaScreen(
         val actividad = grupo.first()
         AlertDialog(
             onDismissRequest = { grupoDetalle = null },
-            shape = RoundedCornerShape(22.dp),
+            shape = RoundedCornerShape(16.dp),
             containerColor = Color.White,
             title = { Text(if (grupo.size > 1) "Visita familiar (${grupo.size})" else actividad.tipo,
-                color = agendaAzul, fontWeight = FontWeight.ExtraBold) },
+                color = agendaAzul, fontWeight = FontWeight.SemiBold) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     Text(grupo.joinToString(", ") { it.persona }.ifBlank { "Actividad general" }, color = agendaAzul)
@@ -400,7 +400,7 @@ fun AgendaScreen(
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
                     Text(if (pestana == 0) "Seguimiento" else "Agenda",
-                        color = agendaAzul, fontSize = 32.sp, fontWeight = FontWeight.ExtraBold)
+                        color = agendaAzul, fontSize = 32.sp, fontWeight = FontWeight.SemiBold)
                     Text(if (pestana == 0) "Organiza visitas, notas y controles pendientes"
                         else "Organiza y consulta tus actividades de salud",
                         color = agendaSecundario, fontSize = 15.sp, lineHeight = 20.sp)
@@ -525,14 +525,14 @@ internal fun CabeceraAgenda(onRegresar: () -> Unit) {
 private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)
-            .background(Color(0xFFEDF4F9), RoundedCornerShape(26.dp)),
+            .background(Color(0xFFEDF4F9), RoundedCornerShape(24.dp)),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         listOf("Seguimiento", "Agenda").forEachIndexed { indice, titulo ->
             Surface(
                 onClick = { onSeleccionar(indice) },
                 modifier = Modifier.weight(1f).height(49.dp),
-                shape = RoundedCornerShape(26.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = if (seleccionada == indice) agendaVerde else Color.Transparent,
                 shadowElevation = if (seleccionada == indice) 2.dp else 0.dp
             ) {
@@ -563,7 +563,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
         ).forEachIndexed { indice, dato ->
             Surface(
                 modifier = Modifier.weight(1f).height(91.dp),
-                shape = RoundedCornerShape(17.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = Color.White,
                 border = BorderStroke(1.dp, agendaBorde),
                 shadowElevation = 2.dp
@@ -579,7 +579,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
                         Text(dato.first, color = agendaSecundario, fontSize = 10.sp,
                             maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(dato.second.toString(), color = agendaAzul, fontSize = 23.sp,
-                            fontWeight = FontWeight.ExtraBold)
+                            fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -590,7 +590,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
 @Composable
 private fun EncabezadoActividades(titulo: String, fecha: String) {
     Column(Modifier.fillMaxWidth().padding(horizontal = 19.dp, vertical = 4.dp)) {
-        Text(titulo, color = agendaAzul, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+        Text(titulo, color = agendaAzul, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
         Text(fecha, color = agendaSecundario, fontSize = 12.sp)
     }
 }
@@ -599,7 +599,7 @@ private fun EncabezadoActividades(titulo: String, fecha: String) {
 private fun MensajeAgendaVacia(mensaje: String) {
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).heightIn(min = 74.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, agendaBorde)
     ) {
@@ -650,7 +650,7 @@ private fun CalendarioAgenda(
     }
     Surface(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
-        shape = RoundedCornerShape(21.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, agendaBorde),
         shadowElevation = 3.dp
@@ -658,7 +658,7 @@ private fun CalendarioAgenda(
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(formato(mes.timeInMillis, "MMMM 'de' yyyy").replaceFirstChar { it.uppercase() },
-                    color = agendaAzul, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold,
+                    color = agendaAzul, fontSize = 20.sp, fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f))
                 listOf(-1, 1).forEach { movimiento ->
                     Surface(
@@ -712,7 +712,7 @@ private fun CalendarioAgenda(
                                 Text(fecha.get(Calendar.DAY_OF_MONTH).toString(),
                                     color = if (elegido) Color.White else if (delMes) agendaAzul else Color(0xFFABB8CA),
                                     fontSize = 13.sp,
-                                    fontWeight = if (elegido) FontWeight.ExtraBold else FontWeight.Normal)
+                                    fontWeight = if (elegido) FontWeight.SemiBold else FontWeight.Normal)
                                 Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                     puntos.forEach { punto ->
                                         Box(Modifier.size(5.dp).background(if (elegido) Color.White else punto, CircleShape))
@@ -768,7 +768,7 @@ private fun TarjetaActividadAgenda(
     Surface(
         onClick = onAbrir,
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, agendaBorde),
         shadowElevation = 3.dp
@@ -776,7 +776,7 @@ private fun TarjetaActividadAgenda(
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically) {
             Text(formato(actividad.fechaHora, "HH:mm"), color = agendaAzul,
-                fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
             Spacer(Modifier.width(7.dp))
             Box(Modifier.width(3.dp).height(52.dp).background(acento, RoundedCornerShape(2.dp)))
             Spacer(Modifier.width(8.dp))
@@ -789,7 +789,7 @@ private fun TarjetaActividadAgenda(
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 Text(if (familiar) "Visita familiar (" + integrantes.size + ")" else actividad.tipo,
-                    color = agendaAzul, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp,
+                    color = agendaAzul, fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
                     maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(if (familiar) integrantes.joinToString(", ") { it.persona }
                     else actividad.persona.ifBlank { "Actividad general" },
@@ -893,7 +893,7 @@ private fun FormularioAgenda(
             item {
                 Column(Modifier.padding(horizontal = 21.dp)) {
                     Text(if (original == null) "Nueva actividad" else "Editar actividad",
-                        color = agendaAzul, fontSize = 25.sp, fontWeight = FontWeight.ExtraBold)
+                        color = agendaAzul, fontSize = 25.sp, fontWeight = FontWeight.SemiBold)
                     Text("☁  Disponible sin internet", color = Color(0xFF548A7B), fontSize = 13.sp)
                 }
             }

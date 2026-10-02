@@ -14,14 +14,14 @@ object RuralitosSpacing {
 }
 
 object RuralitosRadius {
-    val input = 18.dp
-    val button = 18.dp
-    val card = 22.dp
-    val hero = 26.dp
+    val input = 12.dp
+    val button = 12.dp
+    val card = 16.dp
+    val hero = 24.dp
 }
 
 object RuralitosElevation {
-    val card = 2.dp
+    val card = 0.dp
     val navigation = 5.dp
 }
 

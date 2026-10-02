@@ -69,7 +69,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
@@ -298,7 +298,7 @@ fun MiembrosFamiliaScreen(
             BotonPrincipalRuralitos(
                 texto = "Agregar un integrante familiar",
                 descripcion = "Abrir formulario de identificación, edad y seguimiento preventivo",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 onClick = {
                     miembroEditando = null
                     mostrandoFormulario = true
@@ -349,8 +349,8 @@ fun MiembrosFamiliaScreen(
                         errorNota = false
                         miembroNota = miembro
                     }) {
-                        Text("+", style = MaterialTheme.typography.headlineSmall, color = VerdeClinico)
-                        Text(" Nota diaria", color = VerdeClinico)
+                        Text("+", style = MaterialTheme.typography.headlineSmall, color = CianRuralitos)
+                        Text(" Nota diaria", color = CianRuralitos)
                     }
                 }
             }
@@ -506,7 +506,7 @@ private fun FormularioMiembroScreen(
             MensajeEstadoRuralitos(
                 titulo = "Grupo de edad",
                 descripcion = grupoEdad ?: "Selecciona una fecha válida para calcularlo",
-                color = if (grupoEdad == null) AzulClinico else VerdeClinico,
+                color = if (grupoEdad == null) AzulClinico else CianRuralitos,
                 simbolo = "E",
                 modifier = Modifier.padding(top = 12.dp)
             )
@@ -604,7 +604,7 @@ private fun FormularioMiembroScreen(
             if (diagnosticos.isNotEmpty()) {
                 Text(
                     "¿Qué enfermedad crónica está descompensada?",
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)
                 )
                 diagnosticos.forEach { diagnostico ->
@@ -783,7 +783,7 @@ private fun FormularioMiembroScreen(
         BotonPrincipalRuralitos(
             texto = if (miembro == null) "Guardar nuevo integrante" else "Guardar cambios del integrante",
             descripcion = "Validar datos y regresar al listado familiar",
-            color = VerdeClinico,
+            color = CianRuralitos,
             onClick = {
                 if (nombres.isBlank() || parentesco.isBlank() || grupoEdad == null || sexo.isBlank()) {
                     error = "Completa apellidos y nombres, parentesco, fecha de nacimiento y sexo."
@@ -923,7 +923,7 @@ private fun SeleccionBooleanMiembro(
         titulo = titulo,
         opciones = listOf("SI" to "Sí", "NO" to "No"),
         seleccion = if (seleccion) "SI" else "NO",
-        color = if (seleccion) VerdeClinico else RojoClinico,
+        color = if (seleccion) CianRuralitos else RojoClinico,
         enabled = enabled,
         onSeleccion = { onSeleccion(it == "SI") }
     )
@@ -941,7 +941,7 @@ private fun SelectorDesplegableMiembro(
     var expandido by remember { mutableStateOf(false) }
     Text(
         titulo,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(top = 14.dp, bottom = 5.dp)
     )
     Box(Modifier.fillMaxWidth()) {
@@ -995,7 +995,7 @@ private fun OpcionDescompensacionDiagnostico(
                 onClick = { onCambio(false) },
                 label = { Text("No") },
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = VerdeClinico,
+                    selectedContainerColor = CianRuralitos,
                     selectedLabelColor = Color.White
                 )
             )
@@ -1011,7 +1011,7 @@ private fun SelectorMultipleMiembro(
     onSeleccion: (Set<String>) -> Unit
 ) {
     var expandido by remember { mutableStateOf(false) }
-    Text(titulo, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
+    Text(titulo, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
     Box(Modifier.fillMaxWidth()) {
         OutlinedButton(
             onClick = { expandido = true },

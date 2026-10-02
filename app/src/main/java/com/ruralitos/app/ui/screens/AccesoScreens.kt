@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -145,15 +146,7 @@ fun CargandoAccesoScreen() {
         modifier = Modifier
             .fillMaxSize()
             .formularioSeguro()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFE9F7FF),
-                        Color(0xFFF8FCFF),
-                        Color(0xFFECFBF6)
-                    )
-                )
-            )
+            .background(FondoClinico)
     ) {
         FondoCargaMascota(
             modifier = Modifier.fillMaxSize()
@@ -209,7 +202,7 @@ private fun BurbujaMensajeMascota(
                 max = 290.dp
             ),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.5.dp,
             Color(0xFF7DC8F4)
@@ -218,9 +211,9 @@ private fun BurbujaMensajeMascota(
     ) {
         Text(
             text = mensaje,
-            color = Color(0xFF08285D),
+            color = Color(0xFF0A2A5E),
             fontSize = 18.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(
                 horizontal = 20.dp,

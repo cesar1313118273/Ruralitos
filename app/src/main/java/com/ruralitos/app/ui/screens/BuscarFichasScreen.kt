@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -72,7 +73,8 @@ import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.theme.VerdeSalud
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -220,15 +222,7 @@ fun BuscarFichasScreen(
 Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFDDF7FF),
-                        Color(0xFFF2FDFF),
-                        Color(0xFFE8FFF5)
-                    )
-                )
-            )
+            .background(FondoClinico)
             .formularioSeguro()
     ) {
         FondoDecorativoBusqueda(
@@ -294,7 +288,7 @@ Box(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     color = Color.White.copy(alpha = 0.94f),
-                    shape = RoundedCornerShape(26.dp),
+                    shape = RoundedCornerShape(24.dp),
                     shadowElevation = 3.dp,
                     border = BorderStroke(
                         1.dp,
@@ -321,7 +315,7 @@ Box(
                                         text = "●●",
                                         color = AzulClinico,
                                         fontSize = 11.sp,
-                                        fontWeight = FontWeight.ExtraBold
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                             }
@@ -330,7 +324,7 @@ Box(
                                 text = "Resultados",
                                 color = MaterialTheme.colorScheme.onSurface,
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(start = 12.dp)
                             )
                         }
@@ -338,7 +332,7 @@ Box(
                         Text(
                             text = "$total ficha(s)",
                             color = AzulClinico,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 16.sp
                         )
                     }
@@ -367,7 +361,7 @@ Box(
                             Text(
                                 text = "No encontramos fichas",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold
+                                fontWeight = FontWeight.SemiBold
                             )
 
                             Text(
@@ -427,7 +421,7 @@ private fun TarjetaEncabezadoBusqueda(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.95f),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         shadowElevation = 4.dp,
         border = BorderStroke(
             1.dp,
@@ -447,14 +441,14 @@ private fun TarjetaEncabezadoBusqueda(
                     text = "ARCHIVO FAMILIAR",
                     color = AzulClinico,
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
                     text = "Buscar y modificar fichas",
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF09285A),
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF0A2A5E),
                     modifier = Modifier.padding(top = 5.dp)
                 )
 
@@ -471,7 +465,7 @@ private fun TarjetaEncabezadoBusqueda(
                     .size(58.dp)
                     .padding(start = 4.dp),
                 color = AzulClinico.copy(alpha = 0.10f),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     IconoCarpetaBusqueda(
@@ -508,7 +502,7 @@ private fun TarjetaBusquedaFichas(
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(24.dp),
         shadowElevation = 5.dp,
         border = BorderStroke(
             1.dp,
@@ -544,8 +538,8 @@ private fun TarjetaBusquedaFichas(
                     Text(
                         text = "Buscar fichas",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF09285A)
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0A2A5E)
                     )
 
                     Text(
@@ -563,7 +557,7 @@ private fun TarjetaBusquedaFichas(
                 label = { Text("Nombre o cédula") },
                 leadingIcon = {
                     IconoUsuarioBusqueda(
-                        color = Color(0xFF5D7197),
+                        color = Color(0xFF5B7083),
                         modifier = Modifier.size(25.dp)
                     )
                 },
@@ -571,7 +565,7 @@ private fun TarjetaBusquedaFichas(
                     .fillMaxWidth()
                     .padding(top = 18.dp),
                 singleLine = true,
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(16.dp)
             )
 
             Surface(
@@ -579,11 +573,11 @@ private fun TarjetaBusquedaFichas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 14.dp),
-                color = VerdeClinico.copy(alpha = 0.08f),
-                shape = RoundedCornerShape(19.dp),
+                color = CianRuralitos.copy(alpha = 0.08f),
+                shape = RoundedCornerShape(16.dp),
                 border = BorderStroke(
                     1.dp,
-                    VerdeClinico.copy(alpha = 0.15f)
+                    CianRuralitos.copy(alpha = 0.15f)
                 )
             ) {
                 Row(
@@ -594,15 +588,15 @@ private fun TarjetaBusquedaFichas(
                 ) {
                     Surface(
                         modifier = Modifier.size(38.dp),
-                        color = VerdeClinico.copy(alpha = 0.12f),
+                        color = CianRuralitos.copy(alpha = 0.12f),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = "≡",
-                                color = VerdeClinico,
+                                color = CianRuralitos,
                                 fontSize = 21.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
@@ -618,8 +612,8 @@ private fun TarjetaBusquedaFichas(
                             } else {
                                 "Más filtros"
                             },
-                            color = VerdeClinico,
-                            fontWeight = FontWeight.ExtraBold,
+                            color = CianRuralitos,
+                            fontWeight = FontWeight.SemiBold,
                             style = MaterialTheme.typography.titleMedium
                         )
 
@@ -632,8 +626,8 @@ private fun TarjetaBusquedaFichas(
 
                     Text(
                         text = if (filtrosAvanzados) "⌃" else "›",
-                        color = VerdeClinico,
-                        fontWeight = FontWeight.ExtraBold,
+                        color = CianRuralitos,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 24.sp
                     )
                 }
@@ -734,7 +728,7 @@ private fun TarjetaBusquedaFichas(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 12.dp),
-                        shape = RoundedCornerShape(18.dp),
+                        shape = RoundedCornerShape(16.dp),
                         color = colorEstado.copy(alpha = 0.08f),
                         border = BorderStroke(
                             1.dp,
@@ -757,7 +751,7 @@ private fun TarjetaBusquedaFichas(
                                 Text(
                                     text = nombreEstado(estado),
                                     color = colorEstado,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(top = 2.dp)
                                 )
                             }
@@ -765,7 +759,7 @@ private fun TarjetaBusquedaFichas(
                             Text(
                                 text = "Cambiar",
                                 color = colorEstado,
-                                fontWeight = FontWeight.ExtraBold
+                                fontWeight = FontWeight.SemiBold
                             )
                         }
                     }
@@ -789,7 +783,7 @@ private fun TarjetaBusquedaFichas(
                     .padding(top = 16.dp)
                     .height(62.dp),
                 color = Color(0xFF0786EF),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 shadowElevation = 5.dp
             ) {
                 Row(
@@ -806,7 +800,7 @@ private fun TarjetaBusquedaFichas(
                         text = "Buscar fichas",
                         color = Color.White,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(start = 12.dp)
                     )
                 }
@@ -850,7 +844,7 @@ private fun MenuPaginacion(
             Text(
                 text = "Página $paginaActual de $totalPaginas",
                 color = AzulClinico,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
 
             Row(
@@ -925,7 +919,7 @@ private fun BotonPagina(
                     habilitado -> AzulClinico
                     else -> Color(0xFFADB5BD)
                 },
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -942,7 +936,7 @@ private fun TarjetaFichaElegante(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(25.dp),
+        shape = RoundedCornerShape(24.dp),
         color = Color.White.copy(alpha = 0.98f),
         shadowElevation = 4.dp,
         border = BorderStroke(
@@ -961,7 +955,7 @@ private fun TarjetaFichaElegante(
             ) {
                 Surface(
                     modifier = Modifier.size(58.dp),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = color.copy(alpha = 0.12f)
                 ) {
                     Box(
@@ -973,7 +967,7 @@ private fun TarjetaFichaElegante(
                                 .ifBlank { "F" },
                             color = color,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -985,8 +979,8 @@ private fun TarjetaFichaElegante(
                         text = ficha.nombreApellidoJefeFamilia
                             .ifBlank { "Familia sin nombre" },
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF09285A),
-                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF0A2A5E),
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1002,14 +996,14 @@ private fun TarjetaFichaElegante(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = color.copy(alpha = 0.13f)
                 ) {
                     Text(
                         text = nombreEstado(ficha.estado),
                         color = color,
                         style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(
                             horizontal = 9.dp,
                             vertical = 6.dp
@@ -1032,7 +1026,7 @@ private fun TarjetaFichaElegante(
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = "▣",
-                            color = Color(0xFF5D7197),
+                            color = Color(0xFF5B7083),
                             fontSize = 15.sp
                         )
                     }
@@ -1078,7 +1072,7 @@ private fun SelectorFechaBusqueda(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(
             1.dp,
@@ -1103,7 +1097,7 @@ private fun SelectorFechaBusqueda(
                     text = fecha.ifBlank { "Todas las fechas" },
                     style = MaterialTheme.typography.titleMedium,
                     color = AzulClinico,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 3.dp)
                 )
 
@@ -1122,7 +1116,7 @@ private fun SelectorFechaBusqueda(
                 Text(
                     text = fecha.take(2).ifBlank { "--" },
                     color = AzulClinico,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(
                         horizontal = 13.dp,
                         vertical = 10.dp
@@ -1146,7 +1140,7 @@ private fun CampoFiltro(
         label = { Text(etiqueta) },
         modifier = modifier.padding(top = 9.dp),
         singleLine = true,
-        shape = RoundedCornerShape(18.dp)
+        shape = RoundedCornerShape(16.dp)
     )
 }
 
@@ -1159,10 +1153,10 @@ private fun BotonRegresarBusqueda(
         onClick = onClick,
         modifier = modifier.height(62.dp),
         color = Color.White.copy(alpha = 0.96f),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.5.dp,
-            VerdeClinico.copy(alpha = 0.65f)
+            CianRuralitos.copy(alpha = 0.65f)
         ),
         shadowElevation = 2.dp
     ) {
@@ -1173,16 +1167,16 @@ private fun BotonRegresarBusqueda(
         ) {
             Text(
                 text = "←",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold
             )
 
             Text(
                 text = "Regresar al menú principal",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 12.dp)
             )
         }
@@ -1452,7 +1446,7 @@ private fun nombreEstado(estado: String): String = when (estado) {
 }
 
 private fun colorEstado(estado: String): Color = when (estado) {
-    "COMPLETA" -> VerdeClinico
+    "COMPLETA" -> VerdeSalud
     "ARCHIVADA" -> MoradoClinico
     "BORRADOR" -> NaranjaClinico
     "ELIMINADA" -> RojoClinico

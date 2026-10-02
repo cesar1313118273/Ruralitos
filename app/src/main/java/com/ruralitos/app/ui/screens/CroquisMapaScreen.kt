@@ -92,7 +92,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -619,9 +619,9 @@ fun CroquisMapaScreen(
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("UBICACIÓN EXACTA", color = Color(0xFF087BEE), fontWeight = FontWeight.Bold, fontSize = 12.sp)
-        Text("Ubicación de vivienda", color = Color(0xFF071C4B), fontWeight = FontWeight.ExtraBold, fontSize = 30.sp)
-        Text("Localiza la vivienda en el mapa.", color = Color(0xFF63799C), fontSize = 16.sp)
+        Text("UBICACIÓN EXACTA", color = Color(0xFF1565C0), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+        Text("Ubicación de vivienda", color = Color(0xFF071C4B), fontWeight = FontWeight.SemiBold, fontSize = 30.sp)
+        Text("Localiza la vivienda en el mapa.", color = Color(0xFF5B7083), fontSize = 16.sp)
         if (estiloDeRespaldo) Text(estadoOffline, color = NaranjaClinico, fontSize = 12.sp)
 
         SeccionFormularioRuralitos(
@@ -632,7 +632,7 @@ fun CroquisMapaScreen(
                 val alturaMapa = if (maxWidth >= 700.dp) 600.dp else 520.dp
                 Card(
                     modifier = Modifier.fillMaxWidth().height(alturaMapa),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
@@ -708,7 +708,7 @@ fun CroquisMapaScreen(
                                 ))
                             }, shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
                                 Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
-                                    Text("⌖", color = Color(0xFF087BEE), fontSize = 28.sp)
+                                    Text("⌖", color = Color(0xFF1565C0), fontSize = 28.sp)
                                 }
                             }
                             Surface(onClick = { capturarMapa() }, shape = CircleShape,
@@ -798,7 +798,7 @@ fun CroquisMapaScreen(
         if (mensaje == "Captura guardada") {
             Surface(shape = RoundedCornerShape(16.dp), color = Color(0xFFE4F8F0)) {
                 Text("✓  Captura guardada", Modifier.fillMaxWidth().padding(12.dp),
-                    color = VerdeClinico, fontWeight = FontWeight.Bold)
+                    color = CianRuralitos, fontWeight = FontWeight.Bold)
             }
         } else if (mensaje.startsWith("No") || mensaje.startsWith("Concede") ||
             mensaje.startsWith("Activa") || mensaje.startsWith("Buscando")) {
@@ -820,7 +820,7 @@ fun CroquisMapaScreen(
                 if (maxWidth < 620.dp) {
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         DatoCoordenada("Latitud", if (ubicacionElegida) "%.7f".format(Locale.US, latitud) else "Sin seleccionar", AzulClinico, Modifier.weight(1f))
-                        DatoCoordenada("Longitud", if (ubicacionElegida) "%.7f".format(Locale.US, longitud) else "Sin seleccionar", VerdeClinico, Modifier.weight(1f))
+                        DatoCoordenada("Longitud", if (ubicacionElegida) "%.7f".format(Locale.US, longitud) else "Sin seleccionar", CianRuralitos, Modifier.weight(1f))
                         DatoCoordenada("Altitud", altitud?.let { "%.0f m".format(Locale.US, it) } ?: "Sin dato",
                             NaranjaClinico, Modifier.weight(1f))
                     }
@@ -835,7 +835,7 @@ fun CroquisMapaScreen(
                         DatoCoordenada(
                             "Longitud",
                             if (ubicacionElegida) "%.7f".format(Locale.US, longitud) else "Sin seleccionar",
-                            VerdeClinico,
+                            CianRuralitos,
                             Modifier.weight(1f)
                         )
                         DatoCoordenada(
@@ -849,7 +849,7 @@ fun CroquisMapaScreen(
             }
         }
         Text("La altitud puede ser aproximada. ${estadoTerreno}",
-            color = Color(0xFF63799C), fontSize = 11.sp)
+            color = Color(0xFF5B7083), fontSize = 11.sp)
         precisionGpsMetros?.let {
             Text("Precisión de $origenGps: ±${it.roundToInt()} m. Ajusta el punto sobre la vivienda si es necesario.",
                 color = AzulClinico, fontSize = 12.sp)
@@ -913,7 +913,7 @@ internal fun DatoCoordenada(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(15.dp),
+        shape = RoundedCornerShape(12.dp),
         color = color.copy(alpha = 0.10f)
     ) {
         Column(Modifier.padding(horizontal = 15.dp, vertical = 13.dp)) {
@@ -921,7 +921,7 @@ internal fun DatoCoordenada(
                 etiqueta,
                 style = MaterialTheme.typography.labelLarge,
                 color = color,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 valor,

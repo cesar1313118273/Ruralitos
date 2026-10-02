@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -54,7 +55,8 @@ import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.theme.VerdeSalud
 
 private data class SeccionFicha(
     val id: String,
@@ -85,7 +87,7 @@ fun FichaSeccionesScreen(
             "Identificación, dirección y personas que integran la familia.",
             listOf(
                 SeccionFicha("datos", "1", "Datos personales y de la ficha", "Jefe de familia, teléfono, fecha, número de ficha y responsable.", AzulClinico),
-                SeccionFicha("ubicacion", "2", "Dirección y vivienda", "Sector, barrio, referencias y número de casa. El GPS está en Croquis.", VerdeClinico),
+                SeccionFicha("ubicacion", "2", "Dirección y vivienda", "Sector, barrio, referencias y número de casa. El GPS está en Croquis.", CianRuralitos),
                 SeccionFicha("miembros", "3", "Integrantes de la familia", "Añade o corrige los datos de cada miembro del hogar.", MoradoClinico)
             )
         ),
@@ -103,10 +105,10 @@ fun FichaSeccionesScreen(
             "3. Evidencias y entorno",
             "Imágenes, ubicación exacta y condiciones ambientales de la familia.",
             listOf(
-                SeccionFicha("familiograma", "7", "Imagen del familiograma", "Sube o reemplaza la imagen que aparecerá en Excel y PDF.", VerdeClinico),
+                SeccionFicha("familiograma", "7", "Imagen del familiograma", "Sube o reemplaza la imagen que aparecerá en Excel y PDF.", CianRuralitos),
                 SeccionFicha("croquis", "8", "Croquis, GPS y mapa", "Obtén latitud, longitud y altitud; mueve el punto y guarda el croquis.", AzulClinico),
                 SeccionFicha("contaminacion", "9", "Contaminación ambiental", "Fecha, tipo, descripción y causante de la contaminación.", NaranjaClinico),
-                SeccionFicha("tratamiento", "10", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", VerdeClinico)
+                SeccionFicha("tratamiento", "10", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", CianRuralitos)
             )
         ),
         GrupoFicha(
@@ -152,15 +154,7 @@ fun FichaSeccionesScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFFEAF8FF),
-                        Color(0xFFF8FCFF),
-                        Color(0xFFF4FFFB)
-                    )
-                )
-            )
+            .background(FondoClinico)
             .formularioSeguro()
             .verticalScroll(rememberScrollState())
     ) {
@@ -178,7 +172,7 @@ fun FichaSeccionesScreen(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White.copy(alpha = 0.97f),
-                shape = RoundedCornerShape(30.dp),
+                shape = RoundedCornerShape(24.dp),
                 shadowElevation = 5.dp,
                 border = BorderStroke(
                     1.dp,
@@ -267,13 +261,13 @@ private fun BannerFichaPanel(
                     text = "PANEL DE LA FICHA",
                     color = AzulClinico,
                     style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
                     text = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha familiar" },
                     style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     color = Color(0xFF0B2556),
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -298,7 +292,7 @@ private fun BannerFichaPanel(
                         text = "Estado: ${ficha.estado.replace('_', ' ')}",
                         color = colorEstadoFicha(ficha.estado),
                         style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -322,7 +316,7 @@ private fun GrupoFichaDesplegable(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = color.copy(alpha = 0.05f),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         border = BorderStroke(
             1.dp,
             color.copy(alpha = 0.16f)
@@ -341,13 +335,13 @@ private fun GrupoFichaDesplegable(
                 Surface(
                     modifier = Modifier.size(54.dp),
                     color = color.copy(alpha = 0.11f),
-                    shape = RoundedCornerShape(18.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = grupo.titulo.substringBefore(".").ifBlank { "•" },
                             color = color,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 20.sp
                         )
                     }
@@ -361,8 +355,8 @@ private fun GrupoFichaDesplegable(
                     Text(
                         text = grupo.titulo.substringAfter(". ").ifBlank { grupo.titulo },
                         style = MaterialTheme.typography.titleLarge,
-                        color = Color(0xFF10295D),
-                        fontWeight = FontWeight.ExtraBold
+                        color = Color(0xFF0A2A5E),
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         text = grupo.descripcion,
@@ -376,7 +370,7 @@ private fun GrupoFichaDesplegable(
                     text = if (abierto) "⌃" else "⌄",
                     color = color,
                     fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
@@ -431,11 +425,11 @@ private fun PanelAdministracionFicha(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         shadowElevation = 4.dp,
         border = BorderStroke(
             1.dp,
-            VerdeClinico.copy(alpha = 0.10f)
+            CianRuralitos.copy(alpha = 0.10f)
         )
     ) {
         Column(
@@ -449,14 +443,14 @@ private fun PanelAdministracionFicha(
             ) {
                 Surface(
                     modifier = Modifier.size(54.dp),
-                    color = VerdeClinico.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(18.dp)
+                    color = CianRuralitos.copy(alpha = 0.12f),
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
                             text = "⚙",
-                            color = VerdeClinico,
-                            fontWeight = FontWeight.ExtraBold,
+                            color = CianRuralitos,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 22.sp
                         )
                     }
@@ -468,8 +462,8 @@ private fun PanelAdministracionFicha(
                     Text(
                         text = "Administración de la ficha",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF10295D)
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF0A2A5E)
                     )
                     Text(
                         text = "Estas opciones cambian el estado o eliminan información.",
@@ -490,7 +484,7 @@ private fun PanelAdministracionFicha(
                 } else {
                     "Podrás reactivarla más adelante"
                 },
-                color = VerdeClinico,
+                color = CianRuralitos,
                 icono = "▣",
                 onClick = onCambiarArchivado
             )
@@ -518,7 +512,7 @@ private fun AccionBordeFicha(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         color = color.copy(alpha = 0.04f),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.4.dp,
             color.copy(alpha = 0.70f)
@@ -533,13 +527,13 @@ private fun AccionBordeFicha(
             Surface(
                 modifier = Modifier.size(42.dp),
                 color = color.copy(alpha = 0.11f),
-                shape = RoundedCornerShape(14.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = icono,
                         color = color,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 18.sp
                     )
                 }
@@ -554,7 +548,7 @@ private fun AccionBordeFicha(
                     text = texto,
                     color = color,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = descripcion,
@@ -577,7 +571,7 @@ private fun TarjetaSeccionRedisenada(
         modifier = modifier
             .heightIn(min = 92.dp)
             .clickable { onAbrir(seccion.id) },
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.98f)
         ),
@@ -595,14 +589,14 @@ private fun TarjetaSeccionRedisenada(
         ) {
             Surface(
                 modifier = Modifier.size(56.dp),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = seccion.color.copy(alpha = 0.12f)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = seccion.simbolo,
                         color = seccion.color,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 20.sp
                     )
                 }
@@ -616,8 +610,8 @@ private fun TarjetaSeccionRedisenada(
                 Text(
                     text = seccion.titulo,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color(0xFF10295D),
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color(0xFF0A2A5E),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -635,7 +629,7 @@ private fun TarjetaSeccionRedisenada(
                 text = "›",
                 color = seccion.color,
                 fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 10.dp)
             )
         }
@@ -645,7 +639,7 @@ private fun TarjetaSeccionRedisenada(
 private fun colorGrupoPrincipal(titulo: String): Color {
     return when {
         titulo.startsWith("1.") -> AzulClinico
-        titulo.startsWith("2.") -> VerdeClinico
+        titulo.startsWith("2.") -> CianRuralitos
         titulo.startsWith("3.") -> MoradoClinico
         titulo.startsWith("4.") -> NaranjaClinico
         else -> AzulClinico
@@ -654,7 +648,7 @@ private fun colorGrupoPrincipal(titulo: String): Color {
 
 private fun colorEstadoFicha(estado: String): Color {
     return when (estado.uppercase()) {
-        "COMPLETA" -> VerdeClinico
+        "COMPLETA" -> VerdeSalud
         "BORRADOR" -> NaranjaClinico
         "ARCHIVADA" -> MoradoClinico
         else -> AzulClinico

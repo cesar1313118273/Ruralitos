@@ -84,7 +84,7 @@ import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import java.text.Normalizer
 import java.util.Locale
 import kotlinx.coroutines.launch
@@ -490,7 +490,7 @@ fun DispensarizacionScreen(
                         AcordeonIndicador(
                             titulo = "Estrategias nacionales",
                             subtitulo = "${resumenRegistro.estrategias.sumOf { it.second }} registro(s)",
-                            color = VerdeClinico,
+                            color = CianRuralitos,
                             simbolo = "EN",
                             expandido = panelIndicadorAbierto == PanelIndicador.ESTRATEGIAS_NACIONALES,
                             onToggle = {
@@ -504,7 +504,7 @@ fun DispensarizacionScreen(
                             GraficoBarrasRegistro(
                                 titulo = "Estrategias nacionales",
                                 datos = resumenRegistro.estrategias,
-                                color = VerdeClinico,
+                                color = CianRuralitos,
                                 mostrarTitulo = false
                             )
                         }
@@ -589,7 +589,7 @@ fun DispensarizacionScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
                             singleLine = true,
-                            shape = RoundedCornerShape(22.dp)
+                            shape = RoundedCornerShape(16.dp)
                         )
                     }
 
@@ -627,7 +627,7 @@ fun DispensarizacionScreen(
                     TarjetaEstadoRegistro(
                         titulo = "Registro general · 2 hojas",
                         descripcion = "$alcance · ${columnasRegistro.size} columna(s) · ${personas.size} personas",
-                        color = VerdeClinico,
+                        color = CianRuralitos,
                         simbolo = "XLS",
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
@@ -649,7 +649,7 @@ fun DispensarizacionScreen(
 
                             BotonPrincipalRuralitos(
                                 texto = if (exportando) "Creando archivo…" else "Descargar Excel",
-                                color = VerdeClinico,
+                                color = CianRuralitos,
                                 enabled = !exportando && seleccionPoblacionCompleta,
                                 onClick = {
                                     if (agrupacionesRegistro.isEmpty() || idsFicha.isEmpty()) {
@@ -744,7 +744,7 @@ private fun SelectorFichas(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 56.dp),
-            shape = RoundedCornerShape(20.dp)
+            shape = RoundedCornerShape(16.dp)
         ) {
             Text(
                 actual?.let { "Ficha ${it.numeroFichaFamiliar} · ${it.nombreApellidoJefeFamilia}" }
@@ -823,7 +823,7 @@ private fun SelectorIdentificadoUnico(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 56.dp),
-            shape = RoundedCornerShape(20.dp),
+            shape = RoundedCornerShape(16.dp),
             border = BorderStroke(1.dp, AzulClinico.copy(alpha = 0.22f))
         ) {
             Text(
@@ -936,12 +936,12 @@ private fun EncabezadoRegistroCurvo(
                 text = paso.uppercase(Locale.getDefault()),
                 color = AzulClinico,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 4.dp)
             )
             Text(
@@ -981,7 +981,7 @@ private fun BarraSeccionesDispensarizacion(
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 52.dp),
-                    shape = RoundedCornerShape(20.dp),
+                    shape = RoundedCornerShape(16.dp),
                     color = if (activa) AzulClinico else Color.Transparent,
                     border = if (activa) {
                         null
@@ -1004,7 +1004,7 @@ private fun BarraSeccionesDispensarizacion(
                         Text(
                             text = opcion.etiqueta,
                             color = if (activa) Color.White else MoradoClinico,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp,
                             maxLines = 1,
                             modifier = Modifier.padding(start = 7.dp)
@@ -1123,7 +1123,7 @@ private fun TituloSeccionRegistro(titulo: String) {
     Text(
         text = titulo,
         style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurface
     )
 }
@@ -1145,7 +1145,7 @@ private fun SelectorVistaPoblacion(
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 50.dp),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = if (activa) AzulClinico else Color.White,
                 border = BorderStroke(
                     1.dp,
@@ -1162,7 +1162,7 @@ private fun SelectorVistaPoblacion(
                     Text(
                         text = opcion.etiqueta,
                         color = if (activa) Color.White else MoradoClinico,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -1181,7 +1181,7 @@ private fun TarjetaSeleccionActual(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.8f)),
         shadowElevation = 3.dp
@@ -1207,7 +1207,7 @@ private fun TarjetaSeleccionActual(
             Text(
                 text = "$personas personas",
                 color = AzulClinico,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -1240,7 +1240,7 @@ private fun TarjetaResumenPoblacion(
                     Text(
                         text = personas.toString(),
                         color = AzulClinico,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 20.sp
                     )
                 }
@@ -1252,7 +1252,7 @@ private fun TarjetaResumenPoblacion(
             ) {
                 Text(
                     text = titulo,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -1267,7 +1267,7 @@ private fun TarjetaResumenPoblacion(
                     text = personas.toString(),
                     color = AzulClinico,
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = "Personas",
@@ -1287,7 +1287,7 @@ private fun TarjetaContenedoraRegistro(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(24.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.65f)),
         shadowElevation = 5.dp
@@ -1299,7 +1299,7 @@ private fun TarjetaContenedoraRegistro(
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
             contenido()
         }
@@ -1316,7 +1316,7 @@ private fun TarjetaEstadoRegistro(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         color = color.copy(alpha = 0.06f),
         border = BorderStroke(1.dp, color.copy(alpha = 0.18f))
     ) {
@@ -1330,7 +1330,7 @@ private fun TarjetaEstadoRegistro(
                 color = Color.White
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Text(simbolo, color = color, fontWeight = FontWeight.ExtraBold)
+                    Text(simbolo, color = color, fontWeight = FontWeight.SemiBold)
                 }
             }
             Column(
@@ -1338,7 +1338,7 @@ private fun TarjetaEstadoRegistro(
                     .weight(1f)
                     .padding(start = 12.dp)
             ) {
-                Text(titulo, color = color, fontWeight = FontWeight.ExtraBold)
+                Text(titulo, color = color, fontWeight = FontWeight.SemiBold)
                 Text(
                     descripcion,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1394,7 +1394,7 @@ private fun AcordeonIndicador(
                         Text(
                             text = simbolo,
                             color = color,
-                            fontWeight = FontWeight.ExtraBold,
+                            fontWeight = FontWeight.SemiBold,
                             fontSize = if (simbolo.length > 2) 11.sp else 14.sp
                         )
                     }
@@ -1408,7 +1408,7 @@ private fun AcordeonIndicador(
                     Text(
                         text = titulo,
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -1465,7 +1465,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
 
     Text(
         titulo,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(top = 8.dp)
     )
 
@@ -1528,7 +1528,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
                         Text(
                             total.toString(),
                             fontSize = 26.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             "personas",
@@ -1566,7 +1566,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
                             Text(
                                 "$porcentaje%",
                                 color = colorGrupo(grupo),
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 fontSize = 11.sp,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
@@ -1589,7 +1589,7 @@ private fun GraficoBarrasRegistro(
     if (mostrarTitulo) {
         Text(
             titulo,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 10.dp, bottom = 4.dp)
         )
     }
@@ -1600,7 +1600,7 @@ private fun GraficoBarrasRegistro(
         datos.take(10).forEach { (etiqueta, valor) ->
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(15.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = Color.White,
                 border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.45f))
             ) {
@@ -1615,7 +1615,7 @@ private fun GraficoBarrasRegistro(
                         Text(
                             valor.toString(),
                             color = color,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                     Box(
@@ -1656,7 +1656,7 @@ private fun TarjetaGrupo(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, color.copy(alpha = 0.20f)),
         shadowElevation = 3.dp
@@ -1689,7 +1689,7 @@ private fun TarjetaGrupo(
                             text = grupo.codigo,
                             color = color,
                             fontSize = 16.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -1702,7 +1702,7 @@ private fun TarjetaGrupo(
                     Text(
                         text = "Grupo ${grupo.codigo} · ${grupo.titulo}",
                         color = color,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -1722,7 +1722,7 @@ private fun TarjetaGrupo(
                     Text(
                         text = "$porcentaje%",
                         color = color,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                     )
                 }
@@ -1863,7 +1863,7 @@ private fun FilaDetalleGrupo(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = Color.White.copy(alpha = 0.80f),
         border = BorderStroke(1.dp, color.copy(alpha = 0.10f))
     ) {
@@ -1878,7 +1878,7 @@ private fun FilaDetalleGrupo(
                 Box(Modifier.size(32.dp))
             }
             Text(etiqueta, modifier = Modifier.weight(1f))
-            Text(valor.toString(), color = color, fontWeight = FontWeight.ExtraBold)
+            Text(valor.toString(), color = color, fontWeight = FontWeight.SemiBold)
         }
     }
 }
@@ -1918,7 +1918,7 @@ private fun TarjetaPersonaDispensarizada(
     val color = colorGrupo(grupo)
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.70f))
@@ -1934,7 +1934,7 @@ private fun TarjetaPersonaDispensarizada(
                         Text(
                             grupo.codigo,
                             color = color,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -1946,7 +1946,7 @@ private fun TarjetaPersonaDispensarizada(
                     Text(
                         persona.nombre.ifBlank { "Integrante sin nombre" },
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         "${persona.parentesco} · Ficha ${persona.ficha.numeroFichaFamiliar}",
@@ -1961,7 +1961,7 @@ private fun TarjetaPersonaDispensarizada(
                     Text(
                         "Grupo ${grupo.codigo}",
                         color = color,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         fontSize = 11.sp,
                         modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp)
                     )
@@ -2021,7 +2021,7 @@ private fun TarjetaPersonaDispensarizada(
                 Text(
                     "Abrir ficha familiar",
                     color = AzulClinico,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -2030,7 +2030,7 @@ private fun TarjetaPersonaDispensarizada(
 
 private fun colorGrupo(grupo: GrupoDispensarizacion): Color = when (grupo) {
     GrupoDispensarizacion.PENDIENTE -> Color(0xFF607D8B)
-    GrupoDispensarizacion.I -> VerdeClinico
+    GrupoDispensarizacion.I -> CianRuralitos
     GrupoDispensarizacion.II -> NaranjaClinico
     GrupoDispensarizacion.III -> RojoClinico
     GrupoDispensarizacion.IV -> AzulClinico

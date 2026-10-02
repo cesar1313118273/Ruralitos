@@ -55,7 +55,7 @@ import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -210,7 +210,7 @@ fun SaludFamiliarScreen(
                 BotonPrincipalRuralitos(
                     texto = "Agregar un embarazo",
                     descripcion = "Abrir formulario obstétrico completo",
-                    color = VerdeClinico,
+                    color = CianRuralitos,
                     onClick = {
                         embarazadaEditando = null
                         modo = "embarazada"
@@ -529,7 +529,7 @@ private fun FormularioEmbarazadaScreen(
         BotonPrincipalRuralitos(
             texto = if (item == null) "Guardar nuevo embarazo" else "Guardar cambios del embarazo",
             descripcion = "Validar y regresar al listado de salud familiar",
-            color = VerdeClinico,
+            color = CianRuralitos,
             onClick = {
                 if (nombres.isBlank() || GrupoEdadFamiliar.calcular(fechaNacimiento) == null) {
                     error = "Completa los apellidos y nombres y una fecha de nacimiento válida."
@@ -593,7 +593,7 @@ private fun FormularioEmbarazadaScreen(
 
 @Composable
 private fun SeleccionRiesgoObstetrico(valor: String, onCambio: (String) -> Unit) {
-    Text("Riesgo obstétrico", fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 12.dp))
+    Text("Riesgo obstétrico", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp))
     Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         listOf("SIN_RIESGO" to "Sin riesgo", "BAJO" to "Bajo", "ALTO" to "Alto", "MUY_ALTO" to "Muy alto").forEach { (codigo, etiqueta) ->
             FilterChip(selected = valor == codigo, onClick = { onCambio(codigo) }, label = { Text(etiqueta) })
@@ -694,7 +694,7 @@ private fun SelectorPersonaExistenteSalud(
 ) {
     var expandido by remember { mutableStateOf(false) }
     var idSeleccionado by remember { mutableStateOf(idInicial) }
-    Text("Integrante de la ficha", fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 8.dp, bottom = 5.dp))
+    Text("Integrante de la ficha", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 5.dp))
     Box(Modifier.fillMaxWidth()) {
         OutlinedButton(onClick = { expandido = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text(miembros.firstOrNull { it.id == idSeleccionado }?.apellidosNombres ?: "Completar una persona nueva")
@@ -726,7 +726,7 @@ private fun SelectorTextoSalud(
     onSeleccion: (String) -> Unit
 ) {
     var expandido by remember { mutableStateOf(false) }
-    Text(titulo, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
+    Text(titulo, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
     Box(Modifier.fillMaxWidth()) {
         OutlinedButton(onClick = { expandido = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text(
@@ -777,7 +777,7 @@ private fun OpcionSiNoSalud(
 ) {
     Text(
         titulo,
-        fontWeight = FontWeight.ExtraBold,
+        fontWeight = FontWeight.SemiBold,
         modifier = Modifier.padding(top = 12.dp, bottom = 5.dp)
     )
     Row(
@@ -790,7 +790,7 @@ private fun OpcionSiNoSalud(
             label = { Text("Sí", fontWeight = FontWeight.Bold) },
             modifier = Modifier.heightIn(min = 48.dp),
             colors = FilterChipDefaults.filterChipColors(
-                selectedContainerColor = VerdeClinico,
+                selectedContainerColor = CianRuralitos,
                 selectedLabelColor = Color.White
             )
         )

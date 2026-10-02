@@ -63,7 +63,7 @@ import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -231,7 +231,7 @@ fun FamiliogramaScreen(
             titulo = "Imagen del familiograma",
             descripcion = "Sube la fotografía, ajusta la eliminación del papel blanco y guarda un PNG transparente.",
             paso = "Evidencias familiares",
-            color = VerdeClinico
+            color = CianRuralitos
         )
 
         SeccionFormularioRuralitos(
@@ -247,7 +247,7 @@ fun FamiliogramaScreen(
             if (vistaPrevia != null) {
                 androidx.compose.material3.Card(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 230.dp, max = 440.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                     colors = androidx.compose.material3.CardDefaults.cardColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent
                     ),
@@ -290,7 +290,7 @@ fun FamiliogramaScreen(
                 Text(
                     "Quitar fondo blanco · ${intensidadFondo.toInt()}%",
                     fontWeight = FontWeight.Bold,
-                    color = VerdeClinico,
+                    color = CianRuralitos,
                     modifier = Modifier.padding(top = 14.dp)
                 )
                 Slider(
@@ -309,7 +309,7 @@ fun FamiliogramaScreen(
                         "la cuadrícula confirma las zonas que quedarán sin fondo en el PNG.",
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.SemiBold,
-                    color = VerdeClinico,
+                    color = CianRuralitos,
                     modifier = Modifier.padding(top = 6.dp)
                 )
             }
@@ -345,7 +345,7 @@ fun FamiliogramaScreen(
                 BotonPrincipalRuralitos(
                     texto = if (procesando) "Guardando PNG transparente…" else "Guardar familiograma transparente",
                     descripcion = "Aplicar este ajuste a Excel, PDF y sincronización",
-                    color = VerdeClinico,
+                    color = CianRuralitos,
                     enabled = !procesando && !procesandoFondo && (resultadoImagen?.porcentajeTransparente ?: 0) > 0,
                     onClick = { guardar(imagenProcesada) },
                     modifier = Modifier.padding(top = 10.dp)
@@ -372,7 +372,7 @@ fun FamiliogramaScreen(
             MensajeEstadoRuralitos(
                 titulo = if (mensaje.startsWith("No")) "No se completó la acción" else "Imagen actualizada",
                 descripcion = mensaje,
-                color = if (mensaje.startsWith("No")) RojoClinico else VerdeClinico,
+                color = if (mensaje.startsWith("No")) RojoClinico else CianRuralitos,
                 simbolo = if (mensaje.startsWith("No")) "!" else "✓"
             )
         }
@@ -500,7 +500,7 @@ fun ContaminacionAmbientalScreen(
         BotonPrincipalRuralitos(
             texto = "Guardar información de esta sección",
             descripcion = "Los informes registrados ya están guardados",
-            color = VerdeClinico,
+            color = CianRuralitos,
             onClick = onContinuar
         )
         BotonSecundarioRuralitos(
@@ -566,7 +566,7 @@ fun LugaresTratamientoScreen(
             titulo = "Lugar o persona para la atención",
             descripcion = "Registra centros de salud, lugares alternativos o personas de confianza a quienes acude la familia.",
             paso = "Red de atención",
-            color = VerdeClinico
+            color = CianRuralitos
         )
 
         SeccionFormularioRuralitos(
@@ -593,7 +593,7 @@ fun LugaresTratamientoScreen(
                 } else {
                     "Guardar en el siguiente renglón disponible de la hoja 4"
                 },
-                color = if (editando == null) VerdeClinico else AzulClinico,
+                color = if (editando == null) CianRuralitos else AzulClinico,
                 enabled = texto.isNotBlank() && (editando != null || lugares.size < 4),
                 onClick = {
                     if (texto.isNotBlank()) {
@@ -661,7 +661,7 @@ fun LugaresTratamientoScreen(
                 titulo = "Opción de atención ${index + 1}",
                 descripcion = item.descripcion,
                 simbolo = (index + 1).toString(),
-                color = VerdeClinico,
+                color = CianRuralitos,
                 onEditar = {
                     editando = item
                     texto = item.descripcion

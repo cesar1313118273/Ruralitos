@@ -38,7 +38,7 @@ import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 
 data class DatosPrincipalesForm(
     val cedula: String,
@@ -224,7 +224,7 @@ fun EditarDatosPrincipalesScreen(
         error?.let {
             Surface(
                 color = Color(0xFFFFECEF),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
@@ -258,7 +258,7 @@ fun EditarDatosPrincipalesScreen(
                     )
                 }
             },
-            color = VerdeClinico
+            color = CianRuralitos
         )
         BotonSecundarioRuralitos(
             texto = "Regresar al panel de la ficha",
@@ -293,7 +293,7 @@ private fun CampoPersonal(
         Text(
             text = etiqueta,
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFF49657D),
+            color = Color(0xFF5B7083),
             fontWeight = FontWeight.Bold
         )
         OutlinedTextField(
@@ -338,7 +338,7 @@ private fun CampoFechaPersonal(
         Text(
             text = etiqueta,
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFF49657D),
+            color = Color(0xFF5B7083),
             fontWeight = FontWeight.Bold
         )
         Box(

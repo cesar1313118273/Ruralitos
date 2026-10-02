@@ -43,7 +43,7 @@ import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
 import com.ruralitos.app.ui.theme.BordeClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -99,7 +99,7 @@ fun BuscarUnidadOperativaScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(22.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, BordeClinico),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -109,14 +109,14 @@ fun BuscarUnidadOperativaScreen(
                         Modifier
                             .fillMaxWidth()
                             .height(4.dp)
-                            .background(VerdeClinico)
+                            .background(CianRuralitos)
                     )
                     Column(Modifier.fillMaxWidth().padding(20.dp)) {
                         Text(
                             text = "Buscar centro de salud",
                             style = MaterialTheme.typography.headlineSmall,
                             color = AzulClinicoOscuro,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = "Busca por código, nombre, provincia, cantón o parroquia.",
@@ -132,7 +132,7 @@ fun BuscarUnidadOperativaScreen(
                             },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            shape = RoundedCornerShape(14.dp)
+                            shape = RoundedCornerShape(12.dp)
                         )
                     }
                 }
@@ -144,7 +144,7 @@ fun BuscarUnidadOperativaScreen(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White.copy(alpha = 0.95f),
-                    shape = RoundedCornerShape(15.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
                         "Continúa escribiendo para iniciar la búsqueda.",
@@ -160,7 +160,7 @@ fun BuscarUnidadOperativaScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     border = BorderStroke(1.dp, BordeClinico),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
@@ -205,7 +205,7 @@ fun EstablecimientoCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(19.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, BordeClinico)
@@ -220,13 +220,13 @@ fun EstablecimientoCard(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .background(AzulClinico, RoundedCornerShape(14.dp)),
+                    .background(AzulClinico, RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     "UO",
                     color = Color.White,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
             Column(Modifier.weight(1f)) {
@@ -234,7 +234,7 @@ fun EstablecimientoCard(
                     text = establecimiento.nombreCentroSalud,
                     style = MaterialTheme.typography.titleMedium,
                     color = AzulClinicoOscuro,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = "Código UO: ${establecimiento.codigoUo}",
@@ -256,8 +256,8 @@ fun EstablecimientoCard(
                 )
                 Text(
                     "Seleccionar esta unidad operativa",
-                    color = VerdeClinico,
-                    fontWeight = FontWeight.ExtraBold,
+                    color = CianRuralitos,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 11.dp)
                 )
             }

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -65,15 +66,7 @@ fun AccesoSupabaseScreen(
         modifier = Modifier
             .fillMaxSize()
             .formularioSeguro()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFE6F6FF),
-                        Color(0xFFF6FBFF),
-                        Color(0xFFEAFBF6)
-                    )
-                )
-            )
+            .background(FondoClinico)
     ) {
         FondoAbstractoLogin(
             modifier = Modifier.fillMaxSize()
@@ -118,7 +111,7 @@ fun AccesoSupabaseScreen(
                         text = "Iniciar sesión",
                         color = AzulLoginNuevoOscuro,
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     )
 
@@ -217,7 +210,7 @@ fun AccesoSupabaseScreen(
 }
 
 private val AzulLoginNuevo = Color(0xFF087BEA)
-private val AzulLoginNuevoOscuro = Color(0xFF08285D)
+private val AzulLoginNuevoOscuro = Color(0xFF0A2A5E)
 private val VerdeLoginNuevo = Color(0xFF08B895)
 private val TextoLoginNuevoSecundario = Color(0xFF60789B)
 private val BordeLoginNuevo = Color(0xFFCBE2F5)
@@ -251,7 +244,7 @@ private fun CabeceraLoginRuralitos() {
             text = "Ruralitos",
             color = AzulLoginNuevoOscuro,
             fontSize = 34.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 10.dp)
         )
@@ -291,7 +284,7 @@ private fun CampoCorreoLogin(
             keyboardType = KeyboardType.Email
         ),
         singleLine = true,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = AzulLoginNuevo,
             unfocusedBorderColor = BordeLoginNuevo,
@@ -343,12 +336,12 @@ private fun CampoClaveLogin(
                         "Ver"
                     },
                     color = VerdeLoginNuevo,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         },
         singleLine = true,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = AzulLoginNuevo,
             unfocusedBorderColor = BordeLoginNuevo,
@@ -379,7 +372,7 @@ private fun IconoCampoLogin(
             Text(
                 text = simbolo,
                 color = color,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -415,7 +408,7 @@ private fun MensajeAccesoLogin(
                 .fillMaxWidth()
                 .padding(top = 14.dp),
             color = color.copy(alpha = 0.09f),
-            shape = RoundedCornerShape(18.dp),
+            shape = RoundedCornerShape(16.dp),
             border = androidx.compose.foundation.BorderStroke(
                 1.dp,
                 color.copy(alpha = 0.30f)
@@ -445,7 +438,7 @@ private fun MensajeAccesoLogin(
                                 "!"
                             },
                             color = Color.White,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -484,7 +477,7 @@ private fun BotonPrincipalLogin(
         } else {
             VerdeLoginNuevo.copy(alpha = 0.48f)
         },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = if (enabled) {
             6.dp
         } else {
@@ -500,14 +493,14 @@ private fun BotonPrincipalLogin(
                 text = texto,
                 color = Color.White,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(
                 text = "  →",
                 color = Color.White,
                 fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -534,7 +527,7 @@ private fun SeparadorOpcionesLogin(
             text = "Otras opciones",
             color = AzulLoginNuevoOscuro,
             style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(horizontal = 12.dp)
         )
 
@@ -566,7 +559,7 @@ private fun OpcionLoginRuralitos(
             .fillMaxWidth()
             .heightIn(min = 76.dp),
         color = Color.White,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             BordeLoginNuevo
@@ -584,7 +577,7 @@ private fun OpcionLoginRuralitos(
         ) {
             Surface(
                 modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(15.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = color.copy(alpha = 0.11f)
             ) {
                 Box(
@@ -594,7 +587,7 @@ private fun OpcionLoginRuralitos(
                         text = simbolo,
                         color = color,
                         fontSize = 20.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -608,7 +601,7 @@ private fun OpcionLoginRuralitos(
                     text = titulo,
                     color = AzulLoginNuevoOscuro,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
@@ -623,7 +616,7 @@ private fun OpcionLoginRuralitos(
                 text = "›",
                 color = color,
                 fontSize = 28.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -636,7 +629,7 @@ private fun AvisoLocalLogin(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color(0xFFE5FAF4),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
             VerdeLoginNuevo.copy(alpha = 0.28f)
@@ -659,7 +652,7 @@ private fun AvisoLocalLogin(
                     Text(
                         text = "✓",
                         color = Color.White,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -1186,7 +1179,7 @@ fun GestionEquipoSupabaseScreen(
                 codigo,
                 style = MaterialTheme.typography.headlineSmall,
                 color = VerdeOscuro,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp)
             )
             Text("Válido durante 7 días y para un solo uso.", style = MaterialTheme.typography.bodySmall)
@@ -1224,11 +1217,7 @@ private fun FormularioConDisenoLogin(
         modifier = Modifier
             .fillMaxSize()
             .formularioSeguro()
-            .background(
-                Brush.verticalGradient(
-                    listOf(Color(0xFFE6F6FF), Color(0xFFF6FBFF), Color(0xFFEAFBF6))
-                )
-            )
+            .background(FondoClinico)
     ) {
         FondoAbstractoLogin(modifier = Modifier.fillMaxSize())
         Column(
@@ -1261,7 +1250,7 @@ private fun FormularioConDisenoLogin(
                         text = titulo,
                         color = AzulLoginNuevoOscuro,
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center
                     )
                     Text(

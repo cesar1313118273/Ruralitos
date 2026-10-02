@@ -44,7 +44,7 @@ import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -248,12 +248,12 @@ fun PerfilScreen(
         mensaje?.let {
             Surface(
                 color = if (esError) Color(0xFFFFECEF) else Color(0xFFEAF9F3),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     it,
-                    color = if (esError) MaterialTheme.colorScheme.error else VerdeClinico,
+                    color = if (esError) MaterialTheme.colorScheme.error else CianRuralitos,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(15.dp)
                 )
@@ -265,7 +265,7 @@ fun PerfilScreen(
             descripcion = "Actualizar la información local y en la cuenta",
             onClick = guardarPerfil,
             enabled = !guardando,
-            color = VerdeClinico
+            color = CianRuralitos
         )
         BotonSecundarioRuralitos(
             texto = "Regresar al menú principal",
@@ -294,7 +294,7 @@ internal fun CampoCargoPredeterminado(
         Text(
             "Cargo profesional",
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFF49657D),
+            color = Color(0xFF5B7083),
             fontWeight = FontWeight.Bold
         )
         ExposedDropdownMenuBox(
@@ -331,7 +331,7 @@ internal fun CampoCargoPredeterminado(
                                     Text(
                                         "Cargo seleccionado",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = VerdeClinico
+                                        color = CianRuralitos
                                     )
                                 }
                             }
@@ -366,7 +366,7 @@ private fun CampoPerfilSeparado(
         Text(
             text = etiqueta,
             style = MaterialTheme.typography.labelLarge,
-            color = Color(0xFF49657D),
+            color = Color(0xFF5B7083),
             fontWeight = FontWeight.Bold
         )
         OutlinedTextField(

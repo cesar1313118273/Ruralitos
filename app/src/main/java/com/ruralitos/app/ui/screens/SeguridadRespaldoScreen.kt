@@ -42,7 +42,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -196,14 +196,14 @@ fun SeguridadRespaldoScreen(
             MensajeEstadoRuralitos(
                 titulo = "Respaldo portable y cifrado",
                 descripcion = "Puede abrirse en otro teléfono o cuenta de Ruralitos con la contraseña que tú definas.",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 simbolo = "✓"
             )
             mensaje?.let {
                 MensajeEstadoRuralitos(
                     titulo = if (esError) "No se pudo completar" else "Operación completada",
                     descripcion = it,
-                    color = if (esError) RojoClinico else VerdeClinico,
+                    color = if (esError) RojoClinico else CianRuralitos,
                     simbolo = if (esError) "!" else "✓"
                 )
             }
@@ -215,7 +215,7 @@ fun SeguridadRespaldoScreen(
                     texto = "Crear respaldo para guardar o compartir",
                     descripcion = "Generar archivo .ruralitos protegido con contraseña",
                     onClick = { modo = "crear"; mensaje = null },
-                    color = VerdeClinico
+                    color = CianRuralitos
                 )
             }
             SeccionFormularioRuralitos(
@@ -294,7 +294,7 @@ fun SeguridadRespaldoScreen(
                 MensajeEstadoRuralitos(
                     titulo = "Revisa la información",
                     descripcion = it,
-                    color = if (esError) RojoClinico else VerdeClinico,
+                    color = if (esError) RojoClinico else CianRuralitos,
                     simbolo = if (esError) "!" else "✓"
                 )
             }
@@ -324,7 +324,7 @@ fun SeguridadRespaldoScreen(
                     }
                 },
                 enabled = !procesando,
-                color = if (modo == "crear") VerdeClinico else NaranjaClinico
+                color = if (modo == "crear") CianRuralitos else NaranjaClinico
             )
             BotonSecundarioRuralitos(
                 texto = "Cancelar y regresar",

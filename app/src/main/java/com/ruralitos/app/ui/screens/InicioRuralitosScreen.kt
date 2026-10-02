@@ -72,7 +72,7 @@ import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
 import com.ruralitos.app.ui.theme.TextoSecundario
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import java.util.Calendar
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -94,14 +94,14 @@ import kotlinx.coroutines.launch
  */
 
 private val FondoPantalla = Color(0xFFFDFEFF)
-private val AzulTitulo = Color(0xFF0B2D5B)
+private val AzulTitulo = Color(0xFF0A2A5E)
 private val AzulSecundario = Color(0xFF6D809E)
 private val VerdePrincipal = Color(0xFF00AD8C)
 private val VerdeSuave = Color(0xFFE7F8F3)
 private val NaranjaPrincipal = Color(0xFFF7941D)
 private val NaranjaFondo = Color(0xFFFFF8EF)
 private val NaranjaBorde = Color(0xFFFFD7A3)
-private val BordeTarjeta = Color(0xFFDCEAF5)
+private val BordeTarjeta = Color(0xFFE2ECF1)
 private val Montana1 = Color(0xFFEDF7FD)
 private val Montana2 = Color(0xFFE2F1FA)
 private val Montana3 = Color(0xFFD5EAF7)
@@ -218,7 +218,7 @@ fun InicioRuralitosScreen(
                                         text = "Ruralitos",
                                         color = AzulClinicoOscuro,
                                         style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.ExtraBold
+                                        fontWeight = FontWeight.SemiBold
                                     )
 
                                     Text(
@@ -243,7 +243,7 @@ fun InicioRuralitosScreen(
                                     Text(
                                         text = "Cerrar",
                                         color = AzulClinico,
-                                        fontWeight = FontWeight.ExtraBold
+                                        fontWeight = FontWeight.SemiBold
                                     )
                                 }
                             }
@@ -264,7 +264,7 @@ fun InicioRuralitosScreen(
                                 text = "CUENTA Y SEGURIDAD",
                                 color = AzulClinicoOscuro.copy(alpha = 0.82f),
                                 fontSize = 12.sp,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 letterSpacing = 1.1.sp,
                                 modifier = Modifier.padding(
                                     start = 8.dp,
@@ -288,7 +288,7 @@ fun InicioRuralitosScreen(
 
                             ItemMenu(
                                 titulo = "Seguridad y respaldos",
-                                color = VerdeClinico
+                                color = CianRuralitos
                             ) {
                                 navegar(onSeguridad)
                             }
@@ -361,7 +361,7 @@ fun InicioRuralitosScreen(
                                 )
                                 .height(66.dp),
                             color = Color.White.copy(alpha = 0.95f),
-                            shape = RoundedCornerShape(22.dp),
+                            shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(
                                 1.3.dp,
                                 RojoClinico.copy(alpha = 0.65f)
@@ -379,14 +379,14 @@ fun InicioRuralitosScreen(
                                     text = "↪",
                                     color = RojoClinico,
                                     fontSize = 26.sp,
-                                    fontWeight = FontWeight.ExtraBold
+                                    fontWeight = FontWeight.SemiBold
                                 )
 
                                 Text(
                                     text = "Cerrar sesión",
                                     color = RojoClinico,
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    fontWeight = FontWeight.SemiBold,
                                     modifier = Modifier.padding(start = 10.dp)
                                 )
                             }
@@ -441,7 +441,7 @@ fun InicioRuralitosScreen(
                                 color = AzulTitulo,
                                 fontSize = 28.sp,
                                 lineHeight = 33.sp,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -457,7 +457,7 @@ fun InicioRuralitosScreen(
                             Spacer(Modifier.height(5.dp))
                             Text(
                                 text = estadoSincronizacion,
-                                color = if (estadoSincronizacion == "Sincronizado") VerdeClinico else AzulSecundario,
+                                color = if (estadoSincronizacion == "Sincronizado") CianRuralitos else AzulSecundario,
                                 fontSize = 13.sp,
                                 maxLines = 2
                             )
@@ -474,7 +474,7 @@ fun InicioRuralitosScreen(
                         color = AzulTitulo,
                         fontSize = 24.sp,
                         lineHeight = 29.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(
                             start = 20.dp,
                             end = 20.dp,
@@ -655,7 +655,7 @@ private fun AvatarInicial(
             text = inicial,
             color = VerdePrincipal,
             fontSize = 25.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -671,7 +671,7 @@ private fun AccesoInicio(
         onClick = onClick,
         modifier = modifier.height(128.dp),
         color = Color.White,
-        shape = RoundedCornerShape(21.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             width = 1.dp,
             color = BordeTarjeta
@@ -925,7 +925,7 @@ private fun ItemMenu(
             .padding(bottom = 12.dp)
             .heightIn(min = 74.dp),
         color = Color.White.copy(alpha = 0.96f),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.dp,
             AzulClinico.copy(alpha = 0.08f)
@@ -961,7 +961,7 @@ private fun ItemMenu(
                 text = titulo,
                 color = AzulClinicoOscuro,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 14.dp)
@@ -1078,7 +1078,7 @@ private fun ItemBarra(
             color = color,
             fontSize = 11.sp,
             fontWeight = if (activo) {
-                FontWeight.ExtraBold
+                FontWeight.SemiBold
             } else {
                 FontWeight.SemiBold
             }

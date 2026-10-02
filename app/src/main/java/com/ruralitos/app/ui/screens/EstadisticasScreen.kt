@@ -52,7 +52,8 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.theme.VerdeSalud
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -102,7 +103,7 @@ fun EstadisticasScreen(
         item {
             Card(
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, BordeClinico),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -122,7 +123,7 @@ fun EstadisticasScreen(
                     LinearProgressIndicator(
                         progress = { avance },
                         modifier = Modifier.fillMaxWidth().height(8.dp),
-                        color = VerdeClinico,
+                        color = CianRuralitos,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                     CampoFecha(fecha, "Fecha de búsqueda") { mostrarCalendario = true }
@@ -162,7 +163,7 @@ fun EstadisticasScreen(
         items(fichasVisibles, key = { it.id }) { ficha ->
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onFichaSeleccionada(ficha) },
-                shape = RoundedCornerShape(15.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 border = BorderStroke(1.dp, BordeClinico),
                 elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -178,7 +179,7 @@ fun EstadisticasScreen(
                     Text(
                         ficha.estado,
                         color = when (ficha.estado) {
-                            "COMPLETA" -> VerdeClinico
+                            "COMPLETA" -> VerdeSalud
                             "ARCHIVADA" -> MoradoClinico
                             else -> NaranjaClinico
                         },
@@ -212,13 +213,13 @@ fun EstadisticasScreen(
 private fun GraficoEstadoFichas(resumen: ResumenFichas) {
     val total = resumen.total.coerceAtLeast(1)
     val partes = listOf(
-        Triple("Completas", resumen.completas, VerdeClinico),
+        Triple("Completas", resumen.completas, CianRuralitos),
         Triple("Borradores", resumen.borradores, NaranjaClinico),
         Triple("Archivadas", resumen.archivadas, MoradoClinico)
     )
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(21.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, BordeClinico)
     ) {
@@ -264,12 +265,12 @@ private fun TarjetasResumen(resumen: ResumenFichas) {
     val tarjetas = listOf(
         Triple("Total", resumen.total, AzulClinico),
         Triple("Borradores", resumen.borradores, NaranjaClinico),
-        Triple("Completas", resumen.completas, VerdeClinico),
+        Triple("Completas", resumen.completas, CianRuralitos),
         Triple("Archivadas", resumen.archivadas, MoradoClinico)
     )
     Card(
         modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        shape = RoundedCornerShape(21.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, BordeClinico),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

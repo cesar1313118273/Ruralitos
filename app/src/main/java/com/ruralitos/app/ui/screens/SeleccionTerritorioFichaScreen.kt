@@ -55,7 +55,7 @@ import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 
 private val FondoPantalla = Color(0xFFEFFBFD)
 private val FondoTarjeta = Color(0xFFFDFEFF)
@@ -136,7 +136,7 @@ fun SeleccionTerritorioFichaScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 10.dp)
                     .offset(y = (-14).dp),
-                shape = RoundedCornerShape(28.dp),
+                shape = RoundedCornerShape(24.dp),
                 color = FondoTarjeta,
                 shadowElevation = 2.dp
             ) {
@@ -232,7 +232,7 @@ fun SeleccionTerritorioFichaScreen(
                         territorios.isEmpty() -> MensajeEstadoRuralitos(
                             titulo = "Falta un barrio",
                             descripcion = "Agrégalo dentro del EAIS antes de crear la ficha.",
-                            color = VerdeClinico,
+                            color = CianRuralitos,
                             simbolo = "3"
                         )
                     }
@@ -277,7 +277,7 @@ private fun CabeceraPagina() {
             text = "NUEVA FICHA · PASO 1",
             color = AzulAccion,
             fontSize = 12.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             letterSpacing = 0.2.sp
         )
 
@@ -286,7 +286,7 @@ private fun CabeceraPagina() {
             color = AzulTitulo,
             fontSize = 30.sp,
             lineHeight = 34.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 4.dp)
         )
 
@@ -312,7 +312,7 @@ private fun InfoTerritorio() {
                         Color(0xFFEAF8FC)
                     )
                 ),
-                shape = RoundedCornerShape(20.dp)
+                shape = RoundedCornerShape(16.dp)
             )
             .padding(horizontal = 14.dp, vertical = 13.dp)
     ) {
@@ -337,7 +337,7 @@ private fun InfoTerritorio() {
                     color = AzulTitulo,
                     fontSize = 20.sp,
                     lineHeight = 24.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
@@ -359,7 +359,7 @@ private fun SeccionSelector(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         shadowElevation = 0.6.dp
     ) {
@@ -373,7 +373,7 @@ private fun SeccionSelector(
                 color = AzulTitulo,
                 fontSize = 17.sp,
                 lineHeight = 21.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 9.dp)
             )
 
@@ -477,7 +477,7 @@ private fun BotonPrincipal(
     Button(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 58.dp),
@@ -513,7 +513,7 @@ private fun BotonPrincipal(
             textAlign = TextAlign.Center,
             fontSize = 15.sp,
             lineHeight = 18.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.SemiBold
         )
 
         Spacer(Modifier.size(36.dp))
@@ -528,7 +528,7 @@ private fun BotonSecundario(
 ) {
     OutlinedButton(
         onClick = onClick,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(1.dp, Color(0xFF77C6EF)),
         modifier = Modifier
             .fillMaxWidth()
@@ -548,7 +548,7 @@ private fun BotonSecundario(
             text = texto,
             color = AzulAccion,
             fontSize = 16.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 12.dp)
         )
     }

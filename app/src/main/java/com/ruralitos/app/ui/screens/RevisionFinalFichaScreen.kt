@@ -77,7 +77,7 @@ import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import com.ruralitos.app.ui.theme.VerdeSuaveRuralitos
 import com.ruralitos.app.ui.theme.NaranjaSuaveRuralitos
 import com.ruralitos.app.ui.theme.BordeClinico
@@ -242,7 +242,7 @@ fun RevisionFinalFichaScreen(
             descripcion = "Toca un elemento pendiente para ir directamente a la sección que debes completar."
         ) {
             requisitos.forEach { requisito ->
-                val color = if (requisito.cumplido) VerdeClinico else NaranjaClinico
+                val color = if (requisito.cumplido) CianRuralitos else NaranjaClinico
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,7 +264,7 @@ fun RevisionFinalFichaScreen(
                             Text(
                                 if (requisito.cumplido) "✓" else "!",
                                 color = Color.White,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             )
                         }
@@ -320,7 +320,7 @@ fun RevisionFinalFichaScreen(
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(
                 1.dp,
-                (if (pendientes.isEmpty()) VerdeClinico else NaranjaClinico).copy(alpha = 0.45f)
+                (if (pendientes.isEmpty()) CianRuralitos else NaranjaClinico).copy(alpha = 0.45f)
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -328,8 +328,8 @@ fun RevisionFinalFichaScreen(
                 Text(
                     if (pendientes.isEmpty()) "✓ La ficha quedará finalizada"
                     else "La ficha se guardará como pendiente",
-                    color = if (pendientes.isEmpty()) VerdeClinico else NaranjaClinico,
-                    fontWeight = FontWeight.ExtraBold
+                    color = if (pendientes.isEmpty()) CianRuralitos else NaranjaClinico,
+                    fontWeight = FontWeight.SemiBold
                 )
                 if (pendientes.isNotEmpty()) {
                     Text(
@@ -353,7 +353,7 @@ fun RevisionFinalFichaScreen(
                         )
                         OpcionDescarga(
                             descargarExcel, { descargarExcel = it }, "Archivo Excel",
-                            "Plantilla oficial editable", R.drawable.ruralitos_icono_excel, VerdeClinico, Modifier.weight(1f)
+                            "Plantilla oficial editable", R.drawable.ruralitos_icono_excel, CianRuralitos, Modifier.weight(1f)
                         )
                     }
                 } else {
@@ -364,7 +364,7 @@ fun RevisionFinalFichaScreen(
                         )
                         OpcionDescarga(
                             descargarExcel, { descargarExcel = it }, "Archivo Excel",
-                            "Plantilla oficial editable", R.drawable.ruralitos_icono_excel, VerdeClinico
+                            "Plantilla oficial editable", R.drawable.ruralitos_icono_excel, CianRuralitos
                         )
                     }
                 }
@@ -408,7 +408,7 @@ fun RevisionFinalFichaScreen(
                     )
                     BotonPrincipalRuralitos(
                         "Finalizar ficha", finalizarFicha, Modifier.weight(1f),
-                        descripcionFinal, !procesando, VerdeClinico
+                        descripcionFinal, !procesando, CianRuralitos
                     )
                 }
             } else {
@@ -419,7 +419,7 @@ fun RevisionFinalFichaScreen(
                     )
                     BotonPrincipalRuralitos(
                         "Finalizar ficha", finalizarFicha,
-                        descripcion = descripcionFinal, enabled = !procesando, color = VerdeClinico
+                        descripcion = descripcionFinal, enabled = !procesando, color = CianRuralitos
                     )
                 }
             }
@@ -455,7 +455,7 @@ private fun OpcionDescarga(
                 modifier = Modifier.height(42.dp).padding(end = 2.dp)
             )
             Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                Text(titulo, fontWeight = FontWeight.ExtraBold)
+                Text(titulo, fontWeight = FontWeight.SemiBold)
                 Text(
                     descripcion,
                     style = MaterialTheme.typography.bodySmall,

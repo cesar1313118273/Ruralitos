@@ -70,7 +70,7 @@ import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import org.json.JSONObject
 import org.json.JSONArray
 import org.maplibre.android.MapLibre
@@ -334,12 +334,12 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("SEGUIMIENTO EXTRAMURAL", color = Color(0xFF087BEE),
+            Text("SEGUIMIENTO EXTRAMURAL", color = Color(0xFF1565C0),
                 fontWeight = FontWeight.Bold, fontSize = 12.sp)
             Text("Ruta de seguimiento", color = Color(0xFF071C4B),
-                fontWeight = FontWeight.ExtraBold, fontSize = 30.sp)
+                fontWeight = FontWeight.SemiBold, fontSize = 30.sp)
             Text(actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
-                ?: "Cargando ficha…", color = Color(0xFF63799C), fontSize = 16.sp)
+                ?: "Cargando ficha…", color = Color(0xFF5B7083), fontSize = 16.sp)
 
             if (actual?.latitud != null && actual.longitud != null) {
                 SeccionFormularioRuralitos(
@@ -349,7 +349,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     BoxWithConstraints(Modifier.fillMaxWidth()) {
                         val alturaMapa = if (maxWidth >= 700.dp) 600.dp else 520.dp
                         Card(Modifier.fillMaxWidth().height(alturaMapa),
-                            shape = RoundedCornerShape(18.dp),
+                            shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
                             Box(Modifier.fillMaxSize()) {
@@ -372,7 +372,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                     }
                                 }, modifier = Modifier.fillMaxSize())
                                 Surface(modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
-                                    shape = RoundedCornerShape(20.dp), color = Color.White,
+                                    shape = RoundedCornerShape(16.dp), color = Color.White,
                                     shadowElevation = 3.dp) {
                                     Text("GPS en vivo · Solo consulta", Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         color = AzulClinico, fontWeight = FontWeight.Bold, fontSize = 12.sp)
@@ -418,7 +418,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     }
                     else -> mensaje
                 }, color = if (!permisoUbicacion || mensaje.startsWith("No")) NaranjaClinico
-                    else Color(0xFF60748E), fontSize = 12.sp)
+                    else Color(0xFF5B7083), fontSize = 12.sp)
                 if (!permisoUbicacion) {
                     BotonSecundarioRuralitos(texto = "Permitir ubicación", onClick = {
                         solicitarPermiso.launch(arrayOf(
@@ -435,14 +435,14 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                         DatoCoordenada("Latitud", "%.7f".format(Locale.US, actual.latitud),
                             AzulClinico, Modifier.weight(1f))
                         DatoCoordenada("Longitud", "%.7f".format(Locale.US, actual.longitud),
-                            VerdeClinico, Modifier.weight(1f))
+                            CianRuralitos, Modifier.weight(1f))
                         DatoCoordenada("Altitud", actual.altitud?.let { "%.0f m".format(Locale.US, it) }
                             ?: "Sin dato", NaranjaClinico, Modifier.weight(1f))
                     }
                     Text(gps?.let {
                         "Inicio · Mi ubicación: ${"%.6f".format(Locale.US, it.latitude)}, ${"%.6f".format(Locale.US, it.longitude)}"
                     } ?: "Inicio · Esperando GPS", Modifier.padding(top = 12.dp),
-                        color = Color(0xFF60748E), fontSize = 12.sp)
+                        color = Color(0xFF5B7083), fontSize = 12.sp)
                 }
                 SeccionFormularioRuralitos(
                     titulo = "3. Indicaciones",
@@ -452,8 +452,8 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                         listOf("auto" to "Auto", "pedestrian" to "A pie", "bicycle" to "Bici")
                             .forEach { (valor, etiqueta) ->
                                 Surface(onClick = { modo = valor },
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = if (modo == valor) Color(0xFF087BEE) else Color.White,
+                                    shape = RoundedCornerShape(16.dp),
+                                    color = if (modo == valor) Color(0xFF1565C0) else Color.White,
                                     shadowElevation = 2.dp) {
                                     Text(etiqueta, Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                                         color = if (modo == valor) Color.White else AzulClinico,
@@ -463,12 +463,12 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     }
                     ruta?.instrucciones?.take(8)?.forEachIndexed { indice, instruccion ->
                         Text("${indice + 1}. $instruccion", Modifier.padding(top = 9.dp),
-                            color = Color(0xFF0B2D5B))
+                            color = Color(0xFF0A2A5E))
                     }
                     Text("Comprueba el estado real de los caminos antes de viajar.",
-                        Modifier.padding(top = 10.dp), color = Color(0xFF60748E), fontSize = 12.sp)
+                        Modifier.padding(top = 10.dp), color = Color(0xFF5B7083), fontSize = 12.sp)
                 }
-                BotonPrincipalRuralitos(texto = "Abrir navegación externa", color = VerdeClinico,
+                BotonPrincipalRuralitos(texto = "Abrir navegación externa", color = CianRuralitos,
                     onClick = {
                         val coordenadas = "${actual.latitud},${actual.longitud}"
                         val navegacion = Intent(Intent.ACTION_VIEW, Uri.parse("google.navigation:q=$coordenadas"))
@@ -480,7 +480,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     })
             } else {
                 Text("Esta ficha todavía no tiene coordenadas. Abre la ficha para guardar la vivienda en el mapa.",
-                    color = Color(0xFF60748E))
+                    color = Color(0xFF5B7083))
             }
             BotonSecundarioRuralitos(texto = "Abrir ficha familiar", onClick = onAbrirFicha,
                 modifier = Modifier.padding(bottom = 24.dp))

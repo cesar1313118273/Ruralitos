@@ -62,9 +62,10 @@ import com.ruralitos.app.ui.theme.FondoRuralitosWeb
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
 import com.ruralitos.app.ui.theme.BordeClinico
+import com.ruralitos.app.ui.theme.BordeCampo
 import com.ruralitos.app.ui.theme.RuralitosElevation
 import com.ruralitos.app.ui.theme.RuralitosRadius
 import com.ruralitos.app.ui.theme.RuralitosSpacing
@@ -128,26 +129,30 @@ fun EncabezadoRuralitos(
     color: Color = MaterialTheme.colorScheme.primary,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier.fillMaxWidth()) {
-        Image(
-            painter = painterResource(R.drawable.ruralitos_paisaje_cabecera),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(82.dp)
-                .clip(RoundedCornerShape(RuralitosRadius.card)),
-            contentScale = ContentScale.Crop
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(RuralitosRadius.card))
+            .background(Color.White)
+            .border(1.dp, BordeClinico, RoundedCornerShape(RuralitosRadius.card))
+            .padding(RuralitosSpacing.base),
+        horizontalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
+    ) {
+        Box(
+            Modifier
+                .width(4.dp)
+                .heightIn(min = 36.dp)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(4.dp))
+                .background(color)
         )
-        Column(
-            Modifier.fillMaxWidth()
-                .padding(horizontal = RuralitosSpacing.xs, vertical = RuralitosSpacing.sm)
-        ) {
+        Column(Modifier.weight(1f)) {
             paso?.let {
                 Text(
-                    text = it.uppercase(),
+                    text = it,
                     style = MaterialTheme.typography.labelMedium,
                     color = color,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1
                 )
             }
@@ -186,7 +191,7 @@ fun SeccionFormularioRuralitos(
                 titulo,
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
             descripcion?.let {
                 Text(
@@ -229,11 +234,11 @@ fun SubmenuRuralitos(
                 label = {
                     Text(
                         opcion,
-                        fontWeight = if (opcion == seleccionada) FontWeight.ExtraBold else FontWeight.SemiBold
+                        fontWeight = if (opcion == seleccionada) FontWeight.SemiBold else FontWeight.Medium
                     )
                 },
                 modifier = Modifier.heightIn(min = 44.dp),
-                shape = RoundedCornerShape(RuralitosRadius.input),
+                shape = RoundedCornerShape(50),
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = Color.Transparent,
                     selectedContainerColor = color,
@@ -274,7 +279,7 @@ fun BotonPrincipalRuralitos(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 52.dp)
+            .heightIn(min = 48.dp)
             .alpha(if (enabled) 1f else 0.52f)
             .graphicsLayer {
                 scaleX = escala
@@ -328,7 +333,7 @@ fun BotonSecundarioRuralitos(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 50.dp)
+            .heightIn(min = 48.dp)
             .alpha(if (enabled) 1f else 0.52f)
             .graphicsLayer {
                 scaleX = escala
@@ -336,7 +341,7 @@ fun BotonSecundarioRuralitos(
             }
             .clip(forma)
             .background(colorFondo)
-            .border(1.dp, MaterialTheme.colorScheme.outline, forma)
+            .border(1.dp, BordeCampo, forma)
             .clickable(
                 interactionSource = interacciones,
                 indication = indicacion,
@@ -350,7 +355,7 @@ fun BotonSecundarioRuralitos(
         Text(
             limpiarTextoInterfaz(texto),
             style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
+            color = AzulClinicoOscuro,
             textAlign = TextAlign.Center
         )
     }
@@ -388,7 +393,7 @@ fun MensajeEstadoRuralitos(
                 Text(
                     simbolo,
                     color = color,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -396,7 +401,7 @@ fun MensajeEstadoRuralitos(
                 Text(
                     titulo,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     descripcion,
@@ -460,8 +465,8 @@ fun BotonAccionRuralitos(
             .heightIn(min = 43.dp)
             .alpha(if (enabled) 1f else 0.48f)
             .clip(forma)
-            .background(color.copy(alpha = 0.07f))
-            .border(1.dp, color.copy(alpha = 0.42f), forma)
+            .background(Color.White)
+            .border(1.dp, color.copy(alpha = 0.45f), forma)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
@@ -471,7 +476,7 @@ fun BotonAccionRuralitos(
             color = color,
             style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -491,7 +496,7 @@ fun TarjetaRegistroRuralitos(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(RuralitosRadius.card),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = RuralitosElevation.card),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         border = BorderStroke(1.dp, BordeClinico)
     ) {
         Column(
@@ -505,14 +510,14 @@ fun TarjetaRegistroRuralitos(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .background(color.copy(alpha = 0.11f), RoundedCornerShape(12.dp)),
+                        .size(36.dp)
+                        .background(color.copy(alpha = 0.10f), RoundedCornerShape(10.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         simbolo,
                         color = color,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -520,7 +525,7 @@ fun TarjetaRegistroRuralitos(
                     Text(
                         titulo,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                     Text(
                         descripcion,

@@ -82,7 +82,7 @@ import java.util.Date
 import java.util.Locale
 
 private val FondoNotasDiarias = Color(0xFFF7FBFE)
-private val AzulTituloNotas = Color(0xFF08285D)
+private val AzulTituloNotas = Color(0xFF0A2A5E)
 private val AzulEtiquetaNotas = Color(0xFF1678D2)
 private val GrisTextoNotas = Color(0xFF667B99)
 private val BordeCampoNotas = Color(0xFFC4DFF1)
@@ -241,7 +241,7 @@ fun NotasDiariasScreen(
                     text = "SEGUIMIENTO",
                     color = AzulEtiquetaNotas,
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     letterSpacing = 2.sp
                 )
 
@@ -250,7 +250,7 @@ fun NotasDiariasScreen(
                     color = AzulTituloNotas,
                     fontSize = 32.sp,
                     lineHeight = 36.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 4.dp)
                 )
 
@@ -315,7 +315,7 @@ fun NotasDiariasScreen(
                     text = "Personas · ${visibles.size}",
                     color = AzulEtiquetaNotas,
                     fontSize = 19.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(
                         start = 18.dp,
                         end = 18.dp,
@@ -499,7 +499,7 @@ private fun CampoBusquedaNotas(
             )
         },
         singleLine = true,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 18.dp)
@@ -523,7 +523,7 @@ private fun CampoFechaNotas(
 ) {
     Surface(
         modifier = modifier.heightIn(min = 66.dp).clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeCampoNotas)
     ) {
@@ -570,7 +570,7 @@ private fun SelectorFechaNotasDialog(
         onDismissRequest = onCerrar,
         shape = RoundedCornerShape(24.dp),
         containerColor = Color.White,
-        title = { Text(titulo, color = AzulTituloNotas, fontWeight = FontWeight.ExtraBold) },
+        title = { Text(titulo, color = AzulTituloNotas, fontWeight = FontWeight.SemiBold) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -683,7 +683,7 @@ private fun TarjetaSinNotas(
                     color = AzulTituloNotas,
                     fontSize = 24.sp,
                     lineHeight = 28.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
@@ -708,7 +708,7 @@ private fun TarjetaNotaDiaria(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 18.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
         ),
@@ -729,7 +729,7 @@ private fun TarjetaNotaDiaria(
                 text = persona.apellidosNombres.ifBlank { "Persona sin nombre" },
                 color = AzulTituloNotas,
                 fontSize = 17.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -764,7 +764,7 @@ private fun TarjetaNotaDiaria(
                 )
                 Button(
                     onClick = onClick,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = VerdeBotonNotas)
                 ) {
                     Text(if (cantidadNotas == 0) "Agregar" else "Ver")
@@ -814,7 +814,7 @@ private fun DialogoNotaDiaria(
         title = {
             Column {
                 Text(persona.apellidosNombres.ifBlank { "Persona sin nombre" },
-                    color = AzulTituloNotas, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+                    color = AzulTituloNotas, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
                 Text("Cédula: ${persona.cedula.ifBlank { "Sin registrar" }}",
                     color = GrisTextoNotas, fontSize = 13.sp)
             }
@@ -844,7 +844,7 @@ private fun DialogoNotaDiaria(
                     label = { Text("Nota importante") },
                     placeholder = { Text("Escribe la nota de esta persona") },
                     modifier = Modifier.fillMaxWidth().heightIn(min = 130.dp),
-                    shape = RoundedCornerShape(18.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AzulEtiquetaNotas,
                         unfocusedBorderColor = BordeCampoNotas
@@ -894,7 +894,7 @@ private fun BotonVolverNotas(
             .fillMaxWidth()
             .padding(horizontal = 18.dp)
             .heightIn(min = 60.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             width = 1.5.dp,
             color = VerdeBotonNotas
@@ -917,7 +917,7 @@ private fun BotonVolverNotas(
             text = "Volver al inicio",
             color = VerdeBotonNotas,
             fontSize = 17.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(start = 12.dp)
         )
     }

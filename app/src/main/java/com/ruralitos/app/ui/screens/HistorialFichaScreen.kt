@@ -26,7 +26,8 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.theme.VerdeSalud
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -91,7 +92,7 @@ fun HistorialFichaScreen(
                 Text(
                     "Responsable: ${evento.usuarioNombre.ifBlank { "Sin identificar" }}",
                     color = color,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 if (evento.detalle.isNotBlank()) {
                     Text(
@@ -139,7 +140,7 @@ private fun simboloEvento(accion: String): String = when {
 
 private fun colorEvento(accion: String): Color = when {
     accion.contains("ELIMIN") -> RojoClinico
-    accion.contains("COMPLETA") || accion.contains("REACTIV") -> VerdeClinico
+    accion.contains("COMPLETA") || accion.contains("REACTIV") -> VerdeSalud
     accion.contains("ARCHIV") -> NaranjaClinico
     accion.contains("PDF") || accion.contains("EXCEL") -> MoradoClinico
     else -> AzulClinico

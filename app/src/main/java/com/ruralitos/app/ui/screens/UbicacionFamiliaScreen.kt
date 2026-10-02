@@ -19,7 +19,7 @@ import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 
 data class UbicacionFamiliaForm(
     val sector: String,
@@ -59,7 +59,7 @@ fun UbicacionFamiliaScreen(
             titulo = "Dirección y vivienda",
             descripcion = "Completa cómo llegar al hogar. La latitud, longitud y altitud se obtienen únicamente en la sección Croquis, donde puedes mover el punto del mapa.",
             paso = "Sección 2",
-            color = VerdeClinico
+            color = CianRuralitos
         )
 
         SeccionFormularioRuralitos(
@@ -110,7 +110,7 @@ fun UbicacionFamiliaScreen(
                     )
                 )
             },
-            color = VerdeClinico
+            color = CianRuralitos
         )
         BotonSecundarioRuralitos(
             texto = "Regresar al panel de la ficha",

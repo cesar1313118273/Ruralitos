@@ -42,7 +42,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
 import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.TextoSecundario
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 
 @Composable
 fun LoginClinicoScreen(
@@ -105,7 +105,7 @@ private fun BienvenidaClinica(modifier: Modifier, mostrarDetalles: Boolean) {
         modifier = modifier
             .background(
                 com.ruralitos.app.ui.theme.VerdeSuaveRuralitos,
-                RoundedCornerShape(26.dp)
+                RoundedCornerShape(24.dp)
             )
             .padding(if (mostrarDetalles) 38.dp else 20.dp),
         contentAlignment = Alignment.Center
@@ -116,7 +116,7 @@ private fun BienvenidaClinica(modifier: Modifier, mostrarDetalles: Boolean) {
                 "Ruralitos",
                 color = AzulClinicoOscuro,
                 fontSize = if (mostrarDetalles) 40.sp else 27.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -151,7 +151,7 @@ private fun Caracteristica(simbolo: String, texto: String) {
         Box(
             modifier = Modifier.size(34.dp).background(Color.White, RoundedCornerShape(10.dp)),
             contentAlignment = Alignment.Center
-        ) { Text(simbolo, color = VerdeClinico, fontWeight = FontWeight.Bold) }
+        ) { Text(simbolo, color = CianRuralitos, fontWeight = FontWeight.Bold) }
         Text(texto, color = AzulClinicoOscuro, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp))
     }
 }
@@ -171,7 +171,7 @@ private fun TarjetaLogin(
 
     Card(
         modifier = modifier.fillMaxWidth().widthIn(max = 530.dp),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, BordeClinico),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
@@ -182,7 +182,7 @@ private fun TarjetaLogin(
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.headlineMedium,
                 color = AzulClinicoOscuro,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
             Text(

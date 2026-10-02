@@ -40,7 +40,7 @@ import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -318,7 +318,7 @@ fun FormularioContaminacionScreen(
         BotonPrincipalRuralitos(
             texto = if (item == null) "Guardar informe ambiental" else "Guardar cambios del informe",
             descripcion = "Validar y regresar al listado de contaminación",
-            color = VerdeClinico,
+            color = CianRuralitos,
             onClick = {
                 if (descripcion.isBlank()) {
                     error = "Describe el tipo de contaminación."

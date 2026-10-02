@@ -61,7 +61,7 @@ import java.util.Locale
 import java.util.TimeZone
 
 private val FondoFichaDatos = Color(0xFFF2FAFD)
-private val AzulTituloFicha = Color(0xFF08285D)
+private val AzulTituloFicha = Color(0xFF0A2A5E)
 private val AzulAccionFicha = Color(0xFF187CD1)
 private val GrisTextoFicha = Color(0xFF6C7F9A)
 private val VerdeAccionFicha = Color(0xFF0BAF8E)
@@ -119,7 +119,7 @@ fun DatosFamiliaScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 10.dp)
                 .offset(y = (-16).dp),
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(24.dp),
             color = Color.White,
             shadowElevation = 2.dp
         ) {
@@ -227,7 +227,7 @@ private fun CabeceraDatosFamilia() {
             text = "INICIO DE LA FICHA · SECCIÓN 1",
             color = AzulAccionFicha,
             fontSize = 12.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.SemiBold
         )
 
         Text(
@@ -235,7 +235,7 @@ private fun CabeceraDatosFamilia() {
             color = AzulTituloFicha,
             fontSize = 29.sp,
             lineHeight = 33.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(top = 5.dp)
         )
 
@@ -274,7 +274,7 @@ private fun TituloSeccionConIcono(
             color = AzulTituloFicha,
             fontSize = 20.sp,
             lineHeight = 24.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.SemiBold
         )
     }
 }
@@ -285,7 +285,7 @@ fun ResumenUnidadOperativa(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color(0xFFF8FCFF),
         border = BorderStroke(1.dp, Color(0xFFC7E2F4)),
         shadowElevation = 0.5.dp
@@ -315,7 +315,7 @@ fun ResumenUnidadOperativa(
                     text = establecimiento.nombreCentroSalud,
                     color = AzulTituloFicha,
                     fontSize = 19.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
@@ -436,14 +436,14 @@ private fun TarjetaNumeroFicha(
                 text = "NÚMERO DE FICHA",
                 color = AzulAccionFicha,
                 fontSize = 12.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(
                 text = numeroFichaFamiliar,
                 color = AzulTituloFicha,
                 fontSize = 25.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 2.dp)
             )
         }
@@ -495,7 +495,7 @@ fun CampoFecha(
                     text = valor,
                     color = AzulTituloFicha,
                     fontSize = 19.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -504,7 +504,7 @@ fun CampoFecha(
                 text = "⌄",
                 color = AzulAccionFicha,
                 fontSize = 23.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
@@ -519,7 +519,7 @@ private fun BotonGuardarYContinuar(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 60.dp),
-        shape = RoundedCornerShape(19.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = VerdeAccionFicha,
             contentColor = Color.White
@@ -559,7 +559,7 @@ private fun BotonGuardarYContinuar(
             color = Color.White,
             fontSize = 14.sp,
             lineHeight = 17.sp,
-            fontWeight = FontWeight.ExtraBold
+            fontWeight = FontWeight.SemiBold
         )
 
         // Compensa el círculo izquierdo para que el texto quede centrado.
@@ -578,7 +578,7 @@ private fun BotonVolverCentroSalud(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 58.dp),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             width = 1.5.dp,
             color = VerdeAccionFicha
@@ -592,7 +592,7 @@ private fun BotonVolverCentroSalud(
             text = "Volver a seleccionar el centro de salud",
             color = VerdeAccionFicha,
             fontSize = 15.sp,
-            fontWeight = FontWeight.ExtraBold,
+            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
         )
     }

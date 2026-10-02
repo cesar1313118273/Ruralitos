@@ -52,7 +52,7 @@ import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.SuperficieClinica
 import com.ruralitos.app.ui.theme.TextoClinico
 import com.ruralitos.app.ui.theme.TextoSecundario
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 
 @Composable
 internal fun MarcoAccesoRuralitos(
@@ -138,7 +138,7 @@ private fun MarcaAccesoRuralitos(
                 text = "Ruralitos",
                 style = if (compacta) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.displaySmall,
                 color = TextoClinico,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center
             )
             Text(
@@ -160,7 +160,7 @@ private fun TarjetaAccesoRuralitos(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(26.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = SuperficieClinica),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         border = androidx.compose.foundation.BorderStroke(1.dp, BordeClinico)
@@ -176,7 +176,7 @@ private fun TarjetaAccesoRuralitos(
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.headlineSmall,
                 color = TextoClinico,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center
             )
             Text(
@@ -198,7 +198,7 @@ internal fun BotonAccesoPrincipal(
     texto: String,
     onClick: () -> Unit,
     enabled: Boolean,
-    color: Color = VerdeClinico,
+    color: Color = CianRuralitos,
     descripcion: String? = null,
     modifier: Modifier = Modifier
 ) {
@@ -239,7 +239,7 @@ internal fun OpcionAccesoRuralitos(
     enabled: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val forma = RoundedCornerShape(18.dp)
+    val forma = RoundedCornerShape(16.dp)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -253,14 +253,14 @@ internal fun OpcionAccesoRuralitos(
     ) {
         Surface(
             modifier = Modifier.size(44.dp),
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(12.dp),
             color = color.copy(alpha = 0.10f)
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = simbolo,
                     color = color,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center
                 )
             }
@@ -351,7 +351,7 @@ internal fun TituloSeccionAcceso(
                 Text(
                     text = numero,
                     color = Color.White,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -377,7 +377,7 @@ internal fun TituloSeccionAcceso(
 }
 
 internal val ColorAccesoAzul = AzulClinico
-internal val ColorAccesoVerde = VerdeClinico
+internal val ColorAccesoVerde = CianRuralitos
 internal val ColorAccesoNaranja = NaranjaClinico
 internal val ColorAccesoMorado = MoradoClinico
 internal val ColorBordeAcceso = BordeClinico

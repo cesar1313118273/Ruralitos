@@ -46,7 +46,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -152,7 +152,7 @@ fun GestionRiesgoScreen(
             BotonPrincipalRuralitos(
                 texto = "Agregar nuevo seguimiento",
                 descripcion = "Crear compromisos y programar su evaluación",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 onClick = {
                     editando = null
                     mostrandoFormulario = true
@@ -188,7 +188,7 @@ fun GestionRiesgoScreen(
                 Text(
                     "Estado: ${nombreCumplimiento(item.cumplimiento)}",
                     color = color,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 if (item.compromisoFamilia.isNotBlank()) {
                     Text(
@@ -307,7 +307,7 @@ private fun FormularioGestionRiesgoScreen(
             CampoFecha(fechaEvaluacion, "Fecha de evaluación") { calendario = "evaluacion" }
             Text(
                 "Resultado del seguimiento",
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)
             )
             Row(
@@ -358,7 +358,7 @@ private fun FormularioGestionRiesgoScreen(
         BotonPrincipalRuralitos(
             texto = if (item == null) "Guardar nuevo seguimiento" else "Guardar cambios del seguimiento",
             descripcion = "Validar el plan y regresar al historial",
-            color = VerdeClinico,
+            color = CianRuralitos,
             onClick = {
                 if (compromisoFamilia.isBlank() && compromisoEquipo.isBlank()) {
                     error = "Registra al menos un compromiso de la familia o del equipo de salud."
@@ -424,7 +424,7 @@ private fun nombreCumplimiento(valor: String): String = when (valor) {
 }
 
 private fun colorCumplimiento(valor: String): Color = when (valor) {
-    "SI_CUMPLE" -> VerdeClinico
+    "SI_CUMPLE" -> CianRuralitos
     "NO_CUMPLE" -> RojoClinico
     "PARCIAL" -> NaranjaClinico
     "PENDIENTE" -> AzulClinico

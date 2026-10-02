@@ -51,7 +51,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
 import com.ruralitos.app.ui.theme.BordeClinico
 import kotlinx.coroutines.Dispatchers
@@ -157,7 +157,7 @@ fun RiesgoFamiliarScreen(
             MensajeEstadoRuralitos(
                 titulo = "${calificaciones.size} evaluación(es) guardada(s)",
                 descripcion = "El historial se conserva y las cuatro evaluaciones más recientes se exportan a la ficha.",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 simbolo = calificaciones.size.toString()
             )
         }
@@ -165,7 +165,7 @@ fun RiesgoFamiliarScreen(
             BotonPrincipalRuralitos(
                 texto = "Crear nueva calificación",
                 descripcion = "Responder los 18 componentes del instrumento familiar",
-                color = VerdeClinico,
+                color = CianRuralitos,
                 onClick = {
                     editando = null
                     valoresIniciales = List(18) { -1 }
@@ -209,7 +209,7 @@ fun RiesgoFamiliarScreen(
                 Text(
                     "Puntaje calculado: ${item.total}",
                     color = color,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     "Responsable: ${item.responsable.ifBlank { "Sin registrar" }}",
@@ -351,7 +351,7 @@ private fun FormularioRiesgoScreen(
             } else {
                 "Revisa los bloques y selecciona una opción en cada componente"
             },
-            color = VerdeClinico,
+            color = CianRuralitos,
             enabled = seleccionCompleta,
             onClick = {
                 onGuardar(
@@ -410,9 +410,9 @@ private fun PreguntaRiesgo(
             Surface(
                 onClick = { valores[index] = opcion.valor },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = if (seleccionada) VerdeClinico.copy(alpha = 0.08f) else Color.White,
-                border = BorderStroke(1.dp, if (seleccionada) VerdeClinico else BordeClinico)
+                shape = RoundedCornerShape(16.dp),
+                color = if (seleccionada) CianRuralitos.copy(alpha = 0.08f) else Color.White,
+                border = BorderStroke(1.dp, if (seleccionada) CianRuralitos else BordeClinico)
             ) {
                 Row(Modifier.fillMaxWidth().padding(12.dp)) {
                     RadioButton(selected = seleccionada, onClick = null)
@@ -443,7 +443,7 @@ private fun nombreNivelRiesgo(nivel: String): String = when (nivel) {
 }
 
 private fun colorNivelRiesgo(nivel: String): Color = when (nivel) {
-    "SIN_RIESGO" -> VerdeClinico
+    "SIN_RIESGO" -> CianRuralitos
     "BAJO" -> AzulClinico
     "MEDIO" -> NaranjaClinico
     "ALTO" -> RojoClinico

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.FondoClinico
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
@@ -78,7 +79,7 @@ import androidx.compose.ui.unit.dp
 import com.ruralitos.app.data.local.entity.UsuarioEntity
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -143,15 +144,7 @@ fun CredencialesProfesionalesScreen(
 Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFDDF4FF),
-                        Color(0xFFF5FBFF),
-                        Color(0xFFEAFBF8)
-                    )
-                )
-            )
+            .background(FondoClinico)
             .formularioSeguro()
     ) {
         FondoIdentidadProfesional(
@@ -185,7 +178,7 @@ Box(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White.copy(alpha = 0.97f),
-                    shape = RoundedCornerShape(30.dp),
+                    shape = RoundedCornerShape(24.dp),
                     shadowElevation = 5.dp,
                     border = BorderStroke(
                         1.dp,
@@ -240,7 +233,7 @@ Box(
                             Text(
                                 text = "Firma dentro del recuadro",
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.SemiBold,
                                 color = AzulMarca,
                                 modifier = Modifier.padding(
                                     top = 18.dp,
@@ -254,14 +247,14 @@ Box(
                                     .aspectRatio(3f)
                                     .background(
                                         Color(0xFFFBFDFF),
-                                        RoundedCornerShape(22.dp)
+                                        RoundedCornerShape(16.dp)
                                     )
                                     .border(
                                         width = 1.5.dp,
                                         color = AzulMarca.copy(alpha = 0.30f),
-                                        shape = RoundedCornerShape(22.dp)
+                                        shape = RoundedCornerShape(16.dp)
                                     )
-                                    .clip(RoundedCornerShape(22.dp))
+                                    .clip(RoundedCornerShape(16.dp))
                                     .onSizeChanged {
                                         tamanoLienzo = it
                                     }
@@ -370,7 +363,7 @@ Box(
                                         .fillMaxWidth()
                                         .padding(top = 16.dp)
                                         .aspectRatio(3f)
-                                        .clip(RoundedCornerShape(22.dp))
+                                        .clip(RoundedCornerShape(16.dp))
                                         .fondoCuadriculaTransparente()
                                 )
 
@@ -378,7 +371,7 @@ Box(
                                     text = "Control para quitar el fondo",
                                     style =
                                         MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    fontWeight = FontWeight.SemiBold,
                                     color = AzulMarca,
                                     modifier = Modifier.padding(top = 16.dp)
                                 )
@@ -421,7 +414,7 @@ Box(
                                     style =
                                         MaterialTheme.typography.bodySmall,
                                     fontWeight = FontWeight.SemiBold,
-                                    color = VerdeClinico,
+                                    color = CianRuralitos,
                                     modifier = Modifier.padding(top = 6.dp)
                                 )
                             } ?: MensajeEstadoRuralitos(
@@ -633,7 +626,7 @@ private fun CabeceraIdentidadProfesional() {
                 text = "MI CUENTA",
                 color = AzulMarca,
                 fontSize = 14.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 letterSpacing = 0.5.sp
             )
 
@@ -641,7 +634,7 @@ private fun CabeceraIdentidadProfesional() {
                 text = "Identidad profesional",
                 color = AzulMarcaOscuro,
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(top = 5.dp)
             )
 
@@ -664,7 +657,7 @@ private fun TarjetaCodigoProfesional(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(24.dp),
         shadowElevation = 5.dp,
         border = BorderStroke(
             1.dp,
@@ -696,7 +689,7 @@ private fun TarjetaCodigoProfesional(
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AzulMarca,
                     unfocusedBorderColor =
@@ -735,7 +728,7 @@ private fun EncabezadoTarjetaCredencial(
                     text = simbolo,
                     color = color,
                     fontSize = 23.sp,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
             }
         }
@@ -749,7 +742,7 @@ private fun EncabezadoTarjetaCredencial(
                 text = titulo,
                 color = AzulMarcaOscuro,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(
@@ -778,7 +771,7 @@ private fun SelectorModoFirma(
         } else {
             Color.White
         },
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.3.dp,
             if (seleccionado) {
@@ -817,7 +810,7 @@ private fun SelectorModoFirma(
                     AzulMarca
                 },
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 7.dp)
             )
         }
@@ -831,10 +824,10 @@ private fun EstadoFirmaProtegida(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color(0xFFE5FAF4),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.dp,
-            VerdeClinico.copy(alpha = 0.30f)
+            CianRuralitos.copy(alpha = 0.30f)
         )
     ) {
         Row(
@@ -845,8 +838,8 @@ private fun EstadoFirmaProtegida(
         ) {
             Surface(
                 modifier = Modifier.size(48.dp),
-                color = VerdeClinico,
-                shape = RoundedCornerShape(15.dp)
+                color = CianRuralitos,
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Box(
                     contentAlignment = Alignment.Center
@@ -855,7 +848,7 @@ private fun EstadoFirmaProtegida(
                         text = "✓",
                         color = Color.White,
                         fontSize = 25.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
             }
@@ -869,7 +862,7 @@ private fun EstadoFirmaProtegida(
                     text = "Firma actual protegida",
                     color = AzulMarcaOscuro,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.ExtraBold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
@@ -903,7 +896,7 @@ private fun BotonPrincipalAzul(
         } else {
             AzulMarca.copy(alpha = 0.45f)
         },
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = if (enabled) {
             5.dp
         } else {
@@ -919,14 +912,14 @@ private fun BotonPrincipalAzul(
                 text = simbolo,
                 color = Color.White,
                 fontSize = 23.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(
                 text = texto,
                 color = Color.White,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 10.dp)
             )
         }
@@ -948,7 +941,7 @@ private fun BotonContornoAzul(
             .fillMaxWidth()
             .height(58.dp),
         color = Color.White.copy(alpha = 0.94f),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.4.dp,
             if (enabled) {
@@ -971,7 +964,7 @@ private fun BotonContornoAzul(
                     AzulMarca.copy(alpha = 0.35f)
                 },
                 fontSize = 23.sp,
-                fontWeight = FontWeight.ExtraBold
+                fontWeight = FontWeight.SemiBold
             )
 
             Text(
@@ -982,7 +975,7 @@ private fun BotonContornoAzul(
                     AzulMarca.copy(alpha = 0.35f)
                 },
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(start = 10.dp)
             )
         }

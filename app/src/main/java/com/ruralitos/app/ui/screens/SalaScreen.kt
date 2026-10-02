@@ -52,7 +52,7 @@ import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
 import com.ruralitos.app.ui.theme.RojoClinico
-import com.ruralitos.app.ui.theme.VerdeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -288,13 +288,13 @@ fun SalaScreen(
                         text = seccion.etiqueta.uppercase(),
                         color = MoradoClinico,
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.ExtraBold
+                        fontWeight = FontWeight.SemiBold
                     )
 
                     Text(
                         text = "Mis Salas",
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
@@ -365,7 +365,7 @@ fun SalaScreen(
                                             it.canton,
                                             "Permiso: ${it.permiso.lowercase()}"
                                         ).filter(String::isNotBlank).joinToString(" · "),
-                                        color = VerdeClinico,
+                                        color = CianRuralitos,
                                         simbolo = "S",
                                         modifier = Modifier.padding(top = 8.dp)
                                     )
@@ -378,7 +378,7 @@ fun SalaScreen(
                                 titulo = "EAIS del centro",
                                 descripcion = "Selecciona un equipo para ver y administrar sus barrios.",
                                 simbolo = "E",
-                                color = VerdeClinico,
+                                color = CianRuralitos,
                                 abierto = eaisAbierto,
                                 onCambiar = { eaisAbierto = !eaisAbierto }
                             ) {
@@ -398,8 +398,8 @@ fun SalaScreen(
                                                 )
                                             },
                                             colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = VerdeClinico.copy(alpha = 0.13f),
-                                                selectedLabelColor = VerdeClinico
+                                                selectedContainerColor = CianRuralitos.copy(alpha = 0.13f),
+                                                selectedLabelColor = CianRuralitos
                                             )
                                         )
                                     }
@@ -439,7 +439,7 @@ fun SalaScreen(
                                         },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                         singleLine = true,
-                                        shape = RoundedCornerShape(18.dp),
+                                        shape = RoundedCornerShape(16.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = 8.dp)
@@ -488,7 +488,7 @@ fun SalaScreen(
                                             }
                                         },
                                         enabled = !procesando && numeroEais.toIntOrNull() != null,
-                                        color = VerdeClinico,
+                                        color = CianRuralitos,
                                         modifier = Modifier.padding(top = 8.dp)
                                     )
 
@@ -590,7 +590,7 @@ fun SalaScreen(
                                             )
                                         },
                                         singleLine = true,
-                                        shape = RoundedCornerShape(18.dp),
+                                        shape = RoundedCornerShape(16.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = 8.dp)
@@ -654,7 +654,7 @@ fun SalaScreen(
                                         color = if (territorioEditandoId == null) {
                                             NaranjaClinico
                                         } else {
-                                            VerdeClinico
+                                            CianRuralitos
                                         },
                                         modifier = Modifier.padding(top = 8.dp)
                                     )
@@ -754,7 +754,7 @@ fun SalaScreen(
                                         Text("Correo autorizado (opcional)")
                                     },
                                     singleLine = true,
-                                    shape = RoundedCornerShape(18.dp),
+                                    shape = RoundedCornerShape(16.dp),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 6.dp)
@@ -826,7 +826,7 @@ fun SalaScreen(
                                         )
                                     },
                                     singleLine = true,
-                                    shape = RoundedCornerShape(18.dp),
+                                    shape = RoundedCornerShape(16.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
@@ -866,7 +866,7 @@ fun SalaScreen(
                             color = if (
                                 it.contains("correctamente", true)
                             ) {
-                                VerdeClinico
+                                CianRuralitos
                             } else {
                                 NaranjaClinico
                             },
@@ -900,7 +900,7 @@ private fun TabsSalaModernas(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 3.dp,
         border = BorderStroke(
             1.dp,
@@ -928,7 +928,7 @@ private fun TabsSalaModernas(
                     } else {
                         Color.Transparent
                     },
-                    shape = RoundedCornerShape(18.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -987,7 +987,7 @@ private fun PanelDesplegableSala(
                 Surface(
                     modifier = Modifier.size(46.dp),
                     color = color.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(15.dp)
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center
@@ -996,7 +996,7 @@ private fun PanelDesplegableSala(
                             text = simbolo,
                             color = color,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -1009,7 +1009,7 @@ private fun PanelDesplegableSala(
                     Text(
                         text = titulo,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
@@ -1033,7 +1033,7 @@ private fun PanelDesplegableSala(
                             text = if (abierto) "⌃" else "⌄",
                             color = color,
                             fontSize = 18.sp,
-                            fontWeight = FontWeight.ExtraBold
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }

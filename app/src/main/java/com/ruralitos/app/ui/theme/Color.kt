@@ -1,24 +1,37 @@
-﻿package com.ruralitos.app.ui.theme
+package com.ruralitos.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Identidad única Ruralitos: azul institucional, turquesa y verde salud.
-val AzulClinico = Color(0xFF087BE2)
-val AzulClinicoOscuro = Color(0xFF0B2859)
-val VerdeClinico = Color(0xFF00A987)
-val VerdeClinicoOscuro = Color(0xFF007E68)
-val MoradoClinico = Color(0xFF587CC8)
+// Identidad Ruralitos tomada del logo: cian, azul profundo/río y verde hoja.
+
+// Primario (cuerpo de la "R")
+val CianRuralitos = Color(0xFF0889A0)
+val CianRuralitosOscuro = Color(0xFF066B7E)
+val CianSuave = Color(0xFFE3F4F7)
+
+// Azules
+val AzulClinico = Color(0xFF1565C0)
+val AzulClinicoOscuro = Color(0xFF0A2A5E)
+val AzulSuaveRuralitos = Color(0xFFE8EFFA)
+val MoradoClinico = Color(0xFF4F7FCF)
+
+// Verde hoja: salud, éxito y estados completos
+val VerdeSalud = Color(0xFF3A7F1F)
+val VerdeSuaveRuralitos = Color(0xFFE9F5DF)
+
+// Estados
 val NaranjaClinico = Color(0xFFF29424)
-val RojoClinico = Color(0xFFE54854)
-val FondoClinico = Color(0xFFF4F9FC)
-val FondoClinicoVerde = Color(0xFFE9F8F3)
+val NaranjaSuaveRuralitos = Color(0xFFFFF1DE)
+val RojoClinico = Color(0xFFD93F4C)
+
+// Superficies y texto
+val FondoClinico = Color(0xFFF6F9FB)
+val FondoClinicoVerde = CianSuave
 val SuperficieClinica = Color(0xFFFFFFFF)
 val TextoClinico = AzulClinicoOscuro
-val TextoSecundario = Color(0xFF5C7190)
-val BordeClinico = Color(0xFFD9E8F4)
+val TextoSecundario = Color(0xFF5B7083)
+val BordeClinico = Color(0xFFE2ECF1)
+val BordeCampo = Color(0xFFCFDDE5)
 val FondoRuralitosWeb = FondoClinico
 
-val TealRuralitos = Color(0xFF06B6BF)
-val AzulSuaveRuralitos = Color(0xFFEAF5FF)
-val VerdeSuaveRuralitos = Color(0xFFE9F8F3)
-val NaranjaSuaveRuralitos = Color(0xFFFFF4E7)
+val TealRuralitos = CianRuralitos
