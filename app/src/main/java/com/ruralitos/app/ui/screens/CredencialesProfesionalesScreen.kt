@@ -179,7 +179,7 @@ Box(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White.copy(alpha = 0.97f),
                     shape = RoundedCornerShape(24.dp),
-                    shadowElevation = 5.dp,
+                    shadowElevation = 1.dp,
                     border = BorderStroke(
                         1.dp,
                         AzulMarca.copy(alpha = 0.10f)
@@ -658,7 +658,7 @@ private fun TarjetaCodigoProfesional(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.97f),
         shape = RoundedCornerShape(24.dp),
-        shadowElevation = 5.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             AzulMarca.copy(alpha = 0.10f)

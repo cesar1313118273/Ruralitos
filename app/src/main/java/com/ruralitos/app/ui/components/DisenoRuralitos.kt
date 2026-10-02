@@ -19,6 +19,9 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.RowScope
@@ -225,6 +228,71 @@ fun BarraAvanceRuralitos(
     }
 }
 
+@Composable
+private fun EncabezadoPantallaRuralitos(
+    titulo: String,
+    subtitulo: String?,
+    paso: Int?,
+    totalPasos: Int?,
+    etiquetaPaso: String
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .statusBarsPadding()
+            .padding(horizontal = RuralitosSpacing.base)
+            .padding(top = RuralitosSpacing.md, bottom = RuralitosSpacing.md)
+    ) {
+        Text(
+            titulo,
+            style = MaterialTheme.typography.titleLarge,
+            color = AzulClinicoOscuro,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+        subtitulo?.takeIf { it.isNotBlank() }?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        if (paso != null && totalPasos != null) {
+            BarraAvanceRuralitos(
+                paso, totalPasos, etiquetaPaso,
+                Modifier.padding(top = RuralitosSpacing.md)
+            )
+        }
+    }
+    HorizontalDivider(color = BordeClinico)
+}
+
+@Composable
+private fun BarraAccionPantallaRuralitos(barraAccion: @Composable ColumnScope.() -> Unit) {
+    HorizontalDivider(color = BordeClinico)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Color.White)
+            .padding(horizontal = RuralitosSpacing.base, vertical = RuralitosSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.sm),
+        content = barraAccion
+    )
+}
+
+@Composable
+private fun DescripcionPantallaRuralitos(descripcion: String?) {
+    descripcion?.takeIf { it.isNotBlank() }?.let {
+        Text(
+            limpiarTextoInterfaz(it),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
 /**
  * Estructura común de una pantalla: encabezado blanco con título y avance,
  * contenido con desplazamiento y barra de acciones fija abajo.
@@ -248,37 +316,7 @@ fun PantallaRuralitos(
             .background(FondoRuralitosWeb)
             .formularioSeguro()
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .background(Color.White)
-                .statusBarsPadding()
-                .padding(horizontal = RuralitosSpacing.base)
-                .padding(top = RuralitosSpacing.md, bottom = RuralitosSpacing.md)
-        ) {
-            Text(
-                titulo,
-                style = MaterialTheme.typography.titleLarge,
-                color = AzulClinicoOscuro,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            subtitulo?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-            if (paso != null && totalPasos != null) {
-                BarraAvanceRuralitos(
-                    paso, totalPasos, etiquetaPaso,
-                    Modifier.padding(top = RuralitosSpacing.md)
-                )
-            }
-        }
-        HorizontalDivider(color = BordeClinico)
+        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso)
         Column(
             Modifier
                 .weight(1f)
@@ -287,26 +325,42 @@ fun PantallaRuralitos(
                 .padding(RuralitosSpacing.base),
             verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
         ) {
-            descripcion?.takeIf { it.isNotBlank() }?.let {
-                Text(
-                    limpiarTextoInterfaz(it),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            DescripcionPantallaRuralitos(descripcion)
             contenido()
         }
-        if (barraAccion != null) {
-            HorizontalDivider(color = BordeClinico)
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .padding(horizontal = RuralitosSpacing.base, vertical = RuralitosSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.sm),
-                content = barraAccion
-            )
+        if (barraAccion != null) BarraAccionPantallaRuralitos(barraAccion)
+    }
+}
+
+/** Igual que [PantallaRuralitos] pero para listas con muchos registros. */
+@Composable
+fun PantallaListaRuralitos(
+    titulo: String,
+    modifier: Modifier = Modifier,
+    subtitulo: String? = null,
+    descripcion: String? = null,
+    paso: Int? = null,
+    totalPasos: Int? = null,
+    etiquetaPaso: String = "",
+    barraAccion: (@Composable ColumnScope.() -> Unit)? = null,
+    contenido: LazyListScope.() -> Unit
+) {
+    Column(
+        modifier
+            .fillMaxSize()
+            .background(FondoRuralitosWeb)
+            .formularioSeguro()
+    ) {
+        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso)
+        LazyColumn(
+            Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(RuralitosSpacing.base),
+            verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
+        ) {
+            descripcion?.takeIf { it.isNotBlank() }?.let { item { DescripcionPantallaRuralitos(it) } }
+            contenido()
         }
+        if (barraAccion != null) BarraAccionPantallaRuralitos(barraAccion)
     }
 }
 

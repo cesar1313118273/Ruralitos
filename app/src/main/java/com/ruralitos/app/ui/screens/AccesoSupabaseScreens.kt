@@ -92,7 +92,7 @@ fun AccesoSupabaseScreen(
                     .padding(top = 18.dp),
                 shape = RoundedCornerShape(34.dp),
                 color = Color.White.copy(alpha = 0.97f),
-                shadowElevation = 10.dp,
+                shadowElevation = 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
                     Color.White.copy(alpha = 0.90f)
@@ -225,7 +225,7 @@ private fun CabeceraLoginRuralitos() {
             modifier = Modifier.size(116.dp),
             shape = CircleShape,
             color = Color.White.copy(alpha = 0.84f),
-            shadowElevation = 7.dp,
+            shadowElevation = 1.dp,
             border = androidx.compose.foundation.BorderStroke(
                 1.dp,
                 Color.White.copy(alpha = 0.90f)
@@ -564,7 +564,7 @@ private fun OpcionLoginRuralitos(
             1.dp,
             BordeLoginNuevo
         ),
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -1234,7 +1234,7 @@ private fun FormularioConDisenoLogin(
                     .padding(top = 18.dp),
                 shape = RoundedCornerShape(34.dp),
                 color = Color.White.copy(alpha = 0.97f),
-                shadowElevation = 10.dp,
+                shadowElevation = 1.dp,
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
                     Color.White.copy(alpha = 0.90f)

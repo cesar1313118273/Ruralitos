@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.TarjetaRegistroRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
@@ -46,21 +47,19 @@ fun HistorialFichaScreen(
         SimpleDateFormat("dd/MM/yyyy · HH:mm", Locale.getDefault())
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Historial de cambios",
-                descripcion = "Consulta qué se realizó, cuándo ocurrió y qué usuario fue responsable de cada acción.",
-                paso = "Trazabilidad de la ficha",
-                color = NaranjaClinico
-            )
+    PantallaListaRuralitos(
+        titulo = "Historial de cambios",
+        descripcion = "Consulta qué se realizó, cuándo ocurrió y qué usuario fue responsable de cada acción.",
+        subtitulo = "Trazabilidad de la ficha",
+        barraAccion = {
+                BotonPrincipalRuralitos(
+                    texto = "Regresar al panel de la ficha",
+                    descripcion = "Cerrar el historial sin modificar información",
+                    color = AzulClinico,
+                    onClick = onRegresar
+                )
         }
+    ) {
         item {
             MensajeEstadoRuralitos(
                 titulo = "${eventos.size} evento(s) registrado(s)",
@@ -69,7 +68,6 @@ fun HistorialFichaScreen(
                 simbolo = eventos.size.toString()
             )
         }
-
         if (eventos.isEmpty()) {
             item {
                 MensajeEstadoRuralitos(
@@ -80,7 +78,6 @@ fun HistorialFichaScreen(
                 )
             }
         }
-
         items(eventos, key = { it.id }) { evento ->
             val color = colorEvento(evento.accion)
             TarjetaRegistroRuralitos(
@@ -102,16 +99,6 @@ fun HistorialFichaScreen(
                     )
                 }
             }
-        }
-
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Regresar al panel de la ficha",
-                descripcion = "Cerrar el historial sin modificar información",
-                color = AzulClinico,
-                onClick = onRegresar,
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
         }
     }
 }

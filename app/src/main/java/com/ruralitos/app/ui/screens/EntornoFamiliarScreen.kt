@@ -163,7 +163,7 @@ fun EntornoFamiliarScreen(
         items(contaminaciones, key = { "c${it.id}" }) { item ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
                 Column(Modifier.padding(14.dp)) {
                     Text(item.fechaInforme, fontWeight = FontWeight.Bold)

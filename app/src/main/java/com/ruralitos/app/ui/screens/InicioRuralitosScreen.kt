@@ -192,7 +192,7 @@ fun InicioRuralitosScreen(
                                 bottomStart = 28.dp,
                                 bottomEnd = 28.dp
                             ),
-                            shadowElevation = 3.dp
+                            shadowElevation = 1.dp
                         ) {
                             Row(
                                 modifier = Modifier
@@ -366,7 +366,7 @@ fun InicioRuralitosScreen(
                                 1.3.dp,
                                 RojoClinico.copy(alpha = 0.65f)
                             ),
-                            shadowElevation = 2.dp
+                            shadowElevation = 1.dp
                         ) {
                             Row(
                                 modifier = Modifier
@@ -611,7 +611,7 @@ private fun BotonMenu(
         modifier = Modifier.size(56.dp),
         shape = CircleShape,
         color = Color.White.copy(alpha = .96f),
-        shadowElevation = 5.dp
+        shadowElevation = 1.dp
     ) {
         Box(
             contentAlignment = Alignment.Center
@@ -676,7 +676,7 @@ private fun AccesoInicio(
             width = 1.dp,
             color = BordeTarjeta
         ),
-        shadowElevation = 4.dp
+        shadowElevation = 1.dp
     ) {
         Column(
             modifier = Modifier
@@ -930,7 +930,7 @@ private fun ItemMenu(
             1.dp,
             AzulClinico.copy(alpha = 0.08f)
         ),
-        shadowElevation = 3.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -987,7 +987,7 @@ private fun BarraInferior(
 ) {
     Surface(
         color = Color.White,
-        shadowElevation = 9.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -1016,7 +1016,7 @@ private fun BarraInferior(
                 modifier = Modifier.size(56.dp),
                 shape = CircleShape,
                 color = VerdePrincipal,
-                shadowElevation = 7.dp
+                shadowElevation = 1.dp
             ) {
                 Box(
                     contentAlignment = Alignment.Center

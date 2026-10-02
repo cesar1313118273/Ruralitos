@@ -271,7 +271,7 @@ fun SalaScreen(
                     bottomStart = 0.dp,
                     bottomEnd = 0.dp
                 ),
-                shadowElevation = 3.dp
+                shadowElevation = 1.dp
             ) {
                 Column(
                     modifier = Modifier
@@ -901,7 +901,7 @@ private fun TabsSalaModernas(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
-        shadowElevation = 3.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             MoradoClinico.copy(alpha = 0.10f)
@@ -965,7 +965,7 @@ private fun PanelDesplegableSala(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
         shape = RoundedCornerShape(24.dp),
-        shadowElevation = 3.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             width = 1.dp,
             color = color.copy(alpha = 0.14f)

@@ -373,7 +373,7 @@ private fun PanelAdministracionFicha(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.97f),
         shape = RoundedCornerShape(24.dp),
-        shadowElevation = 4.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             CianRuralitos.copy(alpha = 0.10f)
@@ -522,7 +522,7 @@ private fun TarjetaSeccionRedisenada(
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = 0.98f)
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         border = BorderStroke(
             1.dp,
             seccion.color.copy(alpha = 0.14f)

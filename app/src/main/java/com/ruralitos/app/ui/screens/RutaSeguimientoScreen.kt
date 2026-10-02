@@ -326,7 +326,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                 drawPath(curva, Color(0xFFF6F9FB))
             }
             Surface(onClick = onRegresar, modifier = Modifier.padding(16.dp).size(48.dp),
-                shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
+                shape = CircleShape, color = Color.White, shadowElevation = 1.dp) {
                 Box(contentAlignment = Alignment.Center) {
                     Text("‹", color = AzulClinico, fontSize = 38.sp, lineHeight = 40.sp)
                 }
@@ -351,7 +351,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                         Card(Modifier.fillMaxWidth().height(alturaMapa),
                             shape = RoundedCornerShape(16.dp),
                             colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)) {
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
                             Box(Modifier.fillMaxSize()) {
                                 AndroidView(factory = {
                                     mapView.apply {
@@ -373,7 +373,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                 }, modifier = Modifier.fillMaxSize())
                                 Surface(modifier = Modifier.align(Alignment.TopStart).padding(10.dp),
                                     shape = RoundedCornerShape(16.dp), color = Color.White,
-                                    shadowElevation = 3.dp) {
+                                    shadowElevation = 1.dp) {
                                     Text("GPS en vivo · Solo consulta", Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         color = AzulClinico, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                                 }
@@ -383,7 +383,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                         siguiendoGps = true
                                         gps?.let { mapa?.animateCamera(CameraUpdateFactory.newLatLngZoom(it, 16.0)) }
                                     }, shape = RoundedCornerShape(10.dp),
-                                        color = Color(0xEEFFFFFF), shadowElevation = 3.dp) {
+                                        color = Color(0xEEFFFFFF), shadowElevation = 1.dp) {
                                         Text("◎", Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                                             fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AzulClinico)
                                     }
@@ -392,7 +392,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                             mapa?.animateCamera(if (acercar) CameraUpdateFactory.zoomIn()
                                                 else CameraUpdateFactory.zoomOut())
                                         }, shape = RoundedCornerShape(10.dp),
-                                            color = Color(0xEEFFFFFF), shadowElevation = 3.dp) {
+                                            color = Color(0xEEFFFFFF), shadowElevation = 1.dp) {
                                             Text(etiqueta, Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                                                 style = MaterialTheme.typography.titleLarge,
                                                 fontWeight = FontWeight.Bold, color = AzulClinico)
@@ -454,7 +454,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                 Surface(onClick = { modo = valor },
                                     shape = RoundedCornerShape(16.dp),
                                     color = if (modo == valor) Color(0xFF1565C0) else Color.White,
-                                    shadowElevation = 2.dp) {
+                                    shadowElevation = 1.dp) {
                                     Text(etiqueta, Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
                                         color = if (modo == valor) Color.White else AzulClinico,
                                         fontWeight = FontWeight.Bold)

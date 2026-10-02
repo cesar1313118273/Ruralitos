@@ -61,6 +61,7 @@ import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -272,21 +273,26 @@ fun MiembrosFamiliaScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Integrantes de la familia",
-                descripcion = "Registra a cada persona del hogar. La edad determina automáticamente qué campos aplican en la ficha.",
-                paso = "Información del hogar",
-                color = MoradoClinico
-            )
+    PantallaListaRuralitos(
+        titulo = "Integrantes de la familia",
+        descripcion = "Registra a cada persona del hogar. La edad determina automáticamente qué campos aplican en la ficha.",
+        paso = 3,
+        totalPasos = 10,
+        etiquetaPaso = "Información del hogar",
+        barraAccion = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar información de esta sección",
+                    descripcion = "Los integrantes registrados ya están guardados",
+                    color = AzulClinico,
+                    onClick = onContinuar
+                )
+                BotonSecundarioRuralitos(
+                    texto = textoRegresar,
+                    descripcion = descripcionRegresar,
+                    onClick = onSalir
+                )
         }
+    ) {
         item {
             MensajeEstadoRuralitos(
                 titulo = "${miembros.size} integrante(s) registrado(s)",
@@ -306,7 +312,6 @@ fun MiembrosFamiliaScreen(
                 }
             )
         }
-
         if (miembros.isEmpty()) {
             item {
                 MensajeEstadoRuralitos(
@@ -317,7 +322,6 @@ fun MiembrosFamiliaScreen(
                 )
             }
         }
-
         items(miembros, key = { it.id }) { miembro ->
             TarjetaRegistroRuralitos(
                 titulo = miembro.apellidosNombres.ifBlank { "Integrante sin nombre" },
@@ -355,21 +359,6 @@ fun MiembrosFamiliaScreen(
                     }
                 }
             }
-        }
-
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Guardar información de esta sección",
-                descripcion = "Los integrantes registrados ya están guardados",
-                color = AzulClinico,
-                onClick = onContinuar
-            )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir,
-                modifier = Modifier.padding(top = 10.dp, bottom = 24.dp)
-            )
         }
     }
 }

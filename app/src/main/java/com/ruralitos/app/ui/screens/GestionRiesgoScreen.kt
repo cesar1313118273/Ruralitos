@@ -38,6 +38,7 @@ import com.ruralitos.app.data.local.entity.GestionRiesgoEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -126,21 +127,26 @@ fun GestionRiesgoScreen(
         )
     }
 
-    androidx.compose.foundation.lazy.LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Plan y seguimiento del riesgo",
-                descripcion = "Registra los compromisos de la familia y del equipo de salud, luego evalúa su cumplimiento.",
-                paso = "Gestión del riesgo",
-                color = AzulClinico
-            )
+    PantallaListaRuralitos(
+        titulo = "Plan y seguimiento del riesgo",
+        descripcion = "Registra los compromisos de la familia y del equipo de salud, luego evalúa su cumplimiento.",
+        paso = 6,
+        totalPasos = 10,
+        etiquetaPaso = "Salud y evaluación",
+        barraAccion = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar información de esta sección",
+                    descripcion = "Los planes y evaluaciones ya están guardados",
+                    color = MoradoClinico,
+                    onClick = onContinuar
+                )
+                BotonSecundarioRuralitos(
+                    texto = textoRegresar,
+                    descripcion = descripcionRegresar,
+                    onClick = onSalir
+                )
         }
+    ) {
         item {
             MensajeEstadoRuralitos(
                 titulo = "${seguimientos.size} seguimiento(s) registrado(s)",
@@ -160,7 +166,6 @@ fun GestionRiesgoScreen(
                 }
             )
         }
-
         if (seguimientos.isEmpty()) {
             item {
                 MensajeEstadoRuralitos(
@@ -171,7 +176,6 @@ fun GestionRiesgoScreen(
                 )
             }
         }
-
         items(seguimientos.size) { index ->
             val item = seguimientos[index]
             val color = colorCumplimiento(item.cumplimiento)
@@ -207,21 +211,6 @@ fun GestionRiesgoScreen(
                     )
                 }
             }
-        }
-
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Guardar información de esta sección",
-                descripcion = "Los planes y evaluaciones ya están guardados",
-                color = MoradoClinico,
-                onClick = onContinuar
-            )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir,
-                modifier = Modifier.padding(top = 10.dp, bottom = 24.dp)
-            )
         }
     }
 }

@@ -48,6 +48,7 @@ import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -187,22 +188,26 @@ fun SaludFamiliarScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Embarazo y mortalidad",
-                descripcion = "Registra por separado los embarazos actuales y los fallecimientos familiares de los últimos cinco años.",
-                paso = "Salud familiar",
-                color = NaranjaClinico
-            )
+    PantallaListaRuralitos(
+        titulo = "Embarazo y mortalidad",
+        descripcion = "Registra por separado los embarazos actuales y los fallecimientos familiares de los últimos cinco años.",
+        paso = 4,
+        totalPasos = 10,
+        etiquetaPaso = "Salud y evaluación",
+        barraAccion = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar información de esta sección",
+                    descripcion = "Los registros de salud ya están guardados",
+                    color = AzulClinico,
+                    onClick = onContinuar
+                )
+                BotonSecundarioRuralitos(
+                    texto = textoRegresar,
+                    descripcion = descripcionRegresar,
+                    onClick = onSalir
+                )
         }
-
+    ) {
         item {
             SeccionFormularioRuralitos(
                 titulo = "Embarazos registrados",
@@ -228,7 +233,6 @@ fun SaludFamiliarScreen(
                 }
             }
         }
-
         items(embarazadas, key = { "e${it.id}" }) { item ->
             TarjetaRegistroRuralitos(
                 titulo = item.apellidosNombres.ifBlank { "Persona sin nombre" },
@@ -247,7 +251,6 @@ fun SaludFamiliarScreen(
                 )
             }
         }
-
         item {
             SeccionFormularioRuralitos(
                 titulo = "Mortalidad familiar",
@@ -273,7 +276,6 @@ fun SaludFamiliarScreen(
                 }
             }
         }
-
         items(mortalidad, key = { "m${it.id}" }) { item ->
             TarjetaRegistroRuralitos(
                 titulo = item.nombre.ifBlank { "Persona sin nombre" },
@@ -293,21 +295,6 @@ fun SaludFamiliarScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-        }
-
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Guardar información de esta sección",
-                descripcion = "Los registros de salud ya están guardados",
-                color = AzulClinico,
-                onClick = onContinuar
-            )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir,
-                modifier = Modifier.padding(top = 10.dp, bottom = 24.dp)
-            )
         }
     }
 }

@@ -965,7 +965,7 @@ private fun BarraSeccionesDispensarizacion(
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.70f)),
-        shadowElevation = 5.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier
@@ -1184,7 +1184,7 @@ private fun TarjetaSeleccionActual(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.8f)),
-        shadowElevation = 3.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 13.dp),
@@ -1225,7 +1225,7 @@ private fun TarjetaResumenPoblacion(
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.70f)),
-        shadowElevation = 5.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -1290,7 +1290,7 @@ private fun TarjetaContenedoraRegistro(
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.65f)),
-        shadowElevation = 5.dp
+        shadowElevation = 1.dp
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -1365,7 +1365,7 @@ private fun AcordeonIndicador(
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         border = BorderStroke(1.dp, color.copy(alpha = 0.18f)),
-        shadowElevation = 4.dp
+        shadowElevation = 1.dp
     ) {
         Column {
             Row(
@@ -1476,7 +1476,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
         shape = RoundedCornerShape(24.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.65f)),
-        shadowElevation = 4.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.padding(14.dp),
@@ -1518,7 +1518,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
                     shape = CircleShape,
                     color = Color.White,
                     border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.55f)),
-                    shadowElevation = 4.dp
+                    shadowElevation = 1.dp
                 ) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
@@ -1659,7 +1659,7 @@ private fun TarjetaGrupo(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, color.copy(alpha = 0.20f)),
-        shadowElevation = 3.dp
+        shadowElevation = 1.dp
     ) {
         Column {
             Row(
@@ -1920,7 +1920,7 @@ private fun TarjetaPersonaDispensarizada(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.70f))
     ) {
         Column(Modifier.fillMaxWidth().padding(16.dp)) {

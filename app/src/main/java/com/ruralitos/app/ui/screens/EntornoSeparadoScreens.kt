@@ -257,7 +257,7 @@ fun FamiliogramaScreen(
                     colors = androidx.compose.material3.CardDefaults.cardColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent
                     ),
-                    elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Image(
                         bitmap = vistaPrevia.asImageBitmap(),

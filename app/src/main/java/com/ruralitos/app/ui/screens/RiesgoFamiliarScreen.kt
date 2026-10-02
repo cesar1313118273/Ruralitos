@@ -43,6 +43,7 @@ import com.ruralitos.app.domain.RiesgoFamiliar
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -139,21 +140,26 @@ fun RiesgoFamiliarScreen(
         )
     }
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Calificación del riesgo familiar",
-                descripcion = "Selecciona descripciones comprensibles. Ruralitos calcula internamente el puntaje y el nivel de riesgo.",
-                paso = "Evaluación familiar",
-                color = AzulClinico
-            )
+    PantallaListaRuralitos(
+        titulo = "Calificación del riesgo familiar",
+        descripcion = "Selecciona descripciones comprensibles. Ruralitos calcula internamente el puntaje y el nivel de riesgo.",
+        paso = 5,
+        totalPasos = 10,
+        etiquetaPaso = "Salud y evaluación",
+        barraAccion = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar información de esta sección",
+                    descripcion = "Las calificaciones ya están guardadas",
+                    color = AzulClinico,
+                    onClick = onContinuar
+                )
+                BotonSecundarioRuralitos(
+                    texto = textoRegresar,
+                    descripcion = descripcionRegresar,
+                    onClick = onSalir
+                )
         }
+    ) {
         item {
             MensajeEstadoRuralitos(
                 titulo = "${calificaciones.size} evaluación(es) guardada(s)",
@@ -174,7 +180,6 @@ fun RiesgoFamiliarScreen(
                 }
             )
         }
-
         if (calificaciones.isEmpty()) {
             item {
                 MensajeEstadoRuralitos(
@@ -185,7 +190,6 @@ fun RiesgoFamiliarScreen(
                 )
             }
         }
-
         items(calificaciones, key = { it.id }) { item ->
             val color = colorNivelRiesgo(item.nivel)
             TarjetaRegistroRuralitos(
@@ -218,21 +222,6 @@ fun RiesgoFamiliarScreen(
                     modifier = Modifier.padding(top = 3.dp)
                 )
             }
-        }
-
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Guardar información de esta sección",
-                descripcion = "Las calificaciones ya están guardadas",
-                color = AzulClinico,
-                onClick = onContinuar
-            )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir,
-                modifier = Modifier.padding(top = 10.dp, bottom = 24.dp)
-            )
         }
     }
 }

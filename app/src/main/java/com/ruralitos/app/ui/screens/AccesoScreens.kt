@@ -207,7 +207,7 @@ private fun BurbujaMensajeMascota(
             1.5.dp,
             Color(0xFF7DC8F4)
         ),
-        shadowElevation = 5.dp
+        shadowElevation = 1.dp
     ) {
         Text(
             text = mensaje,

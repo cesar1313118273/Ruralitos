@@ -289,7 +289,7 @@ Box(
                         .padding(horizontal = 16.dp),
                     color = Color.White.copy(alpha = 0.94f),
                     shape = RoundedCornerShape(24.dp),
-                    shadowElevation = 3.dp,
+                    shadowElevation = 1.dp,
                     border = BorderStroke(
                         1.dp,
                         AzulClinico.copy(alpha = 0.10f)
@@ -351,7 +351,7 @@ Box(
                             1.dp,
                             AzulClinico.copy(alpha = 0.12f)
                         ),
-                        shadowElevation = 2.dp
+                        shadowElevation = 1.dp
                     ) {
                         Column(
                             modifier = Modifier
@@ -422,7 +422,7 @@ private fun TarjetaEncabezadoBusqueda(
         modifier = modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.95f),
         shape = RoundedCornerShape(24.dp),
-        shadowElevation = 4.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             AzulClinico.copy(alpha = 0.09f)
@@ -503,7 +503,7 @@ private fun TarjetaBusquedaFichas(
             .padding(horizontal = 16.dp),
         color = Color.White.copy(alpha = 0.97f),
         shape = RoundedCornerShape(24.dp),
-        shadowElevation = 5.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             AzulClinico.copy(alpha = 0.10f)
@@ -784,7 +784,7 @@ private fun TarjetaBusquedaFichas(
                     .height(62.dp),
                 color = Color(0xFF1565C0),
                 shape = RoundedCornerShape(16.dp),
-                shadowElevation = 5.dp
+                shadowElevation = 1.dp
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -833,7 +833,7 @@ private fun MenuPaginacion(
             1.dp,
             AzulClinico.copy(alpha = 0.12f)
         ),
-        shadowElevation = 3.dp
+        shadowElevation = 1.dp
     ) {
         Column(
             modifier = Modifier
@@ -938,7 +938,7 @@ private fun TarjetaFichaElegante(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         color = Color.White.copy(alpha = 0.98f),
-        shadowElevation = 4.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             AzulClinico.copy(alpha = 0.12f)
@@ -1158,7 +1158,7 @@ private fun BotonRegresarBusqueda(
             1.5.dp,
             CianRuralitos.copy(alpha = 0.65f)
         ),
-        shadowElevation = 2.dp
+        shadowElevation = 1.dp
     ) {
         Row(
             modifier = Modifier.fillMaxSize(),

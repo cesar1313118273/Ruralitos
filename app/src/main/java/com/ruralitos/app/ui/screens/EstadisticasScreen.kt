@@ -273,7 +273,7 @@ private fun TarjetasResumen(resumen: ResumenFichas) {
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         border = BorderStroke(1.dp, BordeClinico),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp)) {
             Text("Resumen general", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)

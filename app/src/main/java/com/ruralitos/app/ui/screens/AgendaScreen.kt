@@ -479,7 +479,7 @@ fun AgendaScreen(
             onClick = { editando = null; error = ""; formulario = true },
             shape = CircleShape,
             color = agendaVerde,
-            shadowElevation = 8.dp
+            shadowElevation = 1.dp
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text("+", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Light)
@@ -566,7 +566,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
                 border = BorderStroke(1.dp, agendaBorde),
-                shadowElevation = 2.dp
+                shadowElevation = 1.dp
             ) {
                 Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -653,7 +653,7 @@ private fun CalendarioAgenda(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, agendaBorde),
-        shadowElevation = 3.dp
+        shadowElevation = 1.dp
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -771,7 +771,7 @@ private fun TarjetaActividadAgenda(
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, agendaBorde),
-        shadowElevation = 3.dp
+        shadowElevation = 1.dp
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically) {

@@ -611,7 +611,7 @@ fun CroquisMapaScreen(
                 drawPath(curva, Color(0xFFF6F9FB))
             }
             Surface(onClick = onRegresar, modifier = Modifier.padding(16.dp).size(48.dp),
-                shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
+                shape = CircleShape, color = Color.White, shadowElevation = 1.dp) {
                 Box(contentAlignment = Alignment.Center) {
                     Text("‹", color = AzulClinico, fontSize = 38.sp, lineHeight = 40.sp)
                 }
@@ -634,7 +634,7 @@ fun CroquisMapaScreen(
                     modifier = Modifier.fillMaxWidth().height(alturaMapa),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                 ) {
                     Box(Modifier.fillMaxSize()) {
                         AndroidView(
@@ -706,13 +706,13 @@ fun CroquisMapaScreen(
                                     Manifest.permission.ACCESS_FINE_LOCATION,
                                     Manifest.permission.ACCESS_COARSE_LOCATION
                                 ))
-                            }, shape = CircleShape, color = Color.White, shadowElevation = 4.dp) {
+                            }, shape = CircleShape, color = Color.White, shadowElevation = 1.dp) {
                                 Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
                                     Text("⌖", color = Color(0xFF1565C0), fontSize = 28.sp)
                                 }
                             }
                             Surface(onClick = { capturarMapa() }, shape = CircleShape,
-                                color = Color.White, shadowElevation = 4.dp) {
+                                color = Color.White, shadowElevation = 1.dp) {
                                 Box(Modifier.size(42.dp), contentAlignment = Alignment.Center) {
                                     Text("📷", fontSize = 22.sp)
                                 }
@@ -727,7 +727,7 @@ fun CroquisMapaScreen(
                                     },
                                     shape = RoundedCornerShape(10.dp),
                                     color = Color(0xEEFFFFFF),
-                                    shadowElevation = 3.dp
+                                    shadowElevation = 1.dp
                                 ) {
                                     Text(
                                         etiqueta,
@@ -744,7 +744,7 @@ fun CroquisMapaScreen(
                                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 16.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color(0xF5FFFFFF),
-                                shadowElevation = 3.dp
+                                shadowElevation = 1.dp
                             ) {
                                 Column(Modifier.padding(horizontal = 12.dp, vertical = 7.dp)) {
                                     Text("Vivienda",
@@ -767,7 +767,7 @@ fun CroquisMapaScreen(
                                     .padding(start = 14.dp, end = 14.dp, bottom = 62.dp),
                                 shape = RoundedCornerShape(12.dp),
                                 color = Color(0xF9FFF4E7),
-                                shadowElevation = 3.dp
+                                shadowElevation = 1.dp
                             ) {
                                 Text(
                                     "Fuera de Ecuador: el mapa local no cubre esta ubicación. Usa GPS o corrige el punto.",

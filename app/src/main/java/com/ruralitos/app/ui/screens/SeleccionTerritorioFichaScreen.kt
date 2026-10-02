@@ -138,7 +138,7 @@ fun SeleccionTerritorioFichaScreen(
                     .offset(y = (-14).dp),
                 shape = RoundedCornerShape(24.dp),
                 color = FondoTarjeta,
-                shadowElevation = 2.dp
+                shadowElevation = 1.dp
             ) {
                 Column(
                     modifier = Modifier
