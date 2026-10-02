@@ -158,14 +158,6 @@ fun RiesgoFamiliarScreen(
         }
     ) {
         item {
-            MensajeEstadoRuralitos(
-                titulo = "${calificaciones.size} evaluación(es) guardada(s)",
-                descripcion = "El historial se conserva y las cuatro evaluaciones más recientes se exportan a la ficha.",
-                color = CianRuralitos,
-                simbolo = calificaciones.size.toString()
-            )
-        }
-        item {
             BotonPrincipalRuralitos(
                 texto = "Crear nueva calificación",
                 descripcion = "Responder los 18 componentes del instrumento familiar",

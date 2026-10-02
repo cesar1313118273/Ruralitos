@@ -145,18 +145,19 @@ fun CredencialesProfesionalesScreen(
     }
     val fotoProcesada = resultadoFoto?.bitmap
 
-Box(
+Column(
         modifier = Modifier
             .fillMaxSize()
             .background(FondoClinico)
             .formularioSeguro()
     ) {
+        CabeceraIdentidadProfesional(if (!obligatorio) onRegresar else null)
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            CabeceraIdentidadProfesional(if (!obligatorio) onRegresar else null)
 
             Column(
                 modifier = Modifier
@@ -461,7 +462,19 @@ Box(
                     )
                 }
 
-                BotonPrincipalAzul(
+
+
+
+            }
+        }
+        HorizontalDivider(color = Color(0xFFE2ECF1))
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(Color.White)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+            BotonPrincipalAzul(
                     texto = if (procesando) {
                         "Guardando identidad…"
                     } else {
@@ -514,12 +527,6 @@ Box(
                         }
                     }
                 )
-
-
-                Spacer(
-                    modifier = Modifier.height(32.dp)
-                )
-            }
         }
     }
 }

@@ -82,6 +82,7 @@ import com.ruralitos.app.data.mapa.GestorMapaDetalle
 import com.ruralitos.app.domain.DispensarizacionAutomatica
 import com.ruralitos.app.domain.IconosMais
 import com.ruralitos.app.domain.PictogramaDispensarizacion
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
@@ -173,7 +174,6 @@ fun CroquisMapaScreen(
     var ubicacionElegida by remember(fichaDisponible?.id) { mutableStateOf(ubicacionGuardadaValida) }
     val fueraDelMapaNacional = ubicacionElegida &&
         (latitud < -5.02 || latitud > 1.69 || longitud < -92.02 || longitud > -75.18)
-    val scrollPantalla = rememberScrollState()
     var mapaEnUso by remember { mutableStateOf(false) }
     var mapa by remember { mutableStateOf<MapLibreMap?>(null) }
     var marcador by remember { mutableStateOf<Marker?>(null) }
@@ -588,20 +588,41 @@ fun CroquisMapaScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(scrollPantalla, enabled = !mapaEnUso)
-            .background(Color(0xFFF6F9FB))
+    PantallaRuralitos(
+        titulo = "Ubicación de vivienda",
+        subtitulo = "Ubicación exacta",
+        descripcion = "Localiza la vivienda en el mapa.",
+        onVolver = onRegresar,
+        scrollHabilitado = !mapaEnUso,
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar información de esta sección",
+                descripcion = "Guarda la posición actual aunque no tomes una captura",
+                color = NaranjaClinico,
+                enabled = !procesando && ubicacionElegida,
+                onClick = {
+                    procesando = true
+                    val latitudGuardar = latitud
+                    val longitudGuardar = longitud
+                    val altitudGuardar = altitud
+                    scope.launch {
+                        runCatching {
+                            withContext(Dispatchers.IO) {
+                                database.fichaFamiliarDao().actualizarCoordenadas(
+                                    fichaId, latitudGuardar, longitudGuardar, altitudGuardar, usuarioId
+                                )
+                            }
+                        }.onSuccess {
+                            onContinuar()
+                        }.onFailure {
+                            mensaje = "No se pudieron guardar las coordenadas. Inténtalo de nuevo."
+                            procesando = false
+                        }
+                    }
+                }
+            )
+        }
     ) {
-        CabeceraAgenda(onRegresar)
-        Spacer(Modifier.height(16.dp))
-        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        Text("UBICACIÓN EXACTA", color = Color(0xFF1565C0), fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
-        Text("Ubicación de vivienda", color = Color(0xFF0A2A5E), fontWeight = FontWeight.SemiBold, fontSize = 22.sp)
-        Text("Localiza la vivienda en el mapa.", color = Color(0xFF5B7083), fontSize = 16.sp)
         if (estiloDeRespaldo) Text(estadoOffline, color = NaranjaClinico, fontSize = 12.sp)
 
         SeccionFormularioRuralitos(
@@ -841,45 +862,6 @@ fun CroquisMapaScreen(
         if (!ubicacionElegida) {
             Text("Aún no hay una ubicación seleccionada. Usa el botón GPS o toca la vivienda en el mapa.",
                 color = NaranjaClinico, fontSize = 12.sp)
-        }
-
-        SeccionFormularioRuralitos(
-            titulo = "3. Guardar",
-            descripcion = "Guarda la ubicación de la vivienda. La captura del mapa es opcional."
-        ) { }
-
-        BotonPrincipalRuralitos(
-            texto = "Guardar información de esta sección",
-            descripcion = "Guarda la posición actual aunque no tomes una captura",
-            color = NaranjaClinico,
-            enabled = !procesando && ubicacionElegida,
-            onClick = {
-                procesando = true
-                val latitudGuardar = latitud
-                val longitudGuardar = longitud
-                val altitudGuardar = altitud
-                scope.launch {
-                    runCatching {
-                        withContext(Dispatchers.IO) {
-                            database.fichaFamiliarDao().actualizarCoordenadas(
-                                fichaId, latitudGuardar, longitudGuardar, altitudGuardar, usuarioId
-                            )
-                        }
-                    }.onSuccess {
-                        onContinuar()
-                    }.onFailure {
-                        mensaje = "No se pudieron guardar las coordenadas. Inténtalo de nuevo."
-                        procesando = false
-                    }
-                }
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = textoRegresar,
-            descripcion = descripcionRegresar,
-            onClick = onRegresar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
         }
     }
 }

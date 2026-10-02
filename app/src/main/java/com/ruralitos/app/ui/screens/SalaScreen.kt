@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -246,14 +247,24 @@ fun SalaScreen(
             .background(Color(0xFFF6F9FB))
     ) {
         Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Color.White)
+                    .statusBarsPadding()
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                BotonVolverRuralitos(onRegresar)
+            }
+            HorizontalDivider(color = Color(0xFFE2ECF1))
+        Column(
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
         ) {
-            BotonVolverRuralitos(
-                onRegresar,
-                Modifier.statusBarsPadding().padding(start = 16.dp, top = 12.dp)
-            )
 
             // Contenedor blanco superpuesto al paisaje, con la forma escogida por el usuario:
             // sin onda, solo esquinas superiores grandes y redondeadas.
@@ -879,6 +890,7 @@ fun SalaScreen(
                     Spacer(Modifier.height(16.dp))
                 }
             }
+        }
         }
     }
 }

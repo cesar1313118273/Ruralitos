@@ -145,14 +145,6 @@ fun GestionRiesgoScreen(
         }
     ) {
         item {
-            MensajeEstadoRuralitos(
-                titulo = "${seguimientos.size} seguimiento(s) registrado(s)",
-                descripcion = "Cada visita se conserva como un registro independiente para mostrar la evolución familiar.",
-                color = MoradoClinico,
-                simbolo = seguimientos.size.toString()
-            )
-        }
-        item {
             BotonPrincipalRuralitos(
                 texto = "Agregar nuevo seguimiento",
                 descripcion = "Crear compromisos y programar su evaluación",

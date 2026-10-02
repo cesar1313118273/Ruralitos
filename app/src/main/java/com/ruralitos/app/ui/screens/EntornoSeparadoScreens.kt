@@ -545,7 +545,7 @@ fun LugaresTratamientoScreen(
     ) {
         SeccionFormularioRuralitos(
             titulo = if (editando == null) "Agregar lugar o persona" else "Editar registro seleccionado",
-            descripcion = "Máximo 4 registros. Se exportan uno por fila en AY46:CS49 de la hoja 4."
+            descripcion = "Anota dónde o con quién se atiende la familia cuando alguien se enferma: un centro de salud, un hospital, un médico particular, un curandero o una persona de confianza. Puedes registrar hasta 4."
         ) {
             OutlinedTextField(
                 value = texto,
@@ -619,7 +619,7 @@ fun LugaresTratamientoScreen(
             MensajeEstadoRuralitos(
                 titulo = "${lugares.size} lugar(es) o persona(s)",
                 descripcion = if (lugares.size >= 4) {
-                    "Los cuatro renglones de la hoja 4 están ocupados. Puedes editar o eliminar uno."
+                    "Ya registraste los 4 lugares permitidos. Puedes editar o eliminar uno."
                 } else {
                     "Puedes editar cada registro o agregar ${4 - lugares.size} más."
                 },

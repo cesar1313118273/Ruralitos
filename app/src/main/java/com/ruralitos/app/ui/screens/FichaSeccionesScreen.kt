@@ -161,7 +161,6 @@ fun FichaSeccionesScreen(
             .fillMaxSize()
             .background(FondoClinico)
             .formularioSeguro()
-            .verticalScroll(rememberScrollState())
     ) {
         BannerFichaPanel(
             ficha = ficha,
@@ -170,7 +169,9 @@ fun FichaSeccionesScreen(
 
         Column(
             modifier = Modifier
+                .weight(1f)
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {

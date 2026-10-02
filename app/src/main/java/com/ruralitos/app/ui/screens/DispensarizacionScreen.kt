@@ -331,21 +331,22 @@ fun DispensarizacionScreen(
         etiqueta = vista.name.lowercase()
     )
 
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .formularioSeguro(),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 22.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .formularioSeguro()
     ) {
-        item(key = "encabezado") {
-            EncabezadoRegistroCurvo(
+        EncabezadoRegistroCurvo(
                 titulo = "Registro general",
                 descripcion = "Dispensarización y consolidado en una sola vista.",
                 paso = seccion.etiqueta,
                 onVolver = onRegresar
             )
-        }
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
 
         item(key = "submenu") {
             BarraSeccionesDispensarizacion(
@@ -689,6 +690,7 @@ fun DispensarizacionScreen(
             }
         }
 
+    }
     }
 
     archivoExportado?.let { archivo ->

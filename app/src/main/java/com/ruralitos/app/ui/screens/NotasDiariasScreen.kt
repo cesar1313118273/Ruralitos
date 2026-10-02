@@ -216,23 +216,17 @@ fun NotasDiariasScreen(
         } catch (_: Exception) { errorGuardado = true }
     }
 
-    LazyColumn(
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .formularioSeguro()
-            .background(FondoNotasDiarias),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .background(FondoNotasDiarias)
     ) {
-        item {
-            /*
-             * Usa EXACTAMENTE el drawable que indicó el usuario:
-             * ruralitos_paisaje_cabecera.png
-             *
-             * La onda blanca inferior NO depende de la imagen.
-             * Se dibuja con Canvas para que siempre aparezca.
-             */
-            CabeceraNotasConOnda(onRegresar)
-        }
+        CabeceraNotasConOnda(onRegresar)
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
 
         item {
             Column(
@@ -356,6 +350,7 @@ fun NotasDiariasScreen(
                 modifier = Modifier.height(20.dp)
             )
         }
+    }
     }
 
     fechaEnEdicion?.let { tipo ->

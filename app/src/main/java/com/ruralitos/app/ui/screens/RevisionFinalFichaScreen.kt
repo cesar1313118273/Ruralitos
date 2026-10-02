@@ -254,78 +254,39 @@ fun RevisionFinalFichaScreen(
     ) {
         SeccionFormularioRuralitos(
             titulo = "Comprobación de información",
-            descripcion = "Toca un elemento pendiente para ir directamente a la sección que debes completar."
+            descripcion = "Toca cualquier apartado para revisarlo o completar lo que falta antes de finalizar."
         ) {
             requisitos.forEach { requisito ->
                 val color = if (requisito.cumplido) CianRuralitos else NaranjaClinico
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 5.dp)
-                        .clickable(
-                            enabled = !requisito.cumplido && requisito.seccion != "firma"
-                        ) {
-                            onAbrirSeccion(requisito.seccion)
-                        },
-                    shape = RoundedCornerShape(11.dp),
-                    colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
-                    border = BorderStroke(1.dp, color.copy(alpha = 0.14f))
-                ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(color = color, shape = RoundedCornerShape(9.dp)) {
-                            Text(
-                                if (requisito.cumplido) "✓" else "!",
-                                color = Color.White,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                            )
-                        }
-                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                            Text(requisito.titulo, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                when {
-                                    requisito.cumplido -> "Información verificada"
-                                    requisito.seccion == "firma" ->
-                                        "Pendiente · configúrala en Menú > Identidad profesional"
-                                    else -> "Pendiente · toca para completar"
-                                },
-                                color = color,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(top = 2.dp)
-                            )
-                        }
-                    }
-                }
+                FilaRevisionSeccion(
+                    color = color,
+                    simbolo = if (requisito.cumplido) "✓" else "!",
+                    titulo = requisito.titulo,
+                    detalle = when {
+                        requisito.cumplido -> "Información verificada · toca para revisarla"
+                        requisito.seccion == "firma" ->
+                            "Pendiente · configúrala en Menú > Identidad profesional"
+                        else -> "Pendiente · toca para completar"
+                    },
+                    habilitada = requisito.seccion != "firma",
+                    onClick = { onAbrirSeccion(requisito.seccion) }
+                )
             }
-
-        }
-
-        SeccionFormularioRuralitos(
-            titulo = "Todas las secciones de la ficha",
-            descripcion = "Revisa o corrige cualquier apartado antes de finalizar."
-        ) {
+            // Apartados que no bloquean la finalización pero se pueden revisar aquí.
             listOf(
-                "datos" to "1. Datos de la familia",
-                "ubicacion" to "2. Dirección y vivienda",
-                "miembros" to "3. Integrantes y diagnósticos",
-                "salud" to "4. Embarazo y mortalidad",
+                "salud" to "Embarazo y mortalidad",
                 "dispensarizacion" to "Registro general",
-                "riesgos" to "5. Calificación del riesgo familiar",
-                "gestion" to "6. Plan y seguimiento del riesgo",
-                "familiograma" to "7. Familiograma",
-                "croquis" to "8. Croquis, GPS y mapa",
-                "contaminacion" to "9. Contaminación ambiental",
-                "tratamiento" to "10. Lugar de atención o persona"
+                "gestion" to "Plan y seguimiento del riesgo",
+                "contaminacion" to "Contaminación ambiental",
+                "tratamiento" to "Lugar de atención o persona"
             ).forEach { (seccion, titulo) ->
-                Text(
-                    text = "$titulo  ›",
-                    modifier = Modifier.fillMaxWidth().clickable { onAbrirSeccion(seccion) }
-                        .padding(horizontal = 4.dp, vertical = 12.dp),
+                FilaRevisionSeccion(
                     color = AzulClinico,
-                    fontWeight = FontWeight.SemiBold
+                    simbolo = "›",
+                    titulo = titulo,
+                    detalle = "Opcional · toca para revisar o corregir",
+                    habilitada = true,
+                    onClick = { onAbrirSeccion(seccion) }
                 )
             }
         }
@@ -406,6 +367,49 @@ fun RevisionFinalFichaScreen(
                         Text("Guardando y preparando los archivos seleccionados.")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FilaRevisionSeccion(
+    color: Color,
+    simbolo: String,
+    titulo: String,
+    detalle: String,
+    habilitada: Boolean,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 6.dp)
+            .clickable(enabled = habilitada, onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.16f))
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(color = color, shape = RoundedCornerShape(9.dp)) {
+                Text(
+                    simbolo,
+                    color = Color.White,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp)
+                )
+            }
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(titulo, fontWeight = FontWeight.SemiBold)
+                Text(
+                    detalle,
+                    color = color,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
             }
         }
     }

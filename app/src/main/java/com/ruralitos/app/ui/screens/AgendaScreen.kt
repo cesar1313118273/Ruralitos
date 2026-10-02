@@ -394,12 +394,13 @@ fun AgendaScreen(
         )
     }
 
-    Box(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
+    Column(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
+      CabeceraAgenda(onRegresar)
+      Box(Modifier.weight(1f).fillMaxWidth()) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(15.dp)
         ) {
-            item { CabeceraAgenda(onRegresar) }
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
                     Text(if (pestana == 0) "Seguimiento" else "Agenda",
@@ -488,6 +489,7 @@ fun AgendaScreen(
                 Text("+", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Light)
             }
         }
+      }
     }
 }
 
@@ -866,9 +868,12 @@ private fun FormularioAgenda(
         )
     }
 
-    Box(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(17.dp)) {
-            item { CabeceraAgenda(onVolver) }
+    Column(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
+        CabeceraAgenda(onVolver)
+        LazyColumn(
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(17.dp)
+        ) {
             item {
                 Column(Modifier.padding(horizontal = 21.dp)) {
                     Text(if (original == null) "Nueva actividad" else "Editar actividad",
@@ -954,8 +959,11 @@ private fun FormularioAgenda(
                 }
             }
             if (error.isNotBlank()) item { Text(error, color = Color(0xFFC83E4D), modifier = Modifier.padding(horizontal = 21.dp)) }
-            item {
-                Button(
+            item { Spacer(Modifier.height(12.dp)) }
+        }
+        HorizontalDivider(color = Color(0xFFE2ECF1))
+        Column(Modifier.fillMaxWidth().background(Color.White).padding(vertical = 12.dp)) {
+            Button(
                     onClick = {
                         onGuardar(ActividadAgendaEntity(
                             id = original?.id ?: 0,
@@ -989,8 +997,6 @@ private fun FormularioAgenda(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = agendaVerde)
                 ) { Text(if (guardando) "Guardando…" else "Guardar actividad", fontWeight = FontWeight.SemiBold) }
-            }
-            item { Spacer(Modifier.height(28.dp)) }
         }
     }
 }
