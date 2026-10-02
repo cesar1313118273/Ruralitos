@@ -487,7 +487,7 @@ private fun CampoFechaNotas(
                 Text(if (valor.isBlank()) "Elegir fecha" else
                     valor.substring(8, 10) + "/" + valor.substring(5, 7) + "/" + valor.substring(0, 4),
                     color = if (valor.isBlank()) GrisTextoNotas else AzulTituloNotas,
-                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
         }
     }
@@ -678,8 +678,6 @@ private fun TarjetaNotaDiaria(
                 color = AzulTituloNotas,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
             )
 
             Text(
@@ -693,8 +691,6 @@ private fun TarjetaNotaDiaria(
                 text = "Diagnóstico: ${persona.diagnosticos.ifBlank { "Sin diagnóstico registrado" }}",
                 color = Color(0xFF334A67),
                 style = MaterialTheme.typography.bodyMedium,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 10.dp)
             )
             Row(
@@ -779,8 +775,6 @@ private fun DialogoNotaDiaria(
                             Text(
                                 text = "${nota.fechaLocal} · ${nota.contenido.take(35)}",
                                 color = if (nota.id == notaSeleccionadaId) VerdeBotonNotas else AzulTituloNotas,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.fillMaxWidth().clickable { onSeleccionar(nota) }
                             )
                         }

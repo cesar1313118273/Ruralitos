@@ -167,7 +167,7 @@ fun EntornoFamiliarScreen(
             ) {
                 Column(Modifier.padding(14.dp)) {
                     Text(item.fechaInforme, fontWeight = FontWeight.SemiBold)
-                    Text(item.tipoContaminanteDescripcion, maxLines = 2)
+                    Text(item.tipoContaminanteDescripcion)
                     Text("Causante: ${item.causanteContaminacion.ifBlank { "Sin registrar" }}")
                     Row {
                         TextButton(onClick = {
@@ -310,7 +310,6 @@ fun FormularioContaminacionScreen(
                 label = { Text("Tipo de contaminante y descripción") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 4,
-                maxLines = 7
             )
         }
         SeccionFormularioRuralitos(

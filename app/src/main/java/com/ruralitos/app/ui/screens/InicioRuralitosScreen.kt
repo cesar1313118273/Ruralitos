@@ -220,8 +220,6 @@ fun InicioRuralitosScreen(
                                         },
                                         color = AzulSecundario,
                                         style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
                                         modifier = Modifier.padding(top = 1.dp)
                                     )
                                 }
@@ -353,7 +351,7 @@ fun InicioRuralitosScreen(
                                     top = 14.dp,
                                     bottom = 18.dp
                                 )
-                                .height(52.dp),
+                                .heightIn(min = 52.dp),
                             color = Color.White,
                             shape = RoundedCornerShape(16.dp),
                             border = BorderStroke(
@@ -436,8 +434,6 @@ fun InicioRuralitosScreen(
                                 fontSize = 22.sp,
                                 lineHeight = 33.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
                             )
 
                             Spacer(Modifier.height(4.dp))
@@ -453,7 +449,6 @@ fun InicioRuralitosScreen(
                                 text = estadoSincronizacion,
                                 color = if (estadoSincronizacion == "Sincronizado") CianRuralitos else AzulSecundario,
                                 fontSize = 13.sp,
-                                maxLines = 2
                             )
                         }
 
@@ -663,7 +658,7 @@ private fun AccesoInicio(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(128.dp),
+        modifier = modifier.heightIn(min = 128.dp),
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
@@ -698,7 +693,6 @@ private fun AccesoInicio(
                 lineHeight = 19.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                maxLines = 2
             )
         }
     }

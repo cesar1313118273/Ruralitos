@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.foundation.layout.heightIn
 import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.animation.AnimatedVisibility
@@ -756,7 +757,7 @@ private fun TarjetaBusquedaFichas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
-                    .height(62.dp),
+                    .heightIn(min = 62.dp),
                 color = Color(0xFF1565C0),
                 shape = RoundedCornerShape(16.dp),
                 shadowElevation = 1.dp
@@ -956,8 +957,6 @@ private fun TarjetaFichaElegante(
                         style = MaterialTheme.typography.titleMedium,
                         color = Color(0xFF0A2A5E),
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
 
                     Text(
@@ -965,8 +964,6 @@ private fun TarjetaFichaElegante(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 3.dp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -1022,8 +1019,6 @@ private fun TarjetaFichaElegante(
                         .padding(start = 9.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
 
                 Text(
@@ -1126,7 +1121,7 @@ private fun BotonRegresarBusqueda(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(62.dp),
+        modifier = modifier.heightIn(min = 62.dp),
         color = Color.White.copy(alpha = 0.96f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(

@@ -514,7 +514,7 @@ private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
         listOf("Seguimiento", "Agenda").forEachIndexed { indice, titulo ->
             Surface(
                 onClick = { onSeleccionar(indice) },
-                modifier = Modifier.weight(1f).height(49.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 49.dp),
                 shape = RoundedCornerShape(16.dp),
                 color = if (seleccionada == indice) agendaVerde else Color.Transparent,
                 shadowElevation = if (seleccionada == indice) 2.dp else 0.dp
@@ -545,7 +545,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
             Triple("Confirmadas", confirmadas, agendaVerdeEstado)
         ).forEachIndexed { indice, dato ->
             Surface(
-                modifier = Modifier.weight(1f).height(91.dp),
+                modifier = Modifier.weight(1f).heightIn(min = 91.dp),
                 shape = RoundedCornerShape(16.dp),
                 color = Color.White,
                 border = BorderStroke(1.dp, agendaBorde),
@@ -559,8 +559,7 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
                         else -> R.drawable.ruralitos_agenda_confirmado
                     }), null, Modifier.size(25.dp))
                     Column {
-                        Text(dato.first, color = agendaSecundario, fontSize = 10.sp,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(dato.first, color = agendaSecundario, fontSize = 10.sp)
                         Text(dato.second.toString(), color = agendaAzul, fontSize = 20.sp,
                             fontWeight = FontWeight.SemiBold)
                     }
@@ -772,15 +771,12 @@ private fun TarjetaActividadAgenda(
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 Text(if (familiar) "Visita familiar (" + integrantes.size + ")" else actividad.tipo,
-                    color = agendaAzul, fontWeight = FontWeight.SemiBold, fontSize = 13.sp,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    color = agendaAzul, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 Text(if (familiar) integrantes.joinToString(", ") { it.persona }
                     else actividad.persona.ifBlank { "Actividad general" },
-                    color = agendaSecundario, fontSize = 11.sp, lineHeight = 13.sp,
-                    maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    color = agendaSecundario, fontSize = 11.sp, lineHeight = 13.sp)
                 if (actividad.barrio.isNotBlank()) {
-                    Text(actividad.barrio, color = agendaSecundario, fontSize = 11.sp,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(actividad.barrio, color = agendaSecundario, fontSize = 11.sp)
                 }
                 if (actividad.grupoRiesgo.isNotBlank()) {
                     Text("Grupo " + integrantes.map { it.grupoRiesgo }.distinct().joinToString("/"),
@@ -988,7 +984,7 @@ private fun FormularioAgenda(
                             eliminadoEn = original?.eliminadoEn
                         ))
                     },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 21.dp).height(54.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 21.dp).heightIn(min = 54.dp),
                     enabled = !guardando,
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = agendaVerde)
@@ -1003,15 +999,14 @@ private fun FormularioAgenda(
 private fun CampoAgenda(texto: String, icono: Int, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().padding(top = 7.dp).height(56.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 7.dp).heightIn(min = 56.dp),
         shape = RoundedCornerShape(11.dp),
         color = Color(0xFFF6F9FB),
         border = BorderStroke(1.dp, agendaBorde)
     ) {
         Row(Modifier.padding(horizontal = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(painterResource(icono), null, Modifier.size(26.dp))
-            Text(texto, modifier = Modifier.weight(1f).padding(start = 9.dp), color = agendaAzul,
-                maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(texto, modifier = Modifier.weight(1f).padding(start = 9.dp), color = agendaAzul)
             Text("⌄", color = agendaSecundario, fontSize = 18.sp)
         }
     }

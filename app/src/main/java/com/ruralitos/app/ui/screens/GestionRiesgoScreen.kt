@@ -196,7 +196,6 @@ fun GestionRiesgoScreen(
                     Text(
                         "Familia: ${item.compromisoFamilia}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
@@ -381,7 +380,6 @@ private fun CampoLargoGestion(
         label = { Text(etiqueta) },
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
         minLines = 3,
-        maxLines = 6
     )
 }
 

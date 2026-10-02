@@ -553,7 +553,6 @@ fun LugaresTratamientoScreen(
                 label = { Text("Centro, lugar o persona") },
                 supportingText = { Text("Escribe una descripción clara y reconocible") },
                 minLines = 3,
-                maxLines = 5,
                 modifier = Modifier.fillMaxWidth()
             )
             BotonPrincipalRuralitos(

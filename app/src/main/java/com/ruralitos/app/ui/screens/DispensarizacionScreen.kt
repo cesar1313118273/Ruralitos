@@ -739,8 +739,6 @@ private fun SelectorFichas(
             Text(
                 actual?.let { "Ficha ${it.numeroFichaFamiliar} · ${it.nombreApellidoJefeFamilia}" }
                     ?: "Elegir ficha familiar",
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold
             )
         }
@@ -758,8 +756,6 @@ private fun SelectorFichas(
                     text = {
                         Text(
                             "${if (seleccion == ficha.id) "✓ " else ""}Ficha ${ficha.numeroFichaFamiliar} · ${ficha.nombreApellidoJefeFamilia}${coincidencia?.let { " · ${it.apellidosNombres}" }.orEmpty()}",
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     onClick = { onSeleccion(ficha.id); abierto = false; consulta = "" }
@@ -820,8 +816,6 @@ private fun SelectorIdentificadoUnico(
                 text = etiquetaActual ?: textoVacio,
                 modifier = Modifier.weight(1f),
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
             )
             Chevron(expandido = abierto, color = AzulClinico)
         }
@@ -835,8 +829,6 @@ private fun SelectorIdentificadoUnico(
                     text = {
                         Text(
                             text = "${if (id == seleccion) "✓ " else ""}$etiqueta",
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     onClick = {
@@ -945,7 +937,6 @@ private fun BarraSeccionesDispensarizacion(
                             color = if (activa) Color.White else MoradoClinico,
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 13.sp,
-                            maxLines = 1,
                             modifier = Modifier.padding(start = 7.dp)
                         )
                     }
@@ -1103,8 +1094,6 @@ private fun SelectorVistaPoblacion(
                         color = if (activa) Color.White else MoradoClinico,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 12.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -1140,8 +1129,6 @@ private fun TarjetaSeleccionActual(
                     .weight(1f)
                     .padding(start = 10.dp),
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "$personas personas",
@@ -1192,8 +1179,6 @@ private fun TarjetaResumenPoblacion(
                 Text(
                     text = titulo,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "$fichas ficha(s) · $personas persona(s)",
@@ -1349,16 +1334,12 @@ private fun AcordeonIndicador(
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.titleMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = subtitulo,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 2.dp),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
 
@@ -1495,8 +1476,6 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
                             modifier = Modifier
                                 .weight(1f)
                                 .padding(start = 8.dp),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                         Surface(
                             shape = RoundedCornerShape(50),
@@ -1548,8 +1527,6 @@ private fun GraficoBarrasRegistro(
                         Text(
                             etiqueta,
                             modifier = Modifier.weight(1f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             valor.toString(),
@@ -1642,8 +1619,6 @@ private fun TarjetaGrupo(
                         text = "Grupo ${grupo.codigo} · ${grupo.titulo}",
                         color = color,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = "$cantidad persona(s)",

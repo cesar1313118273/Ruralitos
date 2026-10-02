@@ -531,7 +531,6 @@ private fun FormularioEmbarazadaScreen(
                 label = { Text("Antecedentes patológicos obstétricos") },
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
                 minLines = 3,
-                maxLines = 5
             )
         }
         error?.let {
@@ -626,7 +625,6 @@ private fun FormularioMortalidadScreen(
                 label = { Text("Causa del fallecimiento") },
                 modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 minLines = 3,
-                maxLines = 5
             )
         }
         error?.let {

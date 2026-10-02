@@ -270,7 +270,6 @@ private fun TarjetasResumen(resumen: ResumenFichas) {
                             titulo,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 10.sp,
-                            maxLines = 1
                         )
                     }
                 }

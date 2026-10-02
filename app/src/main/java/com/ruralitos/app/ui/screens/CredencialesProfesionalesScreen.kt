@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.ui.theme.FondoClinico
@@ -671,7 +672,7 @@ private fun SelectorModoFirma(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.height(54.dp),
+        modifier = modifier.heightIn(min = 54.dp),
         color = if (seleccionado) {
             AzulMarca
         } else {
@@ -796,7 +797,7 @@ private fun BotonPrincipalAzul(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(62.dp),
+            .heightIn(min = 62.dp),
         color = if (enabled) {
             AzulMarca
         } else {
@@ -845,7 +846,7 @@ private fun BotonContornoAzul(
         enabled = enabled,
         modifier = modifier
             .fillMaxWidth()
-            .height(58.dp),
+            .heightIn(min = 58.dp),
         color = Color.White.copy(alpha = 0.94f),
         shape = RoundedCornerShape(16.dp),
         border = BorderStroke(

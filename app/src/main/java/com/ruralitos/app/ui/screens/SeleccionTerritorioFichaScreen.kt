@@ -355,8 +355,6 @@ private fun <T> SelectorGenerico(
                 color = if (enabled) VerdeTexto else GrisTexto,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
 
             Text(

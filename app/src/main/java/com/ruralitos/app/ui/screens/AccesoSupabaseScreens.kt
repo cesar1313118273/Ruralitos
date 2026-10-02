@@ -473,7 +473,7 @@ private fun BotonPrincipalLogin(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 16.dp)
-            .height(60.dp),
+            .heightIn(min = 60.dp),
         color = if (enabled) {
             VerdeLoginNuevo
         } else {

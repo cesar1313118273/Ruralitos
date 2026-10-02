@@ -160,15 +160,12 @@ fun EncabezadoRuralitos(
                     style = MaterialTheme.typography.labelMedium,
                     color = color,
                     fontWeight = FontWeight.SemiBold,
-                    maxLines = 1
                 )
             }
             Text(
                 text = titulo,
                 style = MaterialTheme.typography.titleLarge,
                 color = AzulClinicoOscuro,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = if (paso == null) 0.dp else 2.dp)
             )
             if (descripcion.isNotBlank()) {
@@ -176,8 +173,6 @@ fun EncabezadoRuralitos(
                     text = descripcion,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
@@ -280,8 +275,6 @@ fun EncabezadoPantallaRuralitos(
                     titulo,
                     style = MaterialTheme.typography.titleLarge,
                     color = AzulClinicoOscuro,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
                 )
                 subtitulo?.takeIf { it.isNotBlank() }?.let {
                     Text(

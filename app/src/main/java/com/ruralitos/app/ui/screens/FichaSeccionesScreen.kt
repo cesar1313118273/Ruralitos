@@ -300,8 +300,6 @@ private fun GrupoFichaDesplegable(
                         style = MaterialTheme.typography.titleMedium,
                         color = AzulClinicoOscuro,
                         fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = grupo.descripcion,
@@ -320,8 +318,12 @@ private fun GrupoFichaDesplegable(
             }
 
             if (abierto) {
-                HorizontalDivider(color = BordeClinico)
-                Column(modifier = Modifier.fillMaxWidth()) {
+                HorizontalDivider(color = color.copy(alpha = 0.25f))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color.copy(alpha = 0.09f))
+                ) {
                     grupo.secciones.forEachIndexed { indice, seccion ->
                         TarjetaSeccionRedisenada(
                             seccion = seccion,
@@ -331,7 +333,7 @@ private fun GrupoFichaDesplegable(
                         if (indice < grupo.secciones.lastIndex) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(start = 70.dp),
-                                color = BordeClinico
+                                color = color.copy(alpha = 0.22f)
                             )
                         }
                     }
@@ -501,7 +503,7 @@ private fun TarjetaSeccionRedisenada(
         Surface(
             modifier = Modifier.size(40.dp),
             shape = RoundedCornerShape(12.dp),
-            color = seccion.color.copy(alpha = 0.12f)
+            color = Color.White
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
@@ -523,16 +525,12 @@ private fun TarjetaSeccionRedisenada(
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = AzulClinicoOscuro,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = seccion.descripcion,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 3.dp),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
             )
         }
 
