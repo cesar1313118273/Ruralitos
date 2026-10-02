@@ -1,5 +1,8 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.ItemMenuRuralitos
+import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
+import com.ruralitos.app.ui.components.BotonSelectorRuralitos
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -648,16 +651,16 @@ private fun SelectorPersonaExistenteSalud(
     var idSeleccionado by remember { mutableStateOf(idInicial) }
     Text("Integrante de la ficha", fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp, bottom = 5.dp))
     Box(Modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { expandido = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+        BotonSelectorRuralitos(onClick = { expandido = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text(miembros.firstOrNull { it.id == idSeleccionado }?.apellidosNombres ?: "Completar una persona nueva")
         }
-        DropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
-            DropdownMenuItem(
+        MenuDesplegableRuralitos(expanded = expandido, onDismissRequest = { expandido = false }) {
+            ItemMenuRuralitos(
                 text = { Text("Completar una persona nueva") },
                 onClick = { idSeleccionado = null; expandido = false }
             )
             miembros.forEach { persona ->
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = { Text("${if (persona.id == idSeleccionado) "✓ " else ""}${persona.apellidosNombres}") },
                     onClick = {
                         idSeleccionado = persona.id
@@ -680,7 +683,7 @@ private fun SelectorTextoSalud(
     var expandido by remember { mutableStateOf(false) }
     Text(titulo, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
     Box(Modifier.fillMaxWidth()) {
-        OutlinedButton(onClick = { expandido = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+        BotonSelectorRuralitos(onClick = { expandido = true }, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
             Text(
                 when (seleccion) {
                     "H" -> "Hombre"
@@ -694,9 +697,9 @@ private fun SelectorTextoSalud(
                 }
             )
         }
-        DropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
+        MenuDesplegableRuralitos(expanded = expandido, onDismissRequest = { expandido = false }) {
             opciones.forEach { opcion ->
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = { Text("${if (opcion == seleccion) "✓ " else ""}${when (opcion) { "H" -> "Hombre"; "M" -> "Mujer"; else -> opcion }}") },
                     onClick = { onSeleccion(opcion); expandido = false }
                 )

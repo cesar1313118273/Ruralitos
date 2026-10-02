@@ -1,5 +1,8 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.ItemMenuRuralitos
+import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
+import com.ruralitos.app.ui.components.BotonSelectorRuralitos
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.R
 
@@ -731,12 +734,11 @@ private fun SelectorFichas(
     val actual = fichas.firstOrNull { it.id == seleccion }
     val encontradas = buscarFichasPorIntegrante(fichas, miembros, consulta)
     Box(Modifier.fillMaxWidth().padding(top = 2.dp)) {
-        OutlinedButton(
+        BotonSelectorRuralitos(
             onClick = { abierto = true },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 56.dp),
-            shape = RoundedCornerShape(16.dp)
+                .heightIn(min = 56.dp)
         ) {
             Text(
                 actual?.let { "Ficha ${it.numeroFichaFamiliar} · ${it.nombreApellidoJefeFamilia}" }
@@ -744,17 +746,17 @@ private fun SelectorFichas(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
+        MenuDesplegableRuralitos(expanded = abierto, onDismissRequest = { abierto = false }) {
             OutlinedTextField(
                 value = consulta,
                 onValueChange = { consulta = it },
                 label = { Text("Buscar por nombre o cédula") },
                 singleLine = true,
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.fillMaxWidth().padding(10.dp)
             )
             fichas.filter { it.id in encontradas }.take(50).forEach { ficha ->
                 val coincidencia = miembros.firstOrNull { it.fichaId == ficha.id && consulta.isNotBlank() && normalizarBusqueda("${it.apellidosNombres} ${it.cedula}").contains(normalizarBusqueda(consulta)) }
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = {
                         Text(
                             "${if (seleccion == ficha.id) "✓ " else ""}Ficha ${ficha.numeroFichaFamiliar} · ${ficha.nombreApellidoJefeFamilia}${coincidencia?.let { " · ${it.apellidosNombres}" }.orEmpty()}",
@@ -806,28 +808,25 @@ private fun SelectorIdentificadoUnico(
             .fillMaxWidth()
             .padding(top = 2.dp)
     ) {
-        OutlinedButton(
+        BotonSelectorRuralitos(
             onClick = { abierto = true },
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 56.dp),
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(1.dp, AzulClinico.copy(alpha = 0.22f))
+                .heightIn(min = 56.dp)
         ) {
             Text(
                 text = etiquetaActual ?: textoVacio,
                 modifier = Modifier.weight(1f),
                 fontWeight = FontWeight.SemiBold,
             )
-            Chevron(expandido = abierto, color = AzulClinico)
         }
 
-        DropdownMenu(
+        MenuDesplegableRuralitos(
             expanded = abierto,
             onDismissRequest = { abierto = false }
         ) {
             opciones.forEach { (id, etiqueta) ->
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = {
                         Text(
                             text = "${if (id == seleccion) "✓ " else ""}$etiqueta",

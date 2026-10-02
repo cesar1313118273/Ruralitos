@@ -1,5 +1,8 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.ItemMenuRuralitos
+import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
+import com.ruralitos.app.ui.components.BotonSelectorRuralitos
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -544,6 +547,8 @@ private fun FormularioMiembroScreen(
     ) {
         SeccionFormularioRuralitos(
             titulo = "1. Identificación personal",
+            desplegable = true,
+            abiertaInicial = true,
             descripcion = "Apellidos y nombres, parentesco, cédula y fecha de nacimiento."
         ) {
             CampoTexto(nombres, { nombres = it }, "Apellidos y nombres")
@@ -573,6 +578,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "2. Características personales",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "Sexo, escolaridad y ocupación según el grupo de edad."
         ) {
             SeleccionTextoMiembro("Sexo", listOf("H" to "Hombre", "M" to "Mujer"), sexo, MoradoClinico) { sexo = it }
@@ -607,6 +614,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "3. Seguimiento preventivo",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "Vacunas, nutrición, salud bucal y consumo. Estos datos alimentan la dispensarización automática."
         ) {
             SeleccionBooleanMiembro(
@@ -679,6 +688,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "4. Estrategias Nacionales",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "¿Esta persona pertenece a uno o varios de los siguientes grupos?"
         ) {
             SelectorMultipleMiembro(
@@ -723,6 +734,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "5. Discapacidad",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "Selecciona un tipo. Los campos relacionados se habilitan solo cuando corresponda."
         ) {
             SeleccionOpcionMiembro(
@@ -762,6 +775,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "6. Alertas Epidemiológicas",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "Registra eventos y casos epidemiológicos."
         ) {
             SelectorMultipleMiembro(
@@ -786,6 +801,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "7. Actores comunitarios",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "Selecciona únicamente las funciones comunitarias que correspondan."
         ) {
             SelectorMultipleMiembro(
@@ -809,6 +826,8 @@ private fun FormularioMiembroScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "8. Otros riesgos prioritarios",
+            desplegable = true,
+            abiertaInicial = false,
             descripcion = "Selecciona la condición registrada o Ninguno."
         ) {
             SeleccionOpcionMiembro(
@@ -911,7 +930,7 @@ private fun SelectorDesplegableMiembro(
         modifier = Modifier.padding(top = 14.dp, bottom = 5.dp)
     )
     Box(Modifier.fillMaxWidth()) {
-        OutlinedButton(
+        BotonSelectorRuralitos(
             onClick = { expandido = true },
             enabled = enabled,
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
@@ -922,12 +941,12 @@ private fun SelectorDesplegableMiembro(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        DropdownMenu(
+        MenuDesplegableRuralitos(
             expanded = expandido,
             onDismissRequest = { expandido = false }
         ) {
             opciones.forEach { (valor, etiqueta) ->
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = { Text("${if (valor == seleccion) "✓ " else ""}$etiqueta") },
                     onClick = {
                         onSeleccion(valor)
@@ -979,7 +998,7 @@ private fun SelectorMultipleMiembro(
     var expandido by remember { mutableStateOf(false) }
     Text(titulo, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
     Box(Modifier.fillMaxWidth()) {
-        OutlinedButton(
+        BotonSelectorRuralitos(
             onClick = { expandido = true },
             modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
         ) {
@@ -992,13 +1011,13 @@ private fun SelectorMultipleMiembro(
                 fontWeight = FontWeight.SemiBold
             )
         }
-        DropdownMenu(expanded = expandido, onDismissRequest = { expandido = false }) {
-            DropdownMenuItem(
+        MenuDesplegableRuralitos(expanded = expandido, onDismissRequest = { expandido = false }) {
+            ItemMenuRuralitos(
                 text = { Text("${if (seleccion.isEmpty()) "✓ " else ""}Ninguno") },
                 onClick = { onSeleccion(emptySet()); expandido = false }
             )
             opciones.forEach { (valor, etiqueta) ->
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = { Text("${if (valor in seleccion) "✓ " else ""}$etiqueta") },
                     onClick = {
                         onSeleccion(if (valor in seleccion) seleccion - valor else seleccion + valor)

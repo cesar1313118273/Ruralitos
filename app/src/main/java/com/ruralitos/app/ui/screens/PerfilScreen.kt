@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.BordeCampo
+import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -296,8 +298,8 @@ internal fun CampoCargoPredeterminado(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(abierto) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MoradoClinico,
-                    unfocusedBorderColor = BordeClinico,
+                    focusedBorderColor = CianRuralitos,
+                    unfocusedBorderColor = BordeCampo,
                     focusedContainerColor = Color.White,
                     unfocusedContainerColor = Color.White
                 ),
@@ -308,7 +310,7 @@ internal fun CampoCargoPredeterminado(
                 onDismissRequest = { abierto = false }
             ) {
                 opciones.forEach { opcion ->
-                    DropdownMenuItem(
+                    ItemMenuRuralitos(
                         text = {
                             Column {
                                 Text(opcion, fontWeight = FontWeight.SemiBold)

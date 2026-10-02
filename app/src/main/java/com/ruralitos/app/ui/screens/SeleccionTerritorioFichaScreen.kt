@@ -1,5 +1,8 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.ItemMenuRuralitos
+import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
+import com.ruralitos.app.ui.components.BotonSelectorRuralitos
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -322,21 +325,12 @@ private fun <T> SelectorGenerico(
     Box(
         modifier = Modifier.fillMaxWidth()
     ) {
-        OutlinedButton(
+        BotonSelectorRuralitos(
             onClick = { abierto = true },
             enabled = enabled,
-            shape = RoundedCornerShape(16.dp),
-            border = BorderStroke(
-                width = 1.dp,
-                color = if (enabled) BordeSelector else Color(0xFFE2ECF1)
-            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 62.dp),
-            colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = Color.White,
-                disabledContainerColor = Color(0xFFF6F9FB)
-            )
+                .heightIn(min = 62.dp)
         ) {
             Image(
                 painter = painterResource(iconoRes),
@@ -357,16 +351,9 @@ private fun <T> SelectorGenerico(
                 fontWeight = FontWeight.SemiBold,
             )
 
-            Text(
-                text = "⌄",
-                color = if (enabled) VerdeTexto else GrisTexto,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(start = 8.dp)
-            )
         }
 
-        DropdownMenu(
+        MenuDesplegableRuralitos(
             expanded = abierto,
             onDismissRequest = { abierto = false },
             modifier = Modifier
@@ -374,7 +361,7 @@ private fun <T> SelectorGenerico(
                 .background(Color.White)
         ) {
             opciones.forEach { opcion ->
-                DropdownMenuItem(
+                ItemMenuRuralitos(
                     text = {
                         Text(
                             text = etiqueta(opcion),

@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.ItemMenuRuralitos
+import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.Manifest
@@ -844,21 +846,19 @@ private fun FormularioAgenda(
             text = {
                 Column {
                     OutlinedTextField(buscarPersona, { buscarPersona = it },
-                        label = { Text("Buscar nombre o cédula") }, modifier = Modifier.fillMaxWidth())
-                    LazyColumn(Modifier.height(320.dp)) {
+                        label = { Text("Buscar nombre o cédula") }, singleLine = true,
+                        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
+                    LazyColumn(Modifier.height(320.dp).padding(top = 8.dp)) {
                         item {
-                            TextButton(onClick = { persona = null; personaModificada = true; elegirPersona = false }) {
-                                Text("Actividad general", color = agendaVerde)
+                            FilaBusquedaAgenda("Actividad general", "Sin paciente ni familia asociada") {
+                                persona = null; personaModificada = true; elegirPersona = false
                             }
                         }
                         items(personas.filter {
                             buscarPersona.isBlank() || it.apellidosNombres.contains(buscarPersona, true) || it.cedula.contains(buscarPersona)
                         }.take(60), key = { it.miembroId }) { item ->
-                            TextButton(onClick = { persona = item; personaModificada = true; elegirPersona = false }) {
-                                Column(Modifier.fillMaxWidth()) {
-                                    Text(item.apellidosNombres, color = agendaAzul)
-                                    Text("${item.cedula} · ${item.barrio}", color = agendaSecundario, fontSize = 11.sp)
-                                }
+                            FilaBusquedaAgenda(item.apellidosNombres, "${item.cedula} · ${item.barrio}") {
+                                persona = item; personaModificada = true; elegirPersona = false
                             }
                         }
                     }
@@ -928,9 +928,9 @@ private fun FormularioAgenda(
                         CampoAgenda(tipo, iconoActividad(tipo)) {
                             if (original?.origen != "SEGUIMIENTO") elegirTipo = true
                         }
-                        DropdownMenu(expanded = elegirTipo && original?.origen != "SEGUIMIENTO", onDismissRequest = { elegirTipo = false }) {
+                        MenuDesplegableRuralitos(expanded = elegirTipo && original?.origen != "SEGUIMIENTO", onDismissRequest = { elegirTipo = false }) {
                             agendaTipos.forEach { opcion ->
-                                DropdownMenuItem(text = { Text(opcion) }, onClick = { tipo = opcion; elegirTipo = false })
+                                ItemMenuRuralitos(text = { Text(opcion) }, onClick = { tipo = opcion; elegirTipo = false })
                             }
                         }
                     }
@@ -999,6 +999,22 @@ private fun FormularioAgenda(
                 ) { Text(if (guardando) "Guardando…" else "Guardar actividad", fontWeight = FontWeight.SemiBold) }
         }
     }
+}
+
+@Composable
+private fun FilaBusquedaAgenda(titulo: String, detalle: String?, onClick: () -> Unit) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp, vertical = 12.dp)
+    ) {
+        Text(titulo, color = agendaAzul, fontWeight = FontWeight.SemiBold)
+        detalle?.let {
+            Text(it, color = agendaSecundario, fontSize = 12.sp, modifier = Modifier.padding(top = 2.dp))
+        }
+    }
+    HorizontalDivider(color = Color(0xFFE2ECF1))
 }
 
 @Composable

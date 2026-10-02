@@ -1,5 +1,9 @@
 package com.ruralitos.app.ui.components
 
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +51,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -394,6 +401,85 @@ fun PantallaListaRuralitos(
     }
 }
 
+/** Campo tipo "spinner": muestra el valor elegido y una flecha para desplegar opciones. */
+@Composable
+fun BotonSelectorRuralitos(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable RowScope.() -> Unit
+) {
+    val forma = RoundedCornerShape(RuralitosRadius.input)
+    Row(
+        modifier = modifier
+            .heightIn(min = 52.dp)
+            .alpha(if (enabled) 1f else 0.55f)
+            .clip(forma)
+            .background(Color.White)
+            .border(1.dp, BordeCampo, forma)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(start = 14.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) { content() }
+        Box(
+            Modifier
+                .padding(start = 8.dp)
+                .size(32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(MaterialTheme.colorScheme.primaryContainer),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                "⌄",
+                color = MaterialTheme.colorScheme.primary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
+
+/** Ventana de opciones del spinner, con el mismo diseño en toda la app. */
+@Composable
+fun MenuDesplegableRuralitos(
+    expanded: Boolean,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismissRequest,
+        modifier = modifier
+            .background(Color.White)
+            .widthIn(min = 220.dp),
+        shape = RoundedCornerShape(RuralitosRadius.card),
+        containerColor = Color.White,
+        tonalElevation = 0.dp,
+        shadowElevation = 6.dp,
+        border = BorderStroke(1.dp, BordeClinico),
+        content = content
+    )
+}
+
+/** Opción del spinner: texto grande y fácil de tocar, separada por una línea fina. */
+@Composable
+fun ItemMenuRuralitos(
+    text: @Composable () -> Unit,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    DropdownMenuItem(
+        text = text,
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.heightIn(min = 48.dp),
+        colors = MenuDefaults.itemColors(textColor = AzulClinicoOscuro)
+    )
+}
+
 /** Tarjeta blanca de bordes finos para agrupar campos dentro de una pantalla. */
 @Composable
 fun TarjetaFormularioRuralitos(
@@ -417,32 +503,71 @@ fun SeccionFormularioRuralitos(
     titulo: String,
     descripcion: String? = null,
     modifier: Modifier = Modifier,
+    desplegable: Boolean = false,
+    abiertaInicial: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    var abierta by rememberSaveable(titulo) { mutableStateOf(abiertaInicial || !desplegable) }
     Column(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(RuralitosRadius.card))
             .background(Color.White)
             .border(1.dp, BordeClinico, RoundedCornerShape(RuralitosRadius.card))
-            .padding(RuralitosSpacing.base)
     ) {
-        Text(
-            titulo,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.SemiBold
-        )
-        descripcion?.let {
-            Text(
-                limpiarTextoInterfaz(it),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp)
-            )
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .then(if (desplegable) Modifier.clickable { abierta = !abierta } else Modifier)
+                .padding(RuralitosSpacing.base),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    titulo,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (abierta || !desplegable) {
+                    descripcion?.let {
+                        Text(
+                            limpiarTextoInterfaz(it),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 2.dp)
+                        )
+                    }
+                }
+            }
+            if (desplegable) {
+                Box(
+                    Modifier
+                        .padding(start = RuralitosSpacing.md)
+                        .size(32.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        if (abierta) "⌃" else "⌄",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
         }
-        Column(Modifier.padding(top = RuralitosSpacing.md)) {
-            content()
+        if (abierta || !desplegable) {
+            Column(
+                Modifier.padding(
+                    start = RuralitosSpacing.base,
+                    end = RuralitosSpacing.base,
+                    bottom = RuralitosSpacing.base
+                )
+            ) {
+                content()
+            }
         }
     }
 }
