@@ -67,7 +67,7 @@ fun EditarDatosPrincipalesScreen(
 
     PantallaRuralitos(
         titulo = "Datos personales y de la ficha",
-        descripcion = "Cada etiqueta está fuera de su cuadro para que los textos permanezcan separados y legibles en cualquier pantalla.",
+        descripcion = "Revisa o corrige los datos del jefe o jefa de la familia y el control de la ficha.",
         paso = 1,
         totalPasos = 10,
         etiquetaPaso = "Información del hogar",
@@ -196,50 +196,7 @@ fun EditarDatosPrincipalesScreen(
                 }
             }
         }
-        SeccionFormularioRuralitos(
-            titulo = "Responsable profesional",
-            descripcion = "Estos datos provienen de la cuenta activa y se colocarán automáticamente en Excel y PDF."
-        ) {
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                if (maxWidth >= 680.dp) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        CampoPersonal(
-                            valor = ficha.responsableNombre,
-                            onCambio = {},
-                            etiqueta = "Apellidos y nombres del responsable",
-                            ayuda = "Usuario con la sesión abierta",
-                            soloLectura = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                        CampoPersonal(
-                            valor = ficha.responsableCodigo,
-                            onCambio = {},
-                            etiqueta = "Código SENESCYT",
-                            ayuda = "Registrado en el perfil profesional",
-                            soloLectura = true,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        CampoPersonal(
-                            valor = ficha.responsableNombre,
-                            onCambio = {},
-                            etiqueta = "Apellidos y nombres del responsable",
-                            ayuda = "Usuario con la sesión abierta",
-                            soloLectura = true
-                        )
-                        CampoPersonal(
-                            valor = ficha.responsableCodigo,
-                            onCambio = {},
-                            etiqueta = "Código SENESCYT",
-                            ayuda = "Registrado en el perfil profesional",
-                            soloLectura = true
-                        )
-                    }
-                }
-            }
-        }
+
         error?.let {
             Surface(
                 color = Color(0xFFFFECEF),

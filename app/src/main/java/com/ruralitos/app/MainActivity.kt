@@ -1474,10 +1474,10 @@ fun RuralitosApp() {
                                 }
                             },
                             onCancelar = {
+                                // Regresar nunca avanza: si la ficha ya existe se vuelve a su panel.
                                 pantallaActual = when {
                                     desdeRevision -> "revisionFicha"
-                                    modoEdicion -> "menuFicha"
-                                    else -> "ubicacion"
+                                    else -> "menuFicha"
                                 }
                                 desdeRevision = false
                             }
