@@ -71,7 +71,6 @@ import com.ruralitos.app.ui.components.EncabezadoRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
-import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
@@ -272,57 +271,30 @@ Column(
             }
 
             item(key = "titulo_resultados") {
-                Surface(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
-                    color = Color.White.copy(alpha = 0.94f),
-                    shape = RoundedCornerShape(16.dp),
-                    shadowElevation = 1.dp,
-                    border = BorderStroke(
-                        1.dp,
-                        AzulClinico.copy(alpha = 0.10f)
-                    )
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 18.dp, vertical = 17.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(
+                        text = "Resultados",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = Color(0xFFE3F4F7)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Surface(
-                                modifier = Modifier.size(44.dp),
-                                color = AzulClinico.copy(alpha = 0.10f),
-                                shape = CircleShape
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "●●",
-                                        color = AzulClinico,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                            }
-
-                            Text(
-                                text = "Resultados",
-                                color = MaterialTheme.colorScheme.onSurface,
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(start = 12.dp)
-                            )
-                        }
-
                         Text(
                             text = "$total ficha(s)",
-                            color = AzulClinico,
+                            color = CianRuralitos,
+                            style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         )
                     }
                 }
@@ -334,13 +306,9 @@ Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        color = Color.White.copy(alpha = 0.96f),
+                        color = Color.White,
                         shape = RoundedCornerShape(16.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            AzulClinico.copy(alpha = 0.12f)
-                        ),
-                        shadowElevation = 1.dp
+                        border = BorderStroke(1.dp, Color(0xFFE2ECF1))
                     ) {
                         Column(
                             modifier = Modifier
@@ -401,7 +369,7 @@ private fun TarjetaEncabezadoBusqueda(
         shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
-            AzulClinico.copy(alpha = 0.09f)
+            CianRuralitos.copy(alpha = 0.09f)
         )
     ) {
         Row(
@@ -415,7 +383,7 @@ private fun TarjetaEncabezadoBusqueda(
             ) {
                 Text(
                     text = "ARCHIVO FAMILIAR",
-                    color = AzulClinico,
+                    color = CianRuralitos,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -440,12 +408,12 @@ private fun TarjetaEncabezadoBusqueda(
                 modifier = Modifier
                     .size(58.dp)
                     .padding(start = 4.dp),
-                color = AzulClinico.copy(alpha = 0.10f),
+                color = CianRuralitos.copy(alpha = 0.10f),
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     IconoCarpetaBusqueda(
-                        color = AzulClinico,
+                        color = CianRuralitos,
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -477,31 +445,27 @@ private fun TarjetaBusquedaFichas(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        color = Color.White.copy(alpha = 0.97f),
+        color = Color.White,
         shape = RoundedCornerShape(16.dp),
-        shadowElevation = 1.dp,
-        border = BorderStroke(
-            1.dp,
-            AzulClinico.copy(alpha = 0.10f)
-        )
+        border = BorderStroke(1.dp, Color(0xFFE2ECF1))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp)
+                .padding(16.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.size(52.dp),
-                    color = AzulClinico.copy(alpha = 0.10f),
-                    shape = CircleShape
+                    modifier = Modifier.size(40.dp),
+                    color = Color(0xFFE3F4F7),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         IconoLupa(
-                            color = Color(0xFF315C95),
-                            modifier = Modifier.size(29.dp)
+                            color = CianRuralitos,
+                            modifier = Modifier.size(22.dp)
                         )
                     }
                 }
@@ -513,7 +477,7 @@ private fun TarjetaBusquedaFichas(
                 ) {
                     Text(
                         text = "Buscar fichas",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = Color(0xFF0A2A5E)
                     )
@@ -521,7 +485,7 @@ private fun TarjetaBusquedaFichas(
                     Text(
                         text = "Por nombre o cédula de cualquier integrante.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
@@ -534,14 +498,14 @@ private fun TarjetaBusquedaFichas(
                 leadingIcon = {
                     IconoUsuarioBusqueda(
                         color = Color(0xFF5B7083),
-                        modifier = Modifier.size(25.dp)
+                        modifier = Modifier.size(22.dp)
                     )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 18.dp),
+                    .padding(top = 14.dp),
                 singleLine = true,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             )
 
             Surface(
@@ -549,29 +513,29 @@ private fun TarjetaBusquedaFichas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 14.dp),
-                color = CianRuralitos.copy(alpha = 0.08f),
-                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFFE3F4F7),
+                shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(
                     1.dp,
-                    CianRuralitos.copy(alpha = 0.15f)
+                    CianRuralitos.copy(alpha = 0.18f)
                 )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 13.dp, vertical = 12.dp),
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Surface(
-                        modifier = Modifier.size(38.dp),
-                        color = CianRuralitos.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.size(34.dp),
+                        color = Color.White,
+                        shape = RoundedCornerShape(10.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
                                 text = "≡",
                                 color = CianRuralitos,
-                                fontSize = 21.sp,
+                                fontSize = 18.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -590,7 +554,7 @@ private fun TarjetaBusquedaFichas(
                             },
                             color = CianRuralitos,
                             fontWeight = FontWeight.SemiBold,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleSmall
                         )
 
                         Text(
@@ -604,7 +568,7 @@ private fun TarjetaBusquedaFichas(
                         text = if (filtrosAvanzados) "⌃" else "›",
                         color = CianRuralitos,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 24.sp
+                        fontSize = 20.sp
                     )
                 }
             }
@@ -704,7 +668,7 @@ private fun TarjetaBusquedaFichas(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 12.dp),
-                        shape = RoundedCornerShape(16.dp),
+                        shape = RoundedCornerShape(12.dp),
                         color = colorEstado.copy(alpha = 0.08f),
                         border = BorderStroke(
                             1.dp,
@@ -757,10 +721,9 @@ private fun TarjetaBusquedaFichas(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
-                    .heightIn(min = 62.dp),
-                color = Color(0xFF1565C0),
-                shape = RoundedCornerShape(16.dp),
-                shadowElevation = 1.dp
+                    .heightIn(min = 52.dp),
+                color = CianRuralitos,
+                shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -769,13 +732,13 @@ private fun TarjetaBusquedaFichas(
                 ) {
                     IconoLupa(
                         color = Color.White,
-                        modifier = Modifier.size(27.dp)
+                        modifier = Modifier.size(22.dp)
                     )
 
                     Text(
                         text = "Buscar fichas",
                         color = Color.White,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(start = 12.dp)
                     )
@@ -804,12 +767,8 @@ private fun MenuPaginacion(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.96f),
-        border = BorderStroke(
-            1.dp,
-            AzulClinico.copy(alpha = 0.12f)
-        ),
-        shadowElevation = 1.dp
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFE2ECF1))
     ) {
         Column(
             modifier = Modifier
@@ -819,7 +778,7 @@ private fun MenuPaginacion(
         ) {
             Text(
                 text = "Página $paginaActual de $totalPaginas",
-                color = AzulClinico,
+                color = CianRuralitos,
                 fontWeight = FontWeight.SemiBold
             )
 
@@ -867,23 +826,23 @@ private fun BotonPagina(
 ) {
     Surface(
         modifier = Modifier
-            .size(39.dp)
+            .size(40.dp)
             .clickable(
                 enabled = habilitado,
                 onClick = onClick
             ),
         shape = RoundedCornerShape(12.dp),
         color = when {
-            seleccionado -> AzulClinico
-            habilitado -> AzulClinico.copy(alpha = 0.10f)
+            seleccionado -> CianRuralitos
+            habilitado -> CianRuralitos.copy(alpha = 0.10f)
             else -> Color(0xFFF1F3F5)
         },
         border = BorderStroke(
             1.dp,
             if (seleccionado) {
-                AzulClinico
+                CianRuralitos
             } else {
-                AzulClinico.copy(alpha = 0.20f)
+                CianRuralitos.copy(alpha = 0.20f)
             }
         )
     ) {
@@ -892,7 +851,7 @@ private fun BotonPagina(
                 text = texto,
                 color = when {
                     seleccionado -> Color.White
-                    habilitado -> AzulClinico
+                    habilitado -> CianRuralitos
                     else -> Color(0xFFADB5BD)
                 },
                 fontWeight = FontWeight.SemiBold
@@ -913,12 +872,8 @@ private fun TarjetaFichaElegante(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        color = Color.White.copy(alpha = 0.98f),
-        shadowElevation = 1.dp,
-        border = BorderStroke(
-            1.dp,
-            AzulClinico.copy(alpha = 0.12f)
-        )
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFE2ECF1))
     ) {
         Column(
             modifier = Modifier
@@ -930,8 +885,8 @@ private fun TarjetaFichaElegante(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Surface(
-                    modifier = Modifier.size(58.dp),
-                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.size(44.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = color.copy(alpha = 0.12f)
                 ) {
                     Box(
@@ -942,7 +897,7 @@ private fun TarjetaFichaElegante(
                                 .takeLast(3)
                                 .ifBlank { "F" },
                             color = color,
-                            fontSize = 18.sp,
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -954,7 +909,7 @@ private fun TarjetaFichaElegante(
                     Text(
                         text = ficha.nombreApellidoJefeFamilia
                             .ifBlank { "Familia sin nombre" },
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         color = Color(0xFF0A2A5E),
                         fontWeight = FontWeight.SemiBold,
                     )
@@ -968,7 +923,7 @@ private fun TarjetaFichaElegante(
                 }
 
                 Surface(
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(50),
                     color = color.copy(alpha = 0.13f)
                 ) {
                     Text(
@@ -993,7 +948,7 @@ private fun TarjetaFichaElegante(
                 Surface(
                     modifier = Modifier.size(30.dp),
                     shape = RoundedCornerShape(9.dp),
-                    color = AzulClinico.copy(alpha = 0.08f)
+                    color = CianRuralitos.copy(alpha = 0.08f)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Text(
@@ -1023,9 +978,8 @@ private fun TarjetaFichaElegante(
 
                 Text(
                     text = "›",
-                    color = AzulClinico,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.SemiBold
+                    color = Color(0xFF5B7083),
+                    fontSize = 22.sp
                 )
             }
         }
@@ -1042,18 +996,14 @@ private fun SelectorFechaBusqueda(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         color = Color.White,
-        border = BorderStroke(
-            1.dp,
-            AzulClinico.copy(alpha = 0.28f)
-        ),
-        shadowElevation = 1.dp
+        border = BorderStroke(1.dp, Color(0xFFCFDDE5))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
@@ -1065,8 +1015,8 @@ private fun SelectorFechaBusqueda(
 
                 Text(
                     text = fecha.ifBlank { "Todas las fechas" },
-                    style = MaterialTheme.typography.titleMedium,
-                    color = AzulClinico,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = CianRuralitos,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 3.dp)
                 )
@@ -1080,12 +1030,12 @@ private fun SelectorFechaBusqueda(
             }
 
             Surface(
-                color = AzulClinico.copy(alpha = 0.10f),
+                color = CianRuralitos.copy(alpha = 0.10f),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
                     text = fecha.take(2).ifBlank { "--" },
-                    color = AzulClinico,
+                    color = CianRuralitos,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(
                         horizontal = 13.dp,
@@ -1108,9 +1058,9 @@ private fun CampoFiltro(
         value = valor,
         onValueChange = onCambio,
         label = { Text(etiqueta) },
-        modifier = modifier.padding(top = 9.dp),
+        modifier = modifier.padding(top = 10.dp),
         singleLine = true,
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(12.dp)
     )
 }
 
@@ -1420,7 +1370,7 @@ private fun colorEstado(estado: String): Color = when (estado) {
     "ARCHIVADA" -> MoradoClinico
     "BORRADOR" -> NaranjaClinico
     "ELIMINADA" -> RojoClinico
-    else -> AzulClinico
+    else -> CianRuralitos
 }
 private fun fechaParaSelectorMillis(fecha: String): Long? {
     val partes = fecha.split('/')
