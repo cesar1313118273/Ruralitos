@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.statusBarsPadding
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -417,59 +419,9 @@ private class SesionNotaEnPantalla(
 
 @Composable
 private fun CabeceraNotasConOnda() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .aspectRatio(392f / 132f)
-    ) {
-        Image(
-            painter = painterResource(
-                id = R.drawable.ruralitos_paisaje_cabecera
-            ),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        /*
-         * EFECTO DE ONDA:
-         * se superpone una figura blanca/gris muy claro al borde inferior
-         * de la imagen. Es el mismo efecto curvo del diseño de referencia.
-         */
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp)
-                .align(Alignment.BottomCenter)
-        ) {
-            val w = size.width
-            val h = size.height
-
-            val onda = Path().apply {
-                moveTo(0f, h * 0.18f)
-
-                cubicTo(
-                    w * 0.14f, h * 0.22f,
-                    w * 0.22f, h * 0.94f,
-                    w * 0.45f, h * 0.82f
-                )
-
-                cubicTo(
-                    w * 0.64f, h * 0.72f,
-                    w * 0.74f, h * 0.20f,
-                    w, h * 0.38f
-                )
-
-                lineTo(w, h)
-                lineTo(0f, h)
-                close()
-            }
-
-            drawPath(
-                path = onda,
-                color = FondoNotasDiarias
-            )
-        }
+    Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
+        Spacer(Modifier.height(10.dp))
+        HorizontalDivider(color = Color(0xFFE2ECF1))
     }
 }
 
@@ -568,7 +520,7 @@ private fun SelectorFechaNotasDialog(
     val filas = (desplazamiento + dias + 6) / 7
     AlertDialog(
         onDismissRequest = onCerrar,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         containerColor = Color.White,
         title = { Text(titulo, color = AzulTituloNotas, fontWeight = FontWeight.SemiBold) },
         text = {
@@ -644,7 +596,7 @@ private fun TarjetaSinNotas(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 18.dp),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = FondoTarjetaNotas
         ),
@@ -809,7 +761,7 @@ private fun DialogoNotaDiaria(
     var marcada by remember(notaSeleccionadaId, notaRealizada) { mutableStateOf(notaRealizada) }
     AlertDialog(
         onDismissRequest = onCerrar,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         containerColor = Color.White,
         title = {
             Column {

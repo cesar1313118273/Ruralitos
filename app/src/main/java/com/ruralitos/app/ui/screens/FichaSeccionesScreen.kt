@@ -372,7 +372,7 @@ private fun PanelAdministracionFicha(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -248,26 +249,17 @@ fun SalaScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Se conserva exactamente la misma imagen ya utilizada por Ruralitos.
-            Image(
-                painter = painterResource(R.drawable.ruralitos_paisaje_cabecera),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(178.dp),
-                contentScale = ContentScale.Crop
-            )
+            Spacer(Modifier.statusBarsPadding().height(8.dp))
 
             // Contenedor blanco superpuesto al paisaje, con la forma escogida por el usuario:
             // sin onda, solo esquinas superiores grandes y redondeadas.
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .offset(y = (-24).dp),
+                    .fillMaxWidth(),
                 color = Color(0xFFF6F9FB),
                 shape = RoundedCornerShape(
-                    topStart = 30.dp,
-                    topEnd = 30.dp,
+                    topStart = 0.dp,
+                    topEnd = 0.dp,
                     bottomStart = 0.dp,
                     bottomEnd = 0.dp
                 ),
@@ -964,7 +956,7 @@ private fun PanelDesplegableSala(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White,
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 1.dp,
         border = BorderStroke(
             width = 1.dp,

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.R
 
 import androidx.compose.foundation.BorderStroke
@@ -869,67 +870,14 @@ private fun EncabezadoRegistroCurvo(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
+            .statusBarsPadding()
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(210.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ruralitos_paisaje_cabecera),
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)),
-                contentScale = ContentScale.Crop
-            )
-
-            Canvas(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp)
-                    .align(Alignment.BottomCenter)
-            ) {
-                val curva = Path().apply {
-                    moveTo(0f, size.height * 0.22f)
-                    cubicTo(
-                        size.width * 0.17f,
-                        size.height * 0.18f,
-                        size.width * 0.29f,
-                        size.height * 0.92f,
-                        size.width * 0.51f,
-                        size.height * 0.82f
-                    )
-                    cubicTo(
-                        size.width * 0.68f,
-                        size.height * 0.75f,
-                        size.width * 0.77f,
-                        size.height * 0.30f,
-                        size.width * 0.91f,
-                        size.height * 0.31f
-                    )
-                    cubicTo(
-                        size.width * 0.96f,
-                        size.height * 0.31f,
-                        size.width * 0.99f,
-                        size.height * 0.42f,
-                        size.width,
-                        size.height * 0.50f
-                    )
-                    lineTo(size.width, size.height)
-                    lineTo(0f, size.height)
-                    close()
-                }
-                drawPath(curva, Color.White)
-            }
-        }
-
         Column(
             modifier = Modifier.padding(
-                start = 20.dp,
-                end = 20.dp,
-                top = 2.dp,
-                bottom = 8.dp
+                start = 16.dp,
+                end = 16.dp,
+                top = 14.dp,
+                bottom = 12.dp
             )
         ) {
             Text(
@@ -962,7 +910,7 @@ private fun BarraSeccionesDispensarizacion(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.70f)),
         shadowElevation = 1.dp
@@ -1222,7 +1170,7 @@ private fun TarjetaResumenPoblacion(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.70f)),
         shadowElevation = 1.dp
@@ -1287,7 +1235,7 @@ private fun TarjetaContenedoraRegistro(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.65f)),
         shadowElevation = 1.dp
@@ -1362,7 +1310,7 @@ private fun AcordeonIndicador(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, color.copy(alpha = 0.18f)),
         shadowElevation = 1.dp
@@ -1473,7 +1421,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 10.dp),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.65f)),
         shadowElevation = 1.dp

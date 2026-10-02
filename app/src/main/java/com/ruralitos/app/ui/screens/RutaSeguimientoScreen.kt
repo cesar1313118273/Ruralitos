@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -312,32 +313,14 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
     Column(Modifier.fillMaxSize().formularioSeguro()
         .verticalScroll(rememberScrollState(), enabled = !mapaEnUso)
         .background(Color(0xFFF6F9FB))) {
-        Box(Modifier.fillMaxWidth().height(164.dp)) {
-            Image(painter = painterResource(R.drawable.ruralitos_paisaje_cabecera),
-                contentDescription = null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
-            Canvas(Modifier.fillMaxWidth().height(36.dp).align(Alignment.BottomCenter)) {
-                val curva = ComposePath().apply {
-                    moveTo(0f, size.height * .28f)
-                    quadraticTo(size.width * .5f, size.height * 1.3f, size.width, size.height * .22f)
-                    lineTo(size.width, size.height)
-                    lineTo(0f, size.height)
-                    close()
-                }
-                drawPath(curva, Color(0xFFF6F9FB))
-            }
-            Surface(onClick = onRegresar, modifier = Modifier.padding(16.dp).size(48.dp),
-                shape = CircleShape, color = Color.White, shadowElevation = 1.dp) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("‹", color = AzulClinico, fontSize = 38.sp, lineHeight = 40.sp)
-                }
-            }
-        }
+        CabeceraAgenda(onRegresar)
+        Spacer(Modifier.height(16.dp))
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text("SEGUIMIENTO EXTRAMURAL", color = Color(0xFF1565C0),
                 fontWeight = FontWeight.Bold, fontSize = 12.sp)
             Text("Ruta de seguimiento", color = Color(0xFF0A2A5E),
-                fontWeight = FontWeight.SemiBold, fontSize = 30.sp)
+                fontWeight = FontWeight.SemiBold, fontSize = 24.sp)
             Text(actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
                 ?: "Cargando ficha…", color = Color(0xFF5B7083), fontSize = 16.sp)
 

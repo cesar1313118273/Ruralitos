@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.statusBarsPadding
 import android.Manifest
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -400,7 +402,7 @@ fun AgendaScreen(
             item {
                 Column(Modifier.padding(horizontal = 18.dp)) {
                     Text(if (pestana == 0) "Seguimiento" else "Agenda",
-                        color = agendaAzul, fontSize = 32.sp, fontWeight = FontWeight.SemiBold)
+                        color = agendaAzul, fontSize = 24.sp, fontWeight = FontWeight.SemiBold)
                     Text(if (pestana == 0) "Organiza visitas, notas y controles pendientes"
                         else "Organiza y consulta tus actividades de salud",
                         color = agendaSecundario, fontSize = 15.sp, lineHeight = 20.sp)
@@ -490,34 +492,23 @@ fun AgendaScreen(
 
 @Composable
 internal fun CabeceraAgenda(onRegresar: () -> Unit) {
-    Box(Modifier.fillMaxWidth().height(151.dp)) {
-        Image(
-            painter = painterResource(R.drawable.ruralitos_paisaje_cabecera),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-        Canvas(Modifier.fillMaxWidth().height(57.dp).align(Alignment.BottomCenter)) {
-            val ola = Path().apply {
-                moveTo(0f, size.height * .25f)
-                cubicTo(size.width * .24f, size.height * -.04f, size.width * .54f, size.height * .95f, size.width * .79f, size.height * .43f)
-                cubicTo(size.width * .9f, size.height * .2f, size.width * .96f, size.height * .27f, size.width, size.height * .42f)
-                lineTo(size.width, size.height)
-                lineTo(0f, size.height)
-                close()
-            }
-            drawPath(ola, agendaFondo)
-        }
-        Surface(
-            onClick = onRegresar,
-            modifier = Modifier.padding(start = 18.dp, top = 15.dp).size(48.dp),
-            shape = CircleShape,
-            color = Color.White.copy(alpha = .96f)
+    Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("‹", fontSize = 32.sp, color = agendaAzul)
+            Surface(
+                onClick = onRegresar,
+                modifier = Modifier.size(40.dp),
+                shape = CircleShape,
+                color = Color(0xFFF6F9FB)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("‹", fontSize = 28.sp, color = agendaAzul)
+                }
             }
         }
+        HorizontalDivider(color = Color(0xFFE2ECF1))
     }
 }
 
@@ -525,14 +516,14 @@ internal fun CabeceraAgenda(onRegresar: () -> Unit) {
 private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp)
-            .background(Color(0xFFE8EFFA), RoundedCornerShape(24.dp)),
+            .background(Color(0xFFE8EFFA), RoundedCornerShape(16.dp)),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         listOf("Seguimiento", "Agenda").forEachIndexed { indice, titulo ->
             Surface(
                 onClick = { onSeleccionar(indice) },
                 modifier = Modifier.weight(1f).height(49.dp),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = if (seleccionada == indice) agendaVerde else Color.Transparent,
                 shadowElevation = if (seleccionada == indice) 2.dp else 0.dp
             ) {
@@ -893,7 +884,7 @@ private fun FormularioAgenda(
             item {
                 Column(Modifier.padding(horizontal = 21.dp)) {
                     Text(if (original == null) "Nueva actividad" else "Editar actividad",
-                        color = agendaAzul, fontSize = 25.sp, fontWeight = FontWeight.SemiBold)
+                        color = agendaAzul, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                     Text("☁  Disponible sin internet", color = Color(0xFF548A7B), fontSize = 13.sp)
                 }
             }

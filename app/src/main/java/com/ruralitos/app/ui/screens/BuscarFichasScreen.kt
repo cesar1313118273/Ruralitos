@@ -275,7 +275,7 @@ Column(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
                     color = Color.White.copy(alpha = 0.94f),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(16.dp),
                     shadowElevation = 1.dp,
                     border = BorderStroke(
                         1.dp,
@@ -333,7 +333,7 @@ Column(
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
                         color = Color.White.copy(alpha = 0.96f),
-                        shape = RoundedCornerShape(24.dp),
+                        shape = RoundedCornerShape(16.dp),
                         border = BorderStroke(
                             1.dp,
                             AzulClinico.copy(alpha = 0.12f)
@@ -402,7 +402,7 @@ private fun TarjetaEncabezadoBusqueda(
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.95f),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
@@ -483,7 +483,7 @@ private fun TarjetaBusquedaFichas(
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
@@ -808,7 +808,7 @@ private fun MenuPaginacion(
 
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White.copy(alpha = 0.96f),
         border = BorderStroke(
             1.dp,
@@ -917,7 +917,7 @@ private fun TarjetaFichaElegante(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.White.copy(alpha = 0.98f),
         shadowElevation = 1.dp,
         border = BorderStroke(

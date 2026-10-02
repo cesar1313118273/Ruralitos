@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.ui.theme.FondoClinico
 import android.content.Context
 import android.graphics.Bitmap
@@ -147,10 +149,6 @@ Box(
             .background(FondoClinico)
             .formularioSeguro()
     ) {
-        FondoIdentidadProfesional(
-            modifier = Modifier.fillMaxSize()
-        )
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -161,8 +159,7 @@ Box(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = (-8).dp)
-                    .padding(horizontal = 18.dp),
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 TarjetaCodigoProfesional(
@@ -178,7 +175,7 @@ Box(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = Color.White.copy(alpha = 0.97f),
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(16.dp),
                     shadowElevation = 1.dp,
                     border = BorderStroke(
                         1.dp,
@@ -539,114 +536,29 @@ private val AzulMarcaMuyClaro = Color(0xFFE8EFFA)
 
 @Composable
 private fun CabeceraIdentidadProfesional() {
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(332.dp)
+            .background(Color.White)
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
-        Image(
-            painter = painterResource(
-                R.drawable.ruralitos_paisaje_cabecera
-            ),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(198.dp),
-            contentScale = ContentScale.Crop
+        Text(
+            text = "Identidad profesional",
+            color = AzulMarcaOscuro,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.SemiBold
         )
 
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(190.dp)
-                .align(Alignment.BottomCenter)
-        ) {
-            val ola = Path().apply {
-                moveTo(
-                    0f,
-                    size.height * 0.17f
-                )
-
-                cubicTo(
-                    size.width * 0.13f,
-                    size.height * 0.43f,
-                    size.width * 0.30f,
-                    size.height * 0.04f,
-                    size.width * 0.49f,
-                    size.height * 0.17f
-                )
-
-                cubicTo(
-                    size.width * 0.66f,
-                    size.height * 0.28f,
-                    size.width * 0.76f,
-                    size.height * 0.52f,
-                    size.width * 0.92f,
-                    size.height * 0.30f
-                )
-
-                cubicTo(
-                    size.width * 0.96f,
-                    size.height * 0.24f,
-                    size.width * 0.99f,
-                    size.height * 0.31f,
-                    size.width,
-                    size.height * 0.39f
-                )
-
-                lineTo(
-                    size.width,
-                    size.height
-                )
-
-                lineTo(
-                    0f,
-                    size.height
-                )
-
-                close()
-            }
-
-            drawPath(
-                path = ola,
-                color = Color(0xFFF6F9FB)
-            )
-        }
-
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(
-                    start = 24.dp,
-                    end = 24.dp,
-                    bottom = 24.dp
-                )
-        ) {
-            Text(
-                text = "MI CUENTA",
-                color = AzulMarca,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 0.5.sp
-            )
-
-            Text(
-                text = "Identidad profesional",
-                color = AzulMarcaOscuro,
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 5.dp)
-            )
-
-            Text(
-                text =
-                    "Configura una sola vez el código y la firma que se colocarán automáticamente en tus fichas.",
-                color = Color(0xFF5B7083),
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(top = 5.dp)
-            )
-        }
+        Text(
+            text =
+                "Configura una sola vez el código y la firma que se colocarán automáticamente en tus fichas.",
+            color = Color(0xFF5B7083),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(top = 2.dp)
+        )
     }
+    HorizontalDivider(color = Color(0xFFE2ECF1))
 }
 
 @Composable
@@ -657,7 +569,7 @@ private fun TarjetaCodigoProfesional(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color.White.copy(alpha = 0.97f),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
