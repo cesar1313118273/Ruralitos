@@ -1,5 +1,10 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.TipoIconoTerritorio
+import com.ruralitos.app.ui.components.IconoTerritorioRuralitos
+import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
 import com.ruralitos.app.ui.components.BotonSelectorRuralitos
@@ -121,21 +126,21 @@ fun SeleccionTerritorioFichaScreen(
         subtitulo = "Nueva ficha · paso 1",
         onVolver = onRegresar,
         barraAccion = {
-        BotonPrincipal(
-            texto = "Continuar con los datos de la familia",
-            enabled = sala != null && eaisElegido != null && territorio != null,
-            onClick = {
-                if (sala != null && eaisElegido != null && territorio != null) {
-                    onContinuar(sala, eaisElegido, territorio)
+            BotonPrincipalRuralitos(
+                texto = "Continuar con los datos de la familia",
+                enabled = sala != null && eaisElegido != null && territorio != null,
+                color = CianRuralitos,
+                onClick = {
+                    if (sala != null && eaisElegido != null && territorio != null) {
+                        onContinuar(sala, eaisElegido, territorio)
+                    }
                 }
-            }
-        )
+            )
 
-        BotonSecundario(
-            texto = "Administrar mis Salas",
-            iconoRes = R.drawable.seleccion_territorio_ajustes,
-            onClick = onConfigurarSala
-        )
+            BotonSecundarioRuralitos(
+                texto = "Administrar mis Salas",
+                onClick = onConfigurarSala
+            )
         }
     ) {
         InfoTerritorio()
@@ -152,7 +157,7 @@ fun SeleccionTerritorioFichaScreen(
                     item.nombreCentroSalud.ifBlank { item.nombreSala }
                 },
                 enabled = salas.isNotEmpty(),
-                iconoRes = R.drawable.icon_centro_salud,
+                icono = TipoIconoTerritorio.CENTRO_SALUD,
                 onElegir = { salaId = it.organizacionId }
             )
 
@@ -169,8 +174,7 @@ fun SeleccionTerritorioFichaScreen(
                     Text(
                         text = referencia,
                         color = GrisTexto,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
+                        style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
@@ -185,7 +189,7 @@ fun SeleccionTerritorioFichaScreen(
                 opciones = eais,
                 etiqueta = { it.nombre },
                 enabled = sala != null,
-                iconoRes = R.drawable.icon_eais,
+                icono = TipoIconoTerritorio.EQUIPO,
                 onElegir = { eaisId = it.id }
             )
         }
@@ -199,7 +203,7 @@ fun SeleccionTerritorioFichaScreen(
                 opciones = territorios,
                 etiqueta = { "${it.etiqueta}: ${it.nombre}" },
                 enabled = eaisElegido != null,
-                iconoRes = R.drawable.icon_barrio,
+                icono = TipoIconoTerritorio.BARRIO,
                 onElegir = { territorioId = it.id }
             )
         }
@@ -231,52 +235,32 @@ fun SeleccionTerritorioFichaScreen(
 
 @Composable
 private fun InfoTerritorio() {
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFFE3F4F7),
-                        Color(0xFFEAF8FC)
-                    )
-                ),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .padding(horizontal = 14.dp, vertical = 13.dp)
+            .background(Color(0xFFE3F4F7), RoundedCornerShape(16.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Image(
-                painter = painterResource(R.drawable.icon_ubicacion),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+        IconoTerritorioRuralitos(
+            tipo = TipoIconoTerritorio.INFORMACION,
+            color = CianRuralitos,
+            tamano = 36.dp
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Territorio de la ficha",
+                color = AzulTitulo,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
             )
-
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "Territorio de la ficha",
-                    color = AzulTitulo,
-                    fontSize = 18.sp,
-                    lineHeight = 24.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = "Las opciones están disponibles sin internet.",
-                    color = GrisTexto,
-                    fontSize = 14.sp,
-                    lineHeight = 18.sp,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
+            Text(
+                text = "Las opciones están disponibles sin internet.",
+                color = GrisTexto,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
     }
 }
@@ -286,28 +270,8 @@ private fun SeccionSelector(
     titulo: String,
     contenido: @Composable () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        color = Color.White,
-        shadowElevation = 0.6.dp
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 12.dp)
-        ) {
-            Text(
-                text = titulo,
-                color = AzulTitulo,
-                fontSize = 16.sp,
-                lineHeight = 21.sp,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(bottom = 9.dp)
-            )
-
-            contenido()
-        }
+    SeccionFormularioRuralitos(titulo = titulo) {
+        contenido()
     }
 }
 
@@ -317,7 +281,7 @@ private fun <T> SelectorGenerico(
     opciones: List<T>,
     etiqueta: (T) -> String,
     enabled: Boolean,
-    iconoRes: Int,
+    icono: TipoIconoTerritorio,
     onElegir: (T) -> Unit
 ) {
     var abierto by remember { mutableStateOf(false) }
@@ -330,15 +294,12 @@ private fun <T> SelectorGenerico(
             enabled = enabled,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 62.dp)
+                .heightIn(min = 56.dp)
         ) {
-            Image(
-                painter = painterResource(iconoRes),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape),
-                contentScale = ContentScale.Crop
+            IconoTerritorioRuralitos(
+                tipo = icono,
+                color = if (enabled) CianRuralitos else GrisTexto,
+                tamano = 36.dp
             )
 
             Text(
@@ -346,19 +307,16 @@ private fun <T> SelectorGenerico(
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 12.dp),
-                color = if (enabled) VerdeTexto else GrisTexto,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
+                color = if (enabled) AzulTitulo else GrisTexto,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
             )
-
         }
 
         MenuDesplegableRuralitos(
             expanded = abierto,
             onDismissRequest = { abierto = false },
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .background(Color.White)
+            modifier = Modifier.fillMaxWidth(0.92f)
         ) {
             opciones.forEach { opcion ->
                 ItemMenuRuralitos(
@@ -366,7 +324,7 @@ private fun <T> SelectorGenerico(
                         Text(
                             text = etiqueta(opcion),
                             color = AzulTitulo,
-                            fontWeight = FontWeight.SemiBold
+                            style = MaterialTheme.typography.bodyLarge
                         )
                     },
                     onClick = {
@@ -378,91 +336,3 @@ private fun <T> SelectorGenerico(
         }
     }
 }
-
-@Composable
-private fun BotonPrincipal(
-    texto: String,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        shape = RoundedCornerShape(16.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 58.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = VerdeAccion,
-            contentColor = Color.White,
-            disabledContainerColor = VerdeAccion.copy(alpha = 0.45f),
-            disabledContentColor = Color.White.copy(alpha = 0.90f)
-        )
-    ) {
-        Surface(
-            modifier = Modifier.size(36.dp),
-            shape = CircleShape,
-            color = Color.White
-        ) {
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.seleccion_territorio_flecha),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp),
-                    contentScale = ContentScale.Fit
-                )
-            }
-        }
-
-        Text(
-            text = texto,
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 10.dp),
-            textAlign = TextAlign.Center,
-            fontSize = 15.sp,
-            lineHeight = 18.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Spacer(Modifier.size(36.dp))
-    }
-}
-
-@Composable
-private fun BotonSecundario(
-    texto: String,
-    iconoRes: Int,
-    onClick: () -> Unit
-) {
-    OutlinedButton(
-        onClick = onClick,
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, Color(0xFF77C6EF)),
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 58.dp),
-        colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = Color.White
-        )
-    ) {
-        Image(
-            painter = painterResource(iconoRes),
-            contentDescription = null,
-            modifier = Modifier.size(22.dp),
-            contentScale = ContentScale.Fit
-        )
-
-        Text(
-            text = texto,
-            color = AzulAccion,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(start = 12.dp)
-        )
-    }
-}
-
-
