@@ -53,6 +53,7 @@ import com.ruralitos.app.data.local.entity.LugarTratamientoEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.RuralitosEmptyState
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
@@ -219,21 +220,26 @@ fun FamiliogramaScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = "Imagen del familiograma",
+        descripcion = "Sube la fotografía, ajusta la eliminación del papel blanco y guarda un PNG transparente.",
+        subtitulo = "Evidencias familiares",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar información de esta sección",
+                descripcion = "Continuar con el familiograma actualmente guardado",
+                color = MoradoClinico,
+                enabled = !procesando && !cargandoImagen && !procesandoFondo,
+                onClick = onContinuar
+            )
+            BotonSecundarioRuralitos(
+                texto = textoRegresar,
+                descripcion = descripcionRegresar,
+                onClick = onSalir,
+                enabled = !procesando && !cargandoImagen && !procesandoFondo
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Imagen del familiograma",
-            descripcion = "Sube la fotografía, ajusta la eliminación del papel blanco y guarda un PNG transparente.",
-            paso = "Evidencias familiares",
-            color = CianRuralitos
-        )
-
         SeccionFormularioRuralitos(
             titulo = if (imagenNueva == null) "Vista previa guardada" else "Vista previa del fondo transparente",
             descripcion = if (imagenNueva == null) {
@@ -324,7 +330,6 @@ fun FamiliogramaScreen(
                 )
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "Gestionar imagen",
             descripcion = "Selecciona una fotografía, revisa el resultado y confirma antes de reemplazar la imagen guardada."
@@ -367,7 +372,6 @@ fun FamiliogramaScreen(
                 )
             }
         }
-
         if (mensaje.isNotBlank()) {
             MensajeEstadoRuralitos(
                 titulo = if (mensaje.startsWith("No")) "No se completó la acción" else "Imagen actualizada",
@@ -376,21 +380,6 @@ fun FamiliogramaScreen(
                 simbolo = if (mensaje.startsWith("No")) "!" else "✓"
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = "Guardar información de esta sección",
-            descripcion = "Continuar con el familiograma actualmente guardado",
-            color = MoradoClinico,
-            enabled = !procesando && !cargandoImagen && !procesandoFondo,
-            onClick = onContinuar
-        )
-        BotonSecundarioRuralitos(
-            texto = textoRegresar,
-            descripcion = descripcionRegresar,
-            onClick = onSalir,
-            enabled = !procesando && !cargandoImagen && !procesandoFondo,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 }
 @Composable
@@ -440,20 +429,24 @@ fun ContaminacionAmbientalScreen(
         return
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = "Contaminación ambiental",
+        descripcion = "Registra la fecha, el tipo de contaminación y su posible causante.",
+        subtitulo = "Entorno familiar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar información de esta sección",
+                descripcion = "Los informes registrados ya están guardados",
+                color = CianRuralitos,
+                onClick = onContinuar
+            )
+            BotonSecundarioRuralitos(
+                texto = textoRegresar,
+                descripcion = descripcionRegresar,
+                onClick = onSalir
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Contaminación ambiental",
-            descripcion = "Registra la fecha, el tipo de contaminación y su posible causante.",
-            paso = "Entorno familiar",
-            color = NaranjaClinico
-        )
         SeccionFormularioRuralitos(
             titulo = "Informes identificados",
             descripcion = "${items.size} registro(s). Cada dato se exporta por separado en la hoja 4."
@@ -497,18 +490,6 @@ fun ContaminacionAmbientalScreen(
                 ilustracion = R.drawable.ruralitos_icono_ambiente
             )
         }
-        BotonPrincipalRuralitos(
-            texto = "Guardar información de esta sección",
-            descripcion = "Los informes registrados ya están guardados",
-            color = CianRuralitos,
-            onClick = onContinuar
-        )
-        BotonSecundarioRuralitos(
-            texto = textoRegresar,
-            descripcion = descripcionRegresar,
-            onClick = onSalir,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 }
 
@@ -554,21 +535,24 @@ fun LugaresTratamientoScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = "Lugar o persona para la atención",
+        descripcion = "Registra centros de salud, lugares alternativos o personas de confianza a quienes acude la familia.",
+        subtitulo = "Red de atención",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar información de esta sección",
+                descripcion = "Los lugares registrados ya están guardados",
+                color = MoradoClinico,
+                onClick = onContinuar
+            )
+            BotonSecundarioRuralitos(
+                texto = textoRegresar,
+                descripcion = descripcionRegresar,
+                onClick = onSalir
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Lugar o persona para la atención",
-            descripcion = "Registra centros de salud, lugares alternativos o personas de confianza a quienes acude la familia.",
-            paso = "Red de atención",
-            color = CianRuralitos
-        )
-
         SeccionFormularioRuralitos(
             titulo = if (editando == null) "Agregar lugar o persona" else "Editar registro seleccionado",
             descripcion = "Máximo 4 registros. Se exportan uno por fila en AY46:CS49 de la hoja 4."
@@ -636,7 +620,6 @@ fun LugaresTratamientoScreen(
                 )
             }
         }
-
         if (lugares.isEmpty()) {
             RuralitosEmptyState(
                 titulo = "Sin red de atención registrada",
@@ -655,7 +638,6 @@ fun LugaresTratamientoScreen(
                 simbolo = lugares.size.toString()
             )
         }
-
         lugares.forEachIndexed { index, item ->
             TarjetaRegistroRuralitos(
                 titulo = "Opción de atención ${index + 1}",
@@ -669,19 +651,6 @@ fun LugaresTratamientoScreen(
                 onEliminar = { eliminar = item }
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = "Guardar información de esta sección",
-            descripcion = "Los lugares registrados ya están guardados",
-            color = MoradoClinico,
-            onClick = onContinuar
-        )
-        BotonSecundarioRuralitos(
-            texto = textoRegresar,
-            descripcion = descripcionRegresar,
-            onClick = onSalir,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 }
 

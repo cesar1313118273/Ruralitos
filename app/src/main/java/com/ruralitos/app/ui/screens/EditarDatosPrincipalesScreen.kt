@@ -34,6 +34,7 @@ import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
@@ -63,21 +64,44 @@ fun EditarDatosPrincipalesScreen(
     var calendario by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    PantallaRuralitos(
+        titulo = "Datos personales y de la ficha",
+        descripcion = "Cada etiqueta está fuera de su cuadro para que los textos permanezcan separados y legibles en cualquier pantalla.",
+        paso = 1,
+        totalPasos = 10,
+        etiquetaPaso = "Información del hogar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar datos principales",
+                descripcion = "Conservar los cambios y volver a la ficha",
+                onClick = {
+                    if (!ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
+                        error = "La identificación debe contener exactamente 10 o 13 números."
+                    } else if (nombre.isBlank() || ficha.numeroFichaFamiliar.isBlank()) {
+                        error = "Completa los apellidos y nombres."
+                    } else {
+                        onGuardar(
+                            DatosPrincipalesForm(
+                                cedula.trim(),
+                                nombre.trim(),
+                                telefono.trim(),
+                                ficha.numeroFichaFamiliar,
+                                fecha,
+                                ficha.responsableNombre.trim(),
+                                ficha.responsableCodigo.trim()
+                            )
+                        )
+                    }
+                },
+                color = CianRuralitos
+            )
+            BotonSecundarioRuralitos(
+                texto = "Regresar al panel de la ficha",
+                descripcion = "Salir de esta sección sin guardar cambios",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Datos personales y de la ficha",
-            descripcion = "Cada etiqueta está fuera de su cuadro para que los textos permanezcan separados y legibles en cualquier pantalla.",
-            paso = "Sección 1",
-            color = AzulClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "Jefe o jefa de la familia",
             descripcion = "La identificación también se utilizará como número de historia clínica."
@@ -132,7 +156,6 @@ fun EditarDatosPrincipalesScreen(
                 }
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "Control de la ficha",
             descripcion = "Información administrativa del documento familiar."
@@ -175,7 +198,6 @@ fun EditarDatosPrincipalesScreen(
                 }
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "Responsable profesional",
             descripcion = "Estos datos provienen de la cuenta activa y se colocarán automáticamente en Excel y PDF."
@@ -220,7 +242,6 @@ fun EditarDatosPrincipalesScreen(
                 }
             }
         }
-
         error?.let {
             Surface(
                 color = Color(0xFFFFECEF),
@@ -235,37 +256,6 @@ fun EditarDatosPrincipalesScreen(
                 )
             }
         }
-
-        BotonPrincipalRuralitos(
-            texto = "Guardar datos principales",
-            descripcion = "Conservar los cambios y volver a la ficha",
-            onClick = {
-                if (!ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
-                    error = "La identificación debe contener exactamente 10 o 13 números."
-                } else if (nombre.isBlank() || ficha.numeroFichaFamiliar.isBlank()) {
-                    error = "Completa los apellidos y nombres."
-                } else {
-                    onGuardar(
-                        DatosPrincipalesForm(
-                            cedula.trim(),
-                            nombre.trim(),
-                            telefono.trim(),
-                            ficha.numeroFichaFamiliar,
-                            fecha,
-                            ficha.responsableNombre.trim(),
-                            ficha.responsableCodigo.trim()
-                        )
-                    )
-                }
-            },
-            color = CianRuralitos
-        )
-        BotonSecundarioRuralitos(
-            texto = "Regresar al panel de la ficha",
-            descripcion = "Salir de esta sección sin guardar cambios",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 28.dp)
-        )
     }
 
     if (calendario) {

@@ -43,6 +43,7 @@ import com.ruralitos.app.domain.RiesgoFamiliar
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.TarjetaRegistroRuralitos
@@ -266,21 +267,41 @@ private fun FormularioRiesgoScreen(
     }
     val resultado = RiesgoFamiliar.calcular(valoresCalculables)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(desplazamiento)
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = if (calificacion == null) "Nueva calificación" else "Editar calificación",
+        descripcion = "Lee cada descripción y marca una sola opción. Los valores numéricos se procesan internamente.",
+        subtitulo = "Instrumento de riesgo familiar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (seleccionCompleta) "Guardar calificación completa" else "Faltan ${18 - seleccionadas} componentes",
+                descripcion = if (seleccionCompleta) {
+                    "Registrar resultado y regresar al historial de evaluaciones"
+                } else {
+                    "Revisa los bloques y selecciona una opción en cada componente"
+                },
+                color = CianRuralitos,
+                enabled = seleccionCompleta,
+                onClick = {
+                    onGuardar(
+                        CalificacionRiesgoEntity(
+                            id = calificacion?.id ?: 0,
+                            fichaId = fichaId,
+                            fechaCalificacion = fecha,
+                            responsable = responsable.trim(),
+                            total = resultado.total,
+                            nivel = resultado.nivel
+                        ),
+                        valores.toList()
+                    )
+                }
+            )
+            BotonSecundarioRuralitos(
+                texto = "Cancelar y regresar",
+                descripcion = "No guardar los cambios de esta calificación",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = if (calificacion == null) "Nueva calificación" else "Editar calificación",
-            descripcion = "Lee cada descripción y marca una sola opción. Los valores numéricos se procesan internamente.",
-            paso = "Instrumento de riesgo familiar",
-            color = AzulClinico
-        )
-
         Text(
             text = "${indiceActivo + 1} de ${valores.size}",
             style = MaterialTheme.typography.labelLarge,
@@ -317,7 +338,6 @@ private fun FormularioRiesgoScreen(
                 color = AzulClinico
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "Datos de la evaluación",
             descripcion = "Fecha y responsable de esta calificación."
@@ -343,36 +363,6 @@ private fun FormularioRiesgoScreen(
                 modifier = Modifier.padding(top = 10.dp)
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = if (seleccionCompleta) "Guardar calificación completa" else "Faltan ${18 - seleccionadas} componentes",
-            descripcion = if (seleccionCompleta) {
-                "Registrar resultado y regresar al historial de evaluaciones"
-            } else {
-                "Revisa los bloques y selecciona una opción en cada componente"
-            },
-            color = CianRuralitos,
-            enabled = seleccionCompleta,
-            onClick = {
-                onGuardar(
-                    CalificacionRiesgoEntity(
-                        id = calificacion?.id ?: 0,
-                        fichaId = fichaId,
-                        fechaCalificacion = fecha,
-                        responsable = responsable.trim(),
-                        total = resultado.total,
-                        nivel = resultado.nivel
-                    ),
-                    valores.toList()
-                )
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = "Cancelar y regresar",
-            descripcion = "No guardar los cambios de esta calificación",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 
     if (mostrarCalendario) {

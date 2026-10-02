@@ -61,6 +61,7 @@ import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.TarjetaRegistroRuralitos
@@ -467,21 +468,97 @@ private fun FormularioMiembroScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = if (miembro == null) "Agregar integrante" else "Editar integrante",
+        descripcion = "Completa los datos por bloques. Los campos que no corresponden a la edad se bloquearán automáticamente.",
+        subtitulo = "Integrantes de la familia",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (miembro == null) "Guardar nuevo integrante" else "Guardar cambios del integrante",
+                descripcion = "Validar datos y regresar al listado familiar",
+                color = CianRuralitos,
+                onClick = {
+                    if (nombres.isBlank() || parentesco.isBlank() || grupoEdad == null || sexo.isBlank()) {
+                        error = "Completa apellidos y nombres, parentesco, fecha de nacimiento y sexo."
+                    } else if (cedula.isNotBlank() && !ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
+                        error = "La identificación, si se registra, debe contener exactamente 10 o 13 números."
+                    } else if (
+                        tipoDiscapacidad != "NINGUNA" &&
+                        porcentajeDiscapacidad.toIntOrNull() !in 1..100
+                    ) {
+                        error = "Registra un porcentaje de discapacidad entre 1 y 100."
+                    } else if (consultaCie10.isNotBlank()) {
+                        error = "Selecciona un diagnóstico de la lista CIE-10 o borra la búsqueda pendiente."
+                    } else if (diagnosticos.any { seleccionado ->
+                            catalogoCie10.none {
+                                it.codigo == seleccionado.codigo &&
+                                    it.descripcion == seleccionado.descripcion
+                            }
+                        }) {
+                        error = "Hay diagnósticos que no pertenecen al catálogo CIE-10. Elimínalos y selecciónalos nuevamente."
+                    } else {
+                        onGuardar(
+                            MiembroFamiliaEntity(
+                                id = miembro?.id ?: 0,
+                                fichaId = fichaId,
+                                grupoEdad = grupoEdad,
+                                apellidosNombres = nombres.trim(),
+                                parentesco = parentesco.trim(),
+                                fechaNacimiento = fechaNacimiento,
+                                ocupacion = if (camposPermitidos.ocupacion) ocupacion.trim() else "",
+                                sexo = sexo,
+                                escolaridad = escolaridad
+                                    .takeIf { it in camposPermitidos.escolaridades }
+                                    .orEmpty(),
+                                vacunasCompletas = vacunas,
+                                saludBucalAdecuada = saludBucal,
+                                riesgoEnfermedadDiscapacidad = diagnosticos.joinToString("; ") { it.etiqueta },
+                                estadoNutricional = estadoNutricional,
+                                hipertensionArterial = hipertension,
+                                diabetesMellitus = diabetes,
+                                tuberculosis = tuberculosis,
+                                problemaSaludMental = saludMental,
+                                consumoAlcoholDrogas = consumo,
+                                enfermedadCronica = diagnosticos.isNotEmpty(),
+                                discapacidadVisual = tipoDiscapacidad == "VISUAL",
+                                discapacidadAuditiva = tipoDiscapacidad == "AUDITIVA",
+                                discapacidadLenguaje = tipoDiscapacidad == "LENGUAJE",
+                                discapacidadFisica = tipoDiscapacidad == "FISICA",
+                                discapacidadIntelectual = tipoDiscapacidad == "INTELECTUAL",
+                                discapacidadPsicosocial = tipoDiscapacidad == "PSICOSOCIAL",
+                                cuidadosPaliativos = cuidadosPaliativos,
+                                vih = vih,
+                                eventoSalud = eventoSalud,
+                                casoConfirmado = casoConfirmado,
+                                casoSospechosoUno = casoSospechosoUno,
+                                casoSospechosoDos = casoSospechosoDos,
+                                prestadorComunitario = prestadorComunitario,
+                                parteroAncestral = parteroAncestral,
+                                sabiduriaAncestral = sabiduriaAncestral,
+                                comorbilidadesCie10Json = CatalogoCie10.codificar(diagnosticos),
+                                porcentajeDiscapacidad = porcentajeDiscapacidad.toIntOrNull()
+                                    ?.coerceIn(0, 100)
+                                    ?.takeIf { tipoDiscapacidad != "NINGUNA" },
+                                necesitaAyudaTecnica = necesitaAyudaTecnica && tipoDiscapacidad != "NINGUNA",
+                                enfermedadCronicaDescompensada = diagnosticos.any { it.descompensada },
+                                riesgoGenetico = riesgoPrioritario == "GENETICO",
+                                victimaViolencia = riesgoPrioritario == "VIOLENCIA",
+                                privadoLibertad = riesgoPrioritario == "PRIVADO_LIBERTAD",
+                                numeroHistoriaClinica = cedula.trim(),
+                                cedula = cedula.trim(),
+                                syncId = miembro?.syncId ?: UUID.randomUUID().toString()
+                            )
+                        )
+                    }
+                }
+            )
+            BotonSecundarioRuralitos(
+                texto = "Cancelar y regresar",
+                descripcion = "No guardar los cambios de este formulario",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = if (miembro == null) "Agregar integrante" else "Editar integrante",
-            descripcion = "Completa los datos por bloques. Los campos que no corresponden a la edad se bloquearán automáticamente.",
-            paso = "Integrantes de la familia",
-            color = MoradoClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "1. Identificación personal",
             descripcion = "Apellidos y nombres, parentesco, cédula y fecha de nacimiento."
@@ -511,7 +588,6 @@ private fun FormularioMiembroScreen(
                 modifier = Modifier.padding(top = 12.dp)
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "2. Características personales",
             descripcion = "Sexo, escolaridad y ocupación según el grupo de edad."
@@ -546,7 +622,6 @@ private fun FormularioMiembroScreen(
                 )
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "3. Seguimiento preventivo",
             descripcion = "Vacunas, nutrición, salud bucal y consumo. Estos datos alimentan la dispensarización automática."
@@ -619,7 +694,6 @@ private fun FormularioMiembroScreen(
                 }
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "4. Estrategias Nacionales",
             descripcion = "¿Esta persona pertenece a uno o varios de los siguientes grupos?"
@@ -664,7 +738,6 @@ private fun FormularioMiembroScreen(
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "5. Discapacidad",
             descripcion = "Selecciona un tipo. Los campos relacionados se habilitan solo cuando corresponda."
@@ -704,7 +777,6 @@ private fun FormularioMiembroScreen(
                 enabled = tipoDiscapacidad != "NINGUNA"
             ) { necesitaAyudaTecnica = it }
         }
-
         SeccionFormularioRuralitos(
             titulo = "6. Alertas Epidemiológicas",
             descripcion = "Registra eventos y casos epidemiológicos."
@@ -729,7 +801,6 @@ private fun FormularioMiembroScreen(
                 }
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "7. Actores comunitarios",
             descripcion = "Selecciona únicamente las funciones comunitarias que correspondan."
@@ -753,7 +824,6 @@ private fun FormularioMiembroScreen(
                 }
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "8. Otros riesgos prioritarios",
             descripcion = "Selecciona la condición registrada o Ninguno."
@@ -770,7 +840,6 @@ private fun FormularioMiembroScreen(
                 color = NaranjaClinico
             ) { riesgoPrioritario = it }
         }
-
         error?.let {
             MensajeEstadoRuralitos(
                 titulo = "Revisa la información",
@@ -779,92 +848,6 @@ private fun FormularioMiembroScreen(
                 simbolo = "!"
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = if (miembro == null) "Guardar nuevo integrante" else "Guardar cambios del integrante",
-            descripcion = "Validar datos y regresar al listado familiar",
-            color = CianRuralitos,
-            onClick = {
-                if (nombres.isBlank() || parentesco.isBlank() || grupoEdad == null || sexo.isBlank()) {
-                    error = "Completa apellidos y nombres, parentesco, fecha de nacimiento y sexo."
-                } else if (cedula.isNotBlank() && !ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
-                    error = "La identificación, si se registra, debe contener exactamente 10 o 13 números."
-                } else if (
-                    tipoDiscapacidad != "NINGUNA" &&
-                    porcentajeDiscapacidad.toIntOrNull() !in 1..100
-                ) {
-                    error = "Registra un porcentaje de discapacidad entre 1 y 100."
-                } else if (consultaCie10.isNotBlank()) {
-                    error = "Selecciona un diagnóstico de la lista CIE-10 o borra la búsqueda pendiente."
-                } else if (diagnosticos.any { seleccionado ->
-                        catalogoCie10.none {
-                            it.codigo == seleccionado.codigo &&
-                                it.descripcion == seleccionado.descripcion
-                        }
-                    }) {
-                    error = "Hay diagnósticos que no pertenecen al catálogo CIE-10. Elimínalos y selecciónalos nuevamente."
-                } else {
-                    onGuardar(
-                        MiembroFamiliaEntity(
-                            id = miembro?.id ?: 0,
-                            fichaId = fichaId,
-                            grupoEdad = grupoEdad,
-                            apellidosNombres = nombres.trim(),
-                            parentesco = parentesco.trim(),
-                            fechaNacimiento = fechaNacimiento,
-                            ocupacion = if (camposPermitidos.ocupacion) ocupacion.trim() else "",
-                            sexo = sexo,
-                            escolaridad = escolaridad
-                                .takeIf { it in camposPermitidos.escolaridades }
-                                .orEmpty(),
-                            vacunasCompletas = vacunas,
-                            saludBucalAdecuada = saludBucal,
-                            riesgoEnfermedadDiscapacidad = diagnosticos.joinToString("; ") { it.etiqueta },
-                            estadoNutricional = estadoNutricional,
-                            hipertensionArterial = hipertension,
-                            diabetesMellitus = diabetes,
-                            tuberculosis = tuberculosis,
-                            problemaSaludMental = saludMental,
-                            consumoAlcoholDrogas = consumo,
-                            enfermedadCronica = diagnosticos.isNotEmpty(),
-                            discapacidadVisual = tipoDiscapacidad == "VISUAL",
-                            discapacidadAuditiva = tipoDiscapacidad == "AUDITIVA",
-                            discapacidadLenguaje = tipoDiscapacidad == "LENGUAJE",
-                            discapacidadFisica = tipoDiscapacidad == "FISICA",
-                            discapacidadIntelectual = tipoDiscapacidad == "INTELECTUAL",
-                            discapacidadPsicosocial = tipoDiscapacidad == "PSICOSOCIAL",
-                            cuidadosPaliativos = cuidadosPaliativos,
-                            vih = vih,
-                            eventoSalud = eventoSalud,
-                            casoConfirmado = casoConfirmado,
-                            casoSospechosoUno = casoSospechosoUno,
-                            casoSospechosoDos = casoSospechosoDos,
-                            prestadorComunitario = prestadorComunitario,
-                            parteroAncestral = parteroAncestral,
-                            sabiduriaAncestral = sabiduriaAncestral,
-                            comorbilidadesCie10Json = CatalogoCie10.codificar(diagnosticos),
-                            porcentajeDiscapacidad = porcentajeDiscapacidad.toIntOrNull()
-                                ?.coerceIn(0, 100)
-                                ?.takeIf { tipoDiscapacidad != "NINGUNA" },
-                            necesitaAyudaTecnica = necesitaAyudaTecnica && tipoDiscapacidad != "NINGUNA",
-                            enfermedadCronicaDescompensada = diagnosticos.any { it.descompensada },
-                            riesgoGenetico = riesgoPrioritario == "GENETICO",
-                            victimaViolencia = riesgoPrioritario == "VIOLENCIA",
-                            privadoLibertad = riesgoPrioritario == "PRIVADO_LIBERTAD",
-                            numeroHistoriaClinica = cedula.trim(),
-                            cedula = cedula.trim(),
-                            syncId = miembro?.syncId ?: UUID.randomUUID().toString()
-                        )
-                    )
-                }
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = "Cancelar y regresar",
-            descripcion = "No guardar los cambios de este formulario",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 
     if (mostrarCalendario) {

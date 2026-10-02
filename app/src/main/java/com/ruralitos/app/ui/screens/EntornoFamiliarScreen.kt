@@ -35,6 +35,7 @@ import androidx.compose.ui.Modifier
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
@@ -262,20 +263,38 @@ fun FormularioContaminacionScreen(
     var mostrarCalendario by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = if (item == null) "Agregar contaminación" else "Editar contaminación",
+        descripcion = "Completa por separado la fecha, el tipo de contaminación y su posible causante.",
+        subtitulo = "Entorno familiar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (item == null) "Guardar informe ambiental" else "Guardar cambios del informe",
+                descripcion = "Validar y regresar al listado de contaminación",
+                color = CianRuralitos,
+                onClick = {
+                    if (descripcion.isBlank()) {
+                        error = "Describe el tipo de contaminación."
+                    } else {
+                        onGuardar(
+                            ContaminacionAmbientalEntity(
+                                id = item?.id ?: 0,
+                                fichaId = fichaId,
+                                fechaInforme = fecha,
+                                tipoContaminanteDescripcion = descripcion.trim(),
+                                causanteContaminacion = causante.trim()
+                            )
+                        )
+                    }
+                }
+            )
+            BotonSecundarioRuralitos(
+                texto = "Cancelar y regresar",
+                descripcion = "No guardar los cambios del informe",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = if (item == null) "Agregar contaminación" else "Editar contaminación",
-            descripcion = "Completa por separado la fecha, el tipo de contaminación y su posible causante.",
-            paso = "Entorno familiar",
-            color = NaranjaClinico
-        )
         SeccionFormularioRuralitos(
             titulo = "1. Identificación",
             descripcion = "Fecha en la que se identificó la contaminación ambiental."
@@ -315,32 +334,6 @@ fun FormularioContaminacionScreen(
                 simbolo = "!"
             )
         }
-        BotonPrincipalRuralitos(
-            texto = if (item == null) "Guardar informe ambiental" else "Guardar cambios del informe",
-            descripcion = "Validar y regresar al listado de contaminación",
-            color = CianRuralitos,
-            onClick = {
-                if (descripcion.isBlank()) {
-                    error = "Describe el tipo de contaminación."
-                } else {
-                    onGuardar(
-                        ContaminacionAmbientalEntity(
-                            id = item?.id ?: 0,
-                            fichaId = fichaId,
-                            fechaInforme = fecha,
-                            tipoContaminanteDescripcion = descripcion.trim(),
-                            causanteContaminacion = causante.trim()
-                        )
-                    )
-                }
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = "Cancelar y regresar",
-            descripcion = "No guardar los cambios del informe",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 
     if (mostrarCalendario) {

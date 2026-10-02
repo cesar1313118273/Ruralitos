@@ -48,6 +48,7 @@ import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.TarjetaRegistroRuralitos
@@ -434,21 +435,60 @@ private fun FormularioEmbarazadaScreen(
     var calendario by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = if (item == null) "Agregar embarazo" else "Editar embarazo",
+        descripcion = "Completa las fechas, vacunación y antecedentes en bloques separados.",
+        subtitulo = "Registro obstétrico",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (item == null) "Guardar nuevo embarazo" else "Guardar cambios del embarazo",
+                descripcion = "Validar y regresar al listado de salud familiar",
+                color = CianRuralitos,
+                onClick = {
+                    if (nombres.isBlank() || GrupoEdadFamiliar.calcular(fechaNacimiento) == null) {
+                        error = "Completa los apellidos y nombres y una fecha de nacimiento válida."
+                    } else if (cedula.isNotBlank() && !ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
+                        error = "La identificación, si se registra, debe contener 10 o 13 números."
+                    } else {
+                        onGuardar(
+                            EmbarazadaEntity(
+                                id = item?.id ?: 0,
+                                fichaId = fichaId,
+                                apellidosNombres = nombres.trim(),
+                                fechaUltimaMenstruacion = fum,
+                                fechaProbableParto = fpp,
+                                semanasGestacion = semanas.toIntOrNull(),
+                                dosisDtPrimera = primera,
+                                dosisDtSegunda = segunda,
+                                dosisDtRefuerzo = refuerzo,
+                                gestas = gestas.toIntOrNull(),
+                                partos = partos.toIntOrNull(),
+                                abortos = abortos.toIntOrNull(),
+                                cesareas = cesareas.toIntOrNull(),
+                                antecedentesPatologicosObstetricos = antecedentes.trim(),
+                                riesgoObstetrico = riesgoObstetrico,
+                                syncId = item?.syncId ?: UUID.randomUUID().toString()
+                            ),
+                            DatosPersonaSalud(
+                                nombres = nombres.trim(),
+                                cedula = cedula.trim(),
+                                fechaNacimiento = fechaNacimiento,
+                                parentesco = parentesco,
+                                sexo = "M",
+                                escolaridad = escolaridad,
+                                ocupacion = ocupacion.trim()
+                            )
+                        )
+                    }
+                }
+            )
+            BotonSecundarioRuralitos(
+                texto = "Cancelar y regresar",
+                descripcion = "No guardar los cambios de este embarazo",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = if (item == null) "Agregar embarazo" else "Editar embarazo",
-            descripcion = "Completa las fechas, vacunación y antecedentes en bloques separados.",
-            paso = "Registro obstétrico",
-            color = NaranjaClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "1. Datos personales",
             descripcion = "Selecciona una integrante o completa sus datos. También aparecerá en los consolidados."
@@ -479,7 +519,6 @@ private fun FormularioEmbarazadaScreen(
             SelectorTextoSalud("Escolaridad", listOf("SIN", "BAS", "BACH", "SUP", "ESP"), escolaridad) { escolaridad = it }
             CampoTexto(ocupacion, { ocupacion = it }, "Ocupación")
         }
-
         SeccionFormularioRuralitos(
             titulo = "2. Gestación",
             descripcion = "Fechas principales y semanas de gestación."
@@ -488,7 +527,6 @@ private fun FormularioEmbarazadaScreen(
             CampoFecha(fpp, "Fecha probable del parto") { calendario = "fpp" }
             CampoEnteroSalud(semanas, { semanas = it }, "Semanas de gestación")
         }
-
         SeccionFormularioRuralitos(
             titulo = "3. Vacunación dT",
             descripcion = "Selecciona Sí o No para cada dosis."
@@ -497,7 +535,6 @@ private fun FormularioEmbarazadaScreen(
             OpcionSiNoSalud("Segunda dosis", segunda) { segunda = it }
             OpcionSiNoSalud("Dosis de refuerzo", refuerzo) { refuerzo = it }
         }
-
         SeccionFormularioRuralitos(
             titulo = "4. Antecedentes obstétricos",
             descripcion = "Número de gestas, partos, abortos, cesáreas y antecedentes clínicos."
@@ -516,7 +553,6 @@ private fun FormularioEmbarazadaScreen(
                 maxLines = 5
             )
         }
-
         error?.let {
             MensajeEstadoRuralitos(
                 titulo = "Revisa el registro",
@@ -525,55 +561,6 @@ private fun FormularioEmbarazadaScreen(
                 simbolo = "!"
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = if (item == null) "Guardar nuevo embarazo" else "Guardar cambios del embarazo",
-            descripcion = "Validar y regresar al listado de salud familiar",
-            color = CianRuralitos,
-            onClick = {
-                if (nombres.isBlank() || GrupoEdadFamiliar.calcular(fechaNacimiento) == null) {
-                    error = "Completa los apellidos y nombres y una fecha de nacimiento válida."
-                } else if (cedula.isNotBlank() && !ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
-                    error = "La identificación, si se registra, debe contener 10 o 13 números."
-                } else {
-                    onGuardar(
-                        EmbarazadaEntity(
-                            id = item?.id ?: 0,
-                            fichaId = fichaId,
-                            apellidosNombres = nombres.trim(),
-                            fechaUltimaMenstruacion = fum,
-                            fechaProbableParto = fpp,
-                            semanasGestacion = semanas.toIntOrNull(),
-                            dosisDtPrimera = primera,
-                            dosisDtSegunda = segunda,
-                            dosisDtRefuerzo = refuerzo,
-                            gestas = gestas.toIntOrNull(),
-                            partos = partos.toIntOrNull(),
-                            abortos = abortos.toIntOrNull(),
-                            cesareas = cesareas.toIntOrNull(),
-                            antecedentesPatologicosObstetricos = antecedentes.trim(),
-                            riesgoObstetrico = riesgoObstetrico,
-                            syncId = item?.syncId ?: UUID.randomUUID().toString()
-                        ),
-                        DatosPersonaSalud(
-                            nombres = nombres.trim(),
-                            cedula = cedula.trim(),
-                            fechaNacimiento = fechaNacimiento,
-                            parentesco = parentesco,
-                            sexo = "M",
-                            escolaridad = escolaridad,
-                            ocupacion = ocupacion.trim()
-                        )
-                    )
-                }
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = "Cancelar y regresar",
-            descripcion = "No guardar los cambios de este embarazo",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 
     if (calendario != null) {
@@ -614,21 +601,40 @@ private fun FormularioMortalidadScreen(
     var causa by remember { mutableStateOf(item?.causa.orEmpty()) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = if (item == null) "Agregar fallecimiento" else "Editar fallecimiento",
+        descripcion = "Registra únicamente antecedentes de mortalidad familiar de los últimos cinco años.",
+        subtitulo = "Mortalidad familiar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (item == null) "Guardar fallecimiento" else "Guardar cambios",
+                descripcion = "Validar y regresar al listado de salud familiar",
+                color = RojoClinico,
+                onClick = {
+                    if (nombre.isBlank() || parentesco.isBlank() || edad.toIntOrNull() == null || causa.isBlank()) {
+                        error = "Completa apellidos y nombres, parentesco, edad al fallecer y causa."
+                    } else {
+                        onGuardar(
+                            MortalidadFamiliarEntity(
+                                id = item?.id ?: 0,
+                                fichaId = fichaId,
+                                nombre = nombre.trim(),
+                                parentesco = parentesco.trim(),
+                                edadAlFallecer = edad.toIntOrNull(),
+                                causa = causa.trim(),
+                                syncId = item?.syncId ?: UUID.randomUUID().toString()
+                            )
+                        )
+                    }
+                }
+            )
+            BotonSecundarioRuralitos(
+                texto = "Cancelar y regresar",
+                descripcion = "No guardar los cambios de este registro",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = if (item == null) "Agregar fallecimiento" else "Editar fallecimiento",
-            descripcion = "Registra únicamente antecedentes de mortalidad familiar de los últimos cinco años.",
-            paso = "Mortalidad familiar",
-            color = RojoClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "Datos de la persona",
             descripcion = "Solo se requieren los cuatro datos de mortalidad de la ficha familiar."
@@ -645,7 +651,6 @@ private fun FormularioMortalidadScreen(
                 maxLines = 5
             )
         }
-
         error?.let {
             MensajeEstadoRuralitos(
                 titulo = "Revisa el registro",
@@ -654,35 +659,6 @@ private fun FormularioMortalidadScreen(
                 simbolo = "!"
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = if (item == null) "Guardar fallecimiento" else "Guardar cambios",
-            descripcion = "Validar y regresar al listado de salud familiar",
-            color = RojoClinico,
-            onClick = {
-                if (nombre.isBlank() || parentesco.isBlank() || edad.toIntOrNull() == null || causa.isBlank()) {
-                    error = "Completa apellidos y nombres, parentesco, edad al fallecer y causa."
-                } else {
-                    onGuardar(
-                        MortalidadFamiliarEntity(
-                            id = item?.id ?: 0,
-                            fichaId = fichaId,
-                            nombre = nombre.trim(),
-                            parentesco = parentesco.trim(),
-                            edadAlFallecer = edad.toIntOrNull(),
-                            causa = causa.trim(),
-                            syncId = item?.syncId ?: UUID.randomUUID().toString()
-                        )
-                    )
-                }
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = "Cancelar y regresar",
-            descripcion = "No guardar los cambios de este registro",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 }
 

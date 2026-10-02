@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
@@ -87,18 +88,19 @@ fun EliminarCuentaScreen(
         )
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = "Eliminar mi cuenta",
+        descripcion = "Proceso protegido mediante un código temporal enviado al correo confirmado.",
+        subtitulo = "Acción irreversible",
+        barraAccion = {
+            BotonSecundarioRuralitos(
+                texto = "Conservar mi cuenta y regresar",
+                descripcion = "Salir sin eliminar información",
+                onClick = onRegresar,
+                enabled = !procesando
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Eliminar mi cuenta",
-            descripcion = "Proceso protegido mediante un código temporal enviado al correo confirmado.",
-            paso = "Acción irreversible",
-            color = RojoClinico
-        )
         MensajeEstadoRuralitos(
             titulo = "Crea un respaldo antes de continuar",
             descripcion = "El respaldo portable permite recuperar tus fichas posteriormente desde otra cuenta.",
@@ -111,7 +113,6 @@ fun EliminarCuentaScreen(
             onClick = onCrearRespaldo,
             color = CianRuralitos
         )
-
         SeccionFormularioRuralitos(
             titulo = "1. Verificar el correo",
             descripcion = "Enviaremos un código de un solo uso a ${ocultarCorreo(correo)}."
@@ -142,7 +143,6 @@ fun EliminarCuentaScreen(
                 color = AzulClinico
             )
         }
-
         if (codigoEnviado) {
             SeccionFormularioRuralitos(
                 titulo = "2. Confirmar eliminación",
@@ -173,7 +173,6 @@ fun EliminarCuentaScreen(
                 )
             }
         }
-
         mensaje?.let {
             MensajeEstadoRuralitos(
                 titulo = if (it.startsWith("Código enviado")) "Verificación iniciada" else "Revisa el proceso",
@@ -182,7 +181,6 @@ fun EliminarCuentaScreen(
                 simbolo = if (it.startsWith("Código enviado")) "✓" else "!"
             )
         }
-
         if (codigoEnviado) {
             BotonPrincipalRuralitos(
                 texto = if (procesando) "Eliminando cuenta…" else "Eliminar mi cuenta definitivamente",
@@ -199,12 +197,6 @@ fun EliminarCuentaScreen(
                 color = RojoClinico
             )
         }
-        BotonSecundarioRuralitos(
-            texto = "Conservar mi cuenta y regresar",
-            descripcion = "Salir sin eliminar información",
-            onClick = onRegresar,
-            enabled = !procesando
-        )
     }
 }
 

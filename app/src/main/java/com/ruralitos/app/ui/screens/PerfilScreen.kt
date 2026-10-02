@@ -39,6 +39,7 @@ import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
@@ -120,21 +121,26 @@ fun PerfilScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    PantallaRuralitos(
+        titulo = "Datos personales",
+        descripcion = "Actualiza la información que identifica tu cuenta profesional en Ruralitos.",
+        subtitulo = if (usuario.esAdministrador) "Perfil de administrador" else "Perfil del personal de salud",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (guardando) "Guardando datos…" else "Guardar mis datos personales",
+                descripcion = "Actualizar la información local y en la cuenta",
+                onClick = guardarPerfil,
+                enabled = !guardando,
+                color = CianRuralitos
+            )
+            BotonSecundarioRuralitos(
+                texto = "Regresar al menú principal",
+                descripcion = "Salir de Datos personales",
+                onClick = onRegresar,
+                enabled = !guardando
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Datos personales",
-            descripcion = "Actualiza la información que identifica tu cuenta profesional en Ruralitos.",
-            paso = if (usuario.esAdministrador) "Perfil de administrador" else "Perfil del personal de salud",
-            color = MoradoClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "Identificación personal",
             descripcion = "Las etiquetas permanecen separadas de los cuadros para facilitar la lectura."
@@ -223,7 +229,6 @@ fun PerfilScreen(
                 }
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "Acceso y seguridad",
             descripcion = "El correo identifica la cuenta y la contraseña se administra por separado."
@@ -244,7 +249,6 @@ fun PerfilScreen(
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
-
         mensaje?.let {
             Surface(
                 color = if (esError) Color(0xFFFFECEF) else Color(0xFFE3F4F7),
@@ -259,21 +263,6 @@ fun PerfilScreen(
                 )
             }
         }
-
-        BotonPrincipalRuralitos(
-            texto = if (guardando) "Guardando datos…" else "Guardar mis datos personales",
-            descripcion = "Actualizar la información local y en la cuenta",
-            onClick = guardarPerfil,
-            enabled = !guardando,
-            color = CianRuralitos
-        )
-        BotonSecundarioRuralitos(
-            texto = "Regresar al menú principal",
-            descripcion = "Salir de Datos personales",
-            onClick = onRegresar,
-            enabled = !guardando,
-            modifier = Modifier.padding(bottom = 28.dp)
-        )
     }
 }
 

@@ -235,6 +235,7 @@ fun PantallaRuralitos(
     titulo: String,
     modifier: Modifier = Modifier,
     subtitulo: String? = null,
+    descripcion: String? = null,
     paso: Int? = null,
     totalPasos: Int? = null,
     etiquetaPaso: String = "",
@@ -284,9 +285,17 @@ fun PantallaRuralitos(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(RuralitosSpacing.base),
-            verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md),
-            content = contenido
-        )
+            verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
+        ) {
+            descripcion?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    limpiarTextoInterfaz(it),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            contenido()
+        }
         if (barraAccion != null) {
             HorizontalDivider(color = BordeClinico)
             Column(
@@ -326,27 +335,29 @@ fun SeccionFormularioRuralitos(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(modifier.fillMaxWidth().padding(vertical = RuralitosSpacing.xs)) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = RuralitosSpacing.xs, vertical = 6.dp)) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(RuralitosRadius.card))
+            .background(Color.White)
+            .border(1.dp, BordeClinico, RoundedCornerShape(RuralitosRadius.card))
+            .padding(RuralitosSpacing.base)
+    ) {
+        Text(
+            titulo,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold
+        )
+        descripcion?.let {
             Text(
-                titulo,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold
+                limpiarTextoInterfaz(it),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 2.dp)
             )
-            descripcion?.let {
-                Text(
-                    limpiarTextoInterfaz(it),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f))
-        Column(Modifier.padding(horizontal = RuralitosSpacing.xs, vertical = RuralitosSpacing.sm)) {
+        Column(Modifier.padding(top = RuralitosSpacing.md)) {
             content()
         }
     }

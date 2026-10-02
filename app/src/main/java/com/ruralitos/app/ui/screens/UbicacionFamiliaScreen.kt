@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.CianRuralitos
@@ -47,21 +48,39 @@ fun UbicacionFamiliaScreen(
     var numeroCasa by remember { mutableStateOf(datosIniciales?.numeroCasa.orEmpty()) }
     var grupoCultural by remember { mutableStateOf(datosIniciales?.grupoCultural.orEmpty()) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = "Dirección y vivienda",
+        descripcion = "Completa cómo llegar al hogar. La latitud, longitud y altitud se obtienen únicamente en la sección Croquis, donde puedes mover el punto del mapa.",
+        paso = 2,
+        totalPasos = 10,
+        etiquetaPaso = "Información del hogar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar información de esta sección",
+                descripcion = "Después podrás registrar a los integrantes",
+                onClick = {
+                    onGuardar(
+                        UbicacionFamiliaForm(
+                            sector = sector.trim(),
+                            manzana = manzana.trim(),
+                            numeroFamilia = numeroFamilia.trim(),
+                            direccion = direccion.trim(),
+                            barrio = barrio.trim(),
+                            numeroCasa = numeroCasa.trim(),
+                            comunidad = "",
+                            grupoCultural = grupoCultural.trim()
+                        )
+                    )
+                },
+                color = CianRuralitos
+            )
+            BotonSecundarioRuralitos(
+                texto = "Regresar al panel de la ficha",
+                descripcion = "Salir de esta sección sin guardar cambios",
+                onClick = onRegresar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Dirección y vivienda",
-            descripcion = "Completa cómo llegar al hogar. La latitud, longitud y altitud se obtienen únicamente en la sección Croquis, donde puedes mover el punto del mapa.",
-            paso = "Sección 2",
-            color = CianRuralitos
-        )
-
         SeccionFormularioRuralitos(
             titulo = "Ubicación territorial",
             descripcion = "Datos del sector y organización local."
@@ -77,7 +96,6 @@ fun UbicacionFamiliaScreen(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "Dirección del domicilio",
             descripcion = "Escribe una dirección o referencia fácil de reconocer."
@@ -85,38 +103,11 @@ fun UbicacionFamiliaScreen(
             CampoTexto(direccion, { direccion = it }, "Dirección habitual o punto de referencia")
             CampoTexto(numeroCasa, { numeroCasa = it }, "Número de casa")
         }
-
         SeccionFormularioRuralitos(
             titulo = "Información cultural",
             descripcion = "Registra el grupo cultural declarado por la familia."
         ) {
             CampoTexto(grupoCultural, { grupoCultural = it }, "Grupo cultural")
         }
-
-        BotonPrincipalRuralitos(
-            texto = "Guardar información de esta sección",
-            descripcion = "Después podrás registrar a los integrantes",
-            onClick = {
-                onGuardar(
-                    UbicacionFamiliaForm(
-                        sector = sector.trim(),
-                        manzana = manzana.trim(),
-                        numeroFamilia = numeroFamilia.trim(),
-                        direccion = direccion.trim(),
-                        barrio = barrio.trim(),
-                        numeroCasa = numeroCasa.trim(),
-                        comunidad = "",
-                        grupoCultural = grupoCultural.trim()
-                    )
-                )
-            },
-            color = CianRuralitos
-        )
-        BotonSecundarioRuralitos(
-            texto = "Regresar al panel de la ficha",
-            descripcion = "Salir de esta sección sin guardar cambios",
-            onClick = onRegresar,
-            modifier = Modifier.padding(bottom = 28.dp)
-        )
     }
 }

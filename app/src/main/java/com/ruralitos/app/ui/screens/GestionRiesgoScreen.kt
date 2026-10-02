@@ -38,6 +38,7 @@ import com.ruralitos.app.data.local.entity.GestionRiesgoEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.TarjetaRegistroRuralitos
@@ -246,21 +247,43 @@ private fun FormularioGestionRiesgoScreen(
     var calendario by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+    PantallaRuralitos(
+        titulo = if (item == null) "Agregar seguimiento" else "Editar seguimiento",
+        descripcion = "Completa el plan en cuatro bloques: control, compromisos, evaluación y observaciones.",
+        subtitulo = "Plan de acción familiar",
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (item == null) "Guardar nuevo seguimiento" else "Guardar cambios del seguimiento",
+                descripcion = "Validar el plan y regresar al historial",
+                color = CianRuralitos,
+                onClick = {
+                    if (compromisoFamilia.isBlank() && compromisoEquipo.isBlank()) {
+                        error = "Registra al menos un compromiso de la familia o del equipo de salud."
+                    } else {
+                        onGuardar(
+                            GestionRiesgoEntity(
+                                id = item?.id ?: 0,
+                                fichaId = fichaId,
+                                fechaAnalisis = fechaAnalisis,
+                                numero = numero.toIntOrNull(),
+                                compromisoFamilia = compromisoFamilia.trim(),
+                                compromisoEquipoSalud = compromisoEquipo.trim(),
+                                fechaEvaluacion = fechaEvaluacion,
+                                cumplimiento = cumplimiento,
+                                causasIncumplimientoObservaciones = observaciones.trim(),
+                                responsable = responsable.trim()
+                            )
+                        )
+                    }
+                }
+            )
+            BotonSecundarioRuralitos(
+                texto = "Cancelar y regresar",
+                descripcion = "No guardar los cambios de este seguimiento",
+                onClick = onCancelar
+            )
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = if (item == null) "Agregar seguimiento" else "Editar seguimiento",
-            descripcion = "Completa el plan en cuatro bloques: control, compromisos, evaluación y observaciones.",
-            paso = "Plan de acción familiar",
-            color = AzulClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "1. Control del seguimiento",
             descripcion = "Fecha de análisis, número consecutivo y responsable automático."
@@ -283,7 +306,6 @@ private fun FormularioGestionRiesgoScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "2. Compromisos acordados",
             descripcion = "Describe por separado lo que realizará la familia y lo que realizará el equipo de salud."
@@ -299,7 +321,6 @@ private fun FormularioGestionRiesgoScreen(
                 "Compromiso del equipo de salud"
             )
         }
-
         SeccionFormularioRuralitos(
             titulo = "3. Evaluación del cumplimiento",
             descripcion = "Selecciona la fecha y el estado actual del acuerdo."
@@ -334,7 +355,6 @@ private fun FormularioGestionRiesgoScreen(
                 }
             }
         }
-
         SeccionFormularioRuralitos(
             titulo = "4. Observaciones",
             descripcion = "Explica causas de incumplimiento, avances parciales o información relevante."
@@ -345,7 +365,6 @@ private fun FormularioGestionRiesgoScreen(
                 "Causas de incumplimiento y observaciones"
             )
         }
-
         error?.let {
             MensajeEstadoRuralitos(
                 titulo = "Revisa el seguimiento",
@@ -354,38 +373,6 @@ private fun FormularioGestionRiesgoScreen(
                 simbolo = "!"
             )
         }
-
-        BotonPrincipalRuralitos(
-            texto = if (item == null) "Guardar nuevo seguimiento" else "Guardar cambios del seguimiento",
-            descripcion = "Validar el plan y regresar al historial",
-            color = CianRuralitos,
-            onClick = {
-                if (compromisoFamilia.isBlank() && compromisoEquipo.isBlank()) {
-                    error = "Registra al menos un compromiso de la familia o del equipo de salud."
-                } else {
-                    onGuardar(
-                        GestionRiesgoEntity(
-                            id = item?.id ?: 0,
-                            fichaId = fichaId,
-                            fechaAnalisis = fechaAnalisis,
-                            numero = numero.toIntOrNull(),
-                            compromisoFamilia = compromisoFamilia.trim(),
-                            compromisoEquipoSalud = compromisoEquipo.trim(),
-                            fechaEvaluacion = fechaEvaluacion,
-                            cumplimiento = cumplimiento,
-                            causasIncumplimientoObservaciones = observaciones.trim(),
-                            responsable = responsable.trim()
-                        )
-                    )
-                }
-            }
-        )
-        BotonSecundarioRuralitos(
-            texto = "Cancelar y regresar",
-            descripcion = "No guardar los cambios de este seguimiento",
-            onClick = onCancelar,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
     }
 
     if (calendario != null) {
