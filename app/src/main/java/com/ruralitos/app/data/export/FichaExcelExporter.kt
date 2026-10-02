@@ -417,7 +417,15 @@ object FichaExcelExporter {
 
     private fun normalizarImagenParaExcel(context: Context, uri: Uri): ByteArray? {
         val originales = leerBytes(context, uri) ?: return null
-        val bitmap = BitmapFactory.decodeByteArray(originales, 0, originales.size) ?: return null
+        // Las fotos de cámara pueden ser enormes: se reducen al decodificarlas para no
+        // agotar la memoria del teléfono. Los recuadros del Excel son pequeños.
+        val limites = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(originales, 0, originales.size, limites)
+        var muestreo = 1
+        val mayor = maxOf(limites.outWidth, limites.outHeight)
+        while (mayor / muestreo > MAX_LADO_IMAGEN_EXCEL) muestreo *= 2
+        val opciones = BitmapFactory.Options().apply { inSampleSize = muestreo }
+        val bitmap = BitmapFactory.decodeByteArray(originales, 0, originales.size, opciones) ?: return null
         bitmap.setHasAlpha(true)
         return try {
             ByteArrayOutputStream().use { salida ->
@@ -428,6 +436,8 @@ object FichaExcelExporter {
             bitmap.recycle()
         }
     }
+
+    private const val MAX_LADO_IMAGEN_EXCEL = 1600
 
     private fun leerBytes(context: Context, uri: Uri): ByteArray? = runCatching {
         when {

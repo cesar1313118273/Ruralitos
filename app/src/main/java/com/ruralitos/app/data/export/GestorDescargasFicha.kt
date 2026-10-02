@@ -52,7 +52,10 @@ object GestorDescargasFicha {
                     FichaPdfPlantillaExporter.exportar(context, fichaId, uri)
                 }
             }.onSuccess(archivos::add)
-                .onFailure { errores += "PDF: ${it.message ?: "no se pudo crear"}" }
+                .onFailure {
+                    android.util.Log.e("RuralitosExport", "No se pudo crear el PDF", it)
+                    errores += "PDF: ${it::class.java.simpleName}: ${it.message ?: "no se pudo crear"}"
+                }
         }
 
         if (descargarExcel) {
@@ -65,7 +68,10 @@ object GestorDescargasFicha {
                     FichaExcelExporter.exportar(context, fichaId, uri)
                 }
             }.onSuccess(archivos::add)
-                .onFailure { errores += "Excel: ${it.message ?: "no se pudo crear"}" }
+                .onFailure {
+                    android.util.Log.e("RuralitosExport", "No se pudo crear el Excel", it)
+                    errores += "Excel: ${it::class.java.simpleName}: ${it.message ?: "no se pudo crear"}"
+                }
         }
 
         ResultadoDescargaFicha(archivos = archivos, errores = errores)
