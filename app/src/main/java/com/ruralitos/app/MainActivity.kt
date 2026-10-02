@@ -831,6 +831,7 @@ fun RuralitosApp() {
                 else -> when (pantallaActual) {
                 "inicio" -> {
                     PantallaPrincipal(
+                        usuarioId = usuarioActual?.id ?: 0L,
                         usuarioNombre = usuarioActual?.nombres.orEmpty(),
                         usuarioCargo = usuarioActual?.cargo.orEmpty(),
                         codigoSenescyt = usuarioActual?.codigoSenescyt.orEmpty(),
@@ -2104,7 +2105,8 @@ fun PantallaPrincipal(
     onSeguridad: () -> Unit,
     onEliminarCuenta: () -> Unit,
     onCambiarClave: () -> Unit,
-    onCerrarSesion: () -> Unit
+    onCerrarSesion: () -> Unit,
+    usuarioId: Long = 0L
 )  {
     InicioRuralitosScreen(
         usuarioNombre = usuarioNombre,
@@ -2124,7 +2126,8 @@ fun PantallaPrincipal(
         onSeguridad = onSeguridad,
         onEliminarCuenta = onEliminarCuenta,
         onCambiarClave = onCambiarClave,
-        onCerrarSesion = onCerrarSesion
+        onCerrarSesion = onCerrarSesion,
+        usuarioId = usuarioId
     )
 }
 

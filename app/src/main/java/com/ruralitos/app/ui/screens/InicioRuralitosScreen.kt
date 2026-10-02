@@ -1,5 +1,9 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.runtime.collectAsState
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.statusBarsPadding
+import com.ruralitos.app.data.local.database.RuralitosDatabase
 import android.content.Context
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -125,11 +129,23 @@ fun InicioRuralitosScreen(
     onSeguridad: () -> Unit,
     onCambiarClave: () -> Unit,
     onEliminarCuenta: () -> Unit,
-    onCerrarSesion: () -> Unit
+    onCerrarSesion: () -> Unit,
+    usuarioId: Long = 0L
 ) {
     val context = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    val actividadesAgenda by remember(context, usuarioId) {
+        RuralitosDatabase.obtenerBaseDatos(context).agendaDao().observar(usuarioId)
+    }.collectAsState(initial = emptyList())
+    val actividadesHoy = remember(actividadesAgenda) {
+        val inicio = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val fin = inicio + 24L * 60 * 60 * 1000
+        actividadesAgenda.filter { it.estado != "CANCELADA" && it.fechaHora in inicio until fin }
+    }
 
     var hora by remember {
         mutableIntStateOf(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))
@@ -394,103 +410,51 @@ fun InicioRuralitosScreen(
                 .background(FondoPantalla)
                 .formularioSeguro()
         ) {
-            Box(
+            Column(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
             ) {
-                FondoDecorativo(
-                    modifier = Modifier.fillMaxSize()
+                CabeceraInicioAzul(
+                    saludo = saludo,
+                    estadoSincronizacion = estadoSincronizacion,
+                    onMenuClick = { scope.launch { drawerState.open() } }
                 )
 
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
+                        .fillMaxWidth()
+                        .widthIn(max = 700.dp)
+                        .padding(horizontal = 16.dp)
+                        .offset(y = (-14).dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    CabeceraRuralitos(
-                        onMenuClick = {
-                            scope.launch { drawerState.open() }
-                        }
+                    TarjetaVisitasHoy(
+                        actividades = actividadesHoy,
+                        onClick = onAgenda
                     )
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 22.dp,
-                                end = 22.dp,
-                                top = 2.dp,
-                                bottom = 6.dp
-                            ),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(
-                                text = saludo,
-                                color = AzulTitulo,
-                                fontSize = 22.sp,
-                                lineHeight = 33.sp,
-                                fontWeight = FontWeight.SemiBold,
-                            )
-
-                            Spacer(Modifier.height(4.dp))
-
-                            Text(
-                                text = "Bienvenido a Ruralitos",
-                                color = AzulSecundario,
-                                fontSize = 16.sp,
-                                lineHeight = 20.sp
-                            )
-                            Spacer(Modifier.height(5.dp))
-                            Text(
-                                text = estadoSincronizacion,
-                                color = if (estadoSincronizacion == "Sincronizado") CianRuralitos else AzulSecundario,
-                                fontSize = 13.sp,
-                            )
-                        }
-
-                        Spacer(Modifier.width(14.dp))
-
-                        AvatarInicial(inicial)
-                    }
-
 
                     Text(
                         text = "Herramientas",
                         color = AzulTitulo,
-                        fontSize = 20.sp,
-                        lineHeight = 29.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(
-                            start = 20.dp,
-                            end = 20.dp,
-                            top = 25.dp,
-                            bottom = 15.dp
-                        )
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
                     )
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).widthIn(max = 700.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            AccesoInicio("Registro general", R.drawable.ruralitos_icono_reportes,
-                                onDispensarizacion, Modifier.weight(1f))
-                            AccesoInicio("Territorios", R.drawable.ruralitos_icono_red,
-                                onSala, Modifier.weight(1f))
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            AccesoInicio("Notas Diarias", R.drawable.ruralitos_icono_fichas,
-                                onNotasDiarias, Modifier.weight(1f))
-                            AccesoInicio("Agenda", R.drawable.ruralitos_icono_agenda,
-                                onAgenda, Modifier.weight(1f))
-                        }
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AccesoInicio("Registro general", R.drawable.ruralitos_icono_reportes,
+                            onDispensarizacion, Modifier.weight(1f))
+                        AccesoInicio("Territorios", R.drawable.ruralitos_icono_red,
+                            onSala, Modifier.weight(1f))
                     }
-
-                    Spacer(Modifier.height(130.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        AccesoInicio("Notas Diarias", R.drawable.ruralitos_icono_fichas,
+                            onNotasDiarias, Modifier.weight(1f))
+                        AccesoInicio("Agenda", R.drawable.ruralitos_icono_agenda,
+                            onAgenda, Modifier.weight(1f))
+                    }
+                    Spacer(Modifier.height(8.dp))
                 }
             }
 
@@ -592,6 +556,169 @@ private fun CabeceraRuralitos(
 }
 
 @Composable
+private fun CabeceraInicioAzul(
+    saludo: String,
+    estadoSincronizacion: String,
+    onMenuClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                AzulTitulo,
+                RoundedCornerShape(bottomStart = 26.dp, bottomEnd = 26.dp)
+            )
+            .statusBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 34.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                onClick = onMenuClick,
+                modifier = Modifier.size(44.dp),
+                shape = RoundedCornerShape(13.dp),
+                color = Color.White.copy(alpha = 0.14f),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.28f))
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Canvas(Modifier.size(22.dp)) {
+                        val inicio = size.width * .14f
+                        val fin = size.width * .86f
+                        listOf(size.height * .28f, size.height * .50f, size.height * .72f).forEach { y ->
+                            drawLine(
+                                color = Color.White,
+                                start = Offset(inicio, y),
+                                end = Offset(fin, y),
+                                strokeWidth = 2.4.dp.toPx(),
+                                cap = StrokeCap.Round
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
+
+            Text(
+                text = "Ruralitos",
+                color = Color.White,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            LogoRuralitos(
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .size(40.dp)
+            )
+        }
+
+        Text(
+            text = saludo,
+            color = Color.White,
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(top = 20.dp)
+        )
+        Text(
+            text = "Bienvenido a Ruralitos",
+            color = Color.White.copy(alpha = 0.78f),
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 2.dp)
+        )
+
+        val sincronizado = estadoSincronizacion == "Sincronizado"
+        Surface(
+            modifier = Modifier.padding(top = 12.dp),
+            shape = RoundedCornerShape(50),
+            color = if (sincronizado) Color(0xFFE9F5DF) else Color.White.copy(alpha = 0.16f)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    Modifier
+                        .size(7.dp)
+                        .background(
+                            if (sincronizado) Color(0xFF3A7F1F) else Color.White,
+                            CircleShape
+                        )
+                )
+                Text(
+                    text = estadoSincronizacion,
+                    color = if (sincronizado) Color(0xFF2F5D14) else Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun TarjetaVisitasHoy(
+    actividades: List<com.ruralitos.app.data.local.entity.ActividadAgendaEntity>,
+    onClick: () -> Unit
+) {
+    val ahora = System.currentTimeMillis()
+    val siguiente = actividades.filter { it.fechaHora >= ahora }.minByOrNull { it.fechaHora }
+    val formatoHora = remember { java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault()) }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, BordeTarjeta)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ruralitos_icono_agenda),
+                contentDescription = null,
+                modifier = Modifier.size(44.dp),
+                contentScale = ContentScale.Fit
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp)
+            ) {
+                Text(
+                    text = when (actividades.size) {
+                        0 -> "Hoy: sin actividades"
+                        1 -> "Hoy: 1 actividad"
+                        else -> "Hoy: ${actividades.size} actividades"
+                    },
+                    color = AzulTitulo,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = siguiente?.let {
+                        val quien = it.persona.ifBlank { it.tipo }
+                        "Siguiente: ${formatoHora.format(java.util.Date(it.fechaHora))} · $quien"
+                    } ?: "Toca para abrir tu agenda",
+                    color = AzulSecundario,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            Text(
+                text = "›",
+                color = AzulSecundario,
+                fontSize = 24.sp
+            )
+        }
+    }
+}
+
+@Composable
 private fun BotonMenu(
     onClick: () -> Unit
 ) {
@@ -658,41 +785,31 @@ private fun AccesoInicio(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 128.dp),
+        modifier = modifier.heightIn(min = 112.dp),
         color = Color.White,
         shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(
-            width = 1.dp,
-            color = BordeTarjeta
-        ),
-        shadowElevation = 1.dp
+        border = BorderStroke(width = 1.dp, color = BordeTarjeta)
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(
-                    horizontal = 8.dp,
-                    vertical = 13.dp
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 14.dp),
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Image(
                 painter = painterResource(ilustracion),
                 contentDescription = null,
-                modifier = Modifier.size(50.dp),
+                modifier = Modifier.size(44.dp),
                 contentScale = ContentScale.Fit
             )
-
-            Spacer(Modifier.height(12.dp))
 
             Text(
                 text = titulo,
                 color = AzulTitulo,
-                fontSize = 16.sp,
-                lineHeight = 19.sp,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold,
-                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 14.dp)
             )
         }
     }
@@ -971,59 +1088,69 @@ private fun BarraInferior(
         color = Color.White,
         shadowElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 7.dp,
-                    vertical = 9.dp
-                ),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            ItemBarra(
-                texto = "Inicio",
-                activo = true,
-                onClick = onInicio
-            )
-
-            ItemBarra(
-                texto = "Fichas",
-                activo = false,
-                onClick = onFichas
-            )
-
-            Surface(
-                onClick = onNueva,
-                modifier = Modifier.size(56.dp),
-                shape = CircleShape,
-                color = VerdePrincipal,
-                shadowElevation = 1.dp
+        Column {
+            HorizontalDivider(color = BordeTarjeta)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp)
+                    .padding(top = 8.dp, bottom = 10.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
+                ItemBarra(
+                    texto = "Inicio",
+                    activo = true,
+                    onClick = onInicio,
+                    modifier = Modifier.weight(1f)
+                )
+
+                ItemBarra(
+                    texto = "Fichas",
+                    activo = false,
+                    onClick = onFichas,
+                    modifier = Modifier.weight(1f)
+                )
+
                 Box(
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.BottomCenter
                 ) {
-                    Text(
-                        text = "+",
-                        color = Color.White,
-                        fontSize = 33.sp,
-                        lineHeight = 34.sp,
-                        fontWeight = FontWeight.Light
-                    )
+                    Surface(
+                        onClick = onNueva,
+                        modifier = Modifier
+                            .offset(y = (-6).dp)
+                            .size(54.dp),
+                        shape = RoundedCornerShape(17.dp),
+                        color = VerdePrincipal,
+                        border = BorderStroke(3.dp, Color.White),
+                        shadowElevation = 2.dp
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Text(
+                                text = "+",
+                                color = Color.White,
+                                fontSize = 30.sp,
+                                lineHeight = 30.sp,
+                                fontWeight = FontWeight.Light
+                            )
+                        }
+                    }
                 }
+
+                ItemBarra(
+                    texto = "Reportes",
+                    activo = false,
+                    onClick = onReportes,
+                    modifier = Modifier.weight(1f)
+                )
+
+                ItemBarra(
+                    texto = "Perfil",
+                    activo = false,
+                    onClick = onPerfil,
+                    modifier = Modifier.weight(1f)
+                )
             }
-
-            ItemBarra(
-                texto = "Reportes",
-                activo = false,
-                onClick = onReportes
-            )
-
-            ItemBarra(
-                texto = "Perfil",
-                activo = false,
-                onClick = onPerfil
-            )
         }
     }
 }
@@ -1032,7 +1159,8 @@ private fun BarraInferior(
 private fun ItemBarra(
     texto: String,
     activo: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val color = if (activo) {
         VerdePrincipal
@@ -1041,10 +1169,10 @@ private fun ItemBarra(
     }
 
     Column(
-        modifier = Modifier
+        modifier = modifier
             .clickable(onClick = onClick)
             .padding(
-                horizontal = 7.dp,
+                horizontal = 4.dp,
                 vertical = 3.dp
             ),
         horizontalAlignment = Alignment.CenterHorizontally
