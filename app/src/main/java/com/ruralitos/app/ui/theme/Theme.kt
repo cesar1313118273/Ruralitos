@@ -13,7 +13,7 @@ private val RuralitosShapes = Shapes(
     small = RoundedCornerShape(12.dp),
     medium = RoundedCornerShape(16.dp),
     large = RoundedCornerShape(16.dp),
-    extraLarge = RoundedCornerShape(24.dp)
+    extraLarge = RoundedCornerShape(20.dp)
 )
 
 private val RuralitosColorScheme = lightColorScheme(
@@ -36,7 +36,17 @@ private val RuralitosColorScheme = lightColorScheme(
     outline = BordeCampo,
     outlineVariant = BordeClinico,
     error = RojoClinico,
-    onError = Color.White
+    onError = Color.White,
+    errorContainer = Color(0xFFFCE8EA),
+    onErrorContainer = Color(0xFFA02834),
+    // Ventanas emergentes, menús y selectores: blanco y tonos de la paleta
+    surfaceTint = Color.Transparent,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = FondoClinico,
+    surfaceContainer = Color(0xFFEEF3F6),
+    surfaceContainerHigh = Color.White,
+    surfaceContainerHighest = Color(0xFFEEF3F6),
+    scrim = AzulClinicoOscuro
 )
 
 @Composable
