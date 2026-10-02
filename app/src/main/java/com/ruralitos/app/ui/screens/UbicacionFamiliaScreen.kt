@@ -38,7 +38,8 @@ fun UbicacionFamiliaScreen(
     sectorInicial: String,
     datosIniciales: UbicacionFamiliaForm? = null,
     onGuardar: (UbicacionFamiliaForm) -> Unit,
-    onRegresar: () -> Unit
+    onRegresar: () -> Unit,
+    mostrarAvance: Boolean = false
 ) {
     var sector by remember { mutableStateOf(datosIniciales?.sector ?: sectorInicial) }
     var manzana by remember { mutableStateOf(datosIniciales?.manzana.orEmpty()) }
@@ -47,6 +48,10 @@ fun UbicacionFamiliaScreen(
     val barrio = datosIniciales?.barrio.orEmpty().ifBlank { datosIniciales?.comunidad.orEmpty() }
     var numeroCasa by remember { mutableStateOf(datosIniciales?.numeroCasa.orEmpty()) }
     var grupoCultural by remember { mutableStateOf(datosIniciales?.grupoCultural.orEmpty()) }
+
+    // Llenado de cada sección (solo al crear una ficha): campos completados / total.
+    fun avance(vararg valores: String): Float? =
+        if (mostrarAvance) valores.count { it.isNotBlank() }.toFloat() / valores.size else null
 
     PantallaRuralitos(
         titulo = "Dirección y vivienda",
@@ -80,6 +85,9 @@ fun UbicacionFamiliaScreen(
     ) {
         SeccionFormularioRuralitos(
             titulo = "Ubicación territorial",
+            desplegable = true,
+            abiertaInicial = true,
+            progreso = avance(sector, manzana, numeroFamilia),
             descripcion = "Datos del sector y organización local."
         ) {
             CampoTexto(sector, { sector = it }, "Sector")
@@ -95,6 +103,9 @@ fun UbicacionFamiliaScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "Dirección del domicilio",
+            desplegable = true,
+            abiertaInicial = false,
+            progreso = avance(direccion, numeroCasa),
             descripcion = "Escribe una dirección o referencia fácil de reconocer."
         ) {
             CampoTexto(direccion, { direccion = it }, "Dirección habitual o punto de referencia")
@@ -102,6 +113,9 @@ fun UbicacionFamiliaScreen(
         }
         SeccionFormularioRuralitos(
             titulo = "Información cultural",
+            desplegable = true,
+            abiertaInicial = false,
+            progreso = avance(grupoCultural),
             descripcion = "Registra el grupo cultural declarado por la familia."
         ) {
             CampoTexto(grupoCultural, { grupoCultural = it }, "Grupo cultural")

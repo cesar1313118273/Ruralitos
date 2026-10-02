@@ -1,5 +1,9 @@
 package com.ruralitos.app.ui.components
 
+import com.ruralitos.app.ui.theme.VerdeSalud
+import com.ruralitos.app.ui.theme.VerdeSuaveRuralitos
+import com.ruralitos.app.ui.theme.CianSuave
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -535,9 +539,16 @@ fun SeccionFormularioRuralitos(
     modifier: Modifier = Modifier,
     desplegable: Boolean = false,
     abiertaInicial: Boolean = true,
+    progreso: Float? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     var abierta by rememberSaveable(titulo) { mutableStateOf(abiertaInicial || !desplegable) }
+    val avance by animateFloatAsState(
+        targetValue = (progreso ?: 0f).coerceIn(0f, 1f),
+        label = "avance_seccion"
+    )
+    val completo = avance >= 0.999f
+    val colorRelleno = if (completo) VerdeSuaveRuralitos else CianSuave
     Column(
         modifier
             .fillMaxWidth()
@@ -545,9 +556,36 @@ fun SeccionFormularioRuralitos(
             .background(Color.White)
             .border(1.dp, BordeClinico, RoundedCornerShape(RuralitosRadius.card))
     ) {
+        // Abierta: barra fina de llenado en la parte superior de la sección.
+        if (progreso != null && desplegable && abierta) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(BordeClinico)
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(avance)
+                        .fillMaxHeight()
+                        .background(if (completo) VerdeSalud else MaterialTheme.colorScheme.primary)
+                )
+            }
+        }
         Row(
             Modifier
                 .fillMaxWidth()
+                .then(
+                    // Cerrada: el propio botón desplegable se va llenando.
+                    if (progreso != null && desplegable && !abierta) {
+                        Modifier.drawBehind {
+                            drawRect(
+                                color = colorRelleno,
+                                size = androidx.compose.ui.geometry.Size(size.width * avance, size.height)
+                            )
+                        }
+                    } else Modifier
+                )
                 .then(if (desplegable) Modifier.clickable { abierta = !abierta } else Modifier)
                 .padding(RuralitosSpacing.base),
             verticalAlignment = Alignment.CenterVertically

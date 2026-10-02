@@ -85,7 +85,11 @@ fun SeleccionTerritorioFichaScreen(
     organizacionActiva: String?,
     onContinuar: (SalaEntity, EaisSalaEntity, TerritorioSalaEntity, String) -> Unit,
     onConfigurarSala: () -> Unit,
-    onRegresar: () -> Unit
+    onRegresar: () -> Unit,
+    salaIdInicial: String? = null,
+    eaisIdInicial: String? = null,
+    territorioIdInicial: String? = null,
+    fechaInicial: String? = null
 ) {
     var salas by remember { mutableStateOf<List<SalaEntity>>(emptyList()) }
     var eais by remember { mutableStateOf<List<EaisSalaEntity>>(emptyList()) }
@@ -98,8 +102,14 @@ fun SeleccionTerritorioFichaScreen(
     // Control de la ficha: número que se asignará al barrio elegido y fecha de llenado.
     var numeroFicha by remember { mutableStateOf("—") }
     var fechaFicha by remember {
-        mutableStateOf(java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date()))
+        mutableStateOf(
+            fechaInicial ?: java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+        )
     }
+    // Al volver desde Dirección y vivienda se conservan las elecciones anteriores.
+    var restaurarSala by remember { mutableStateOf(salaIdInicial != null) }
+    var restaurarEais by remember { mutableStateOf(eaisIdInicial != null) }
+    var restaurarTerritorio by remember { mutableStateOf(territorioIdInicial != null) }
     var mostrarCalendario by remember { mutableStateOf(false) }
     LaunchedEffect(territorioId) {
         numeroFicha = if (territorioId.isBlank()) {
@@ -111,7 +121,8 @@ fun SeleccionTerritorioFichaScreen(
 
     LaunchedEffect(Unit) {
         salas = database.salaDao().listarSalas()
-        salaId = salas.firstOrNull { it.organizacionId == organizacionActiva }?.organizacionId
+        salaId = salas.firstOrNull { it.organizacionId == salaIdInicial }?.organizacionId
+            ?: salas.firstOrNull { it.organizacionId == organizacionActiva }?.organizacionId
             ?: salas.firstOrNull()?.organizacionId.orEmpty()
     }
 
@@ -121,7 +132,9 @@ fun SeleccionTerritorioFichaScreen(
         } else {
             database.salaDao().listarEais(salaId)
         }
-        eaisId = eais.firstOrNull()?.id.orEmpty()
+        eaisId = (if (restaurarEais) eais.firstOrNull { it.id == eaisIdInicial } else null)?.id
+            ?: eais.firstOrNull()?.id.orEmpty()
+        if (eais.isNotEmpty()) restaurarEais = false
     }
 
     LaunchedEffect(eaisId) {
@@ -130,7 +143,9 @@ fun SeleccionTerritorioFichaScreen(
         } else {
             database.salaDao().listarTerritorios(eaisId)
         }
-        territorioId = territorios.firstOrNull()?.id.orEmpty()
+        territorioId = (if (restaurarTerritorio) territorios.firstOrNull { it.id == territorioIdInicial } else null)?.id
+            ?: territorios.firstOrNull()?.id.orEmpty()
+        if (territorios.isNotEmpty()) restaurarTerritorio = false
     }
 
     val sala = salas.firstOrNull { it.organizacionId == salaId }

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.runtime.mutableStateListOf
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
 import com.ruralitos.app.ui.components.BotonSelectorRuralitos
@@ -100,7 +101,9 @@ fun MiembrosFamiliaScreen(
     onContinuar: () -> Unit,
     onSalir: () -> Unit,
     textoRegresar: String = "Volver al panel de la ficha",
-    descripcionRegresar: String = "Conservar los datos y salir de esta sección"
+    descripcionRegresar: String = "Conservar los datos y salir de esta sección",
+    mostrarAvance: Boolean = false,
+    alCrearFicha: (suspend (MiembroFamiliaEntity, String) -> Boolean)? = null
 ) {
     val context = LocalContext.current
     val database = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
@@ -231,7 +234,28 @@ fun MiembrosFamiliaScreen(
             miembro = miembroEditando,
             telefonoJefeInicial = fichaActual?.numeroTelefono.orEmpty(),
             sugerirJefe = miembros.none { it.parentesco == "JEFE/A DE FAMILIA" },
+            mostrarAvance = mostrarAvance,
             onGuardar = { miembro, telefonoJefe ->
+              if (fichaId == 0L && alCrearFicha != null) {
+                // Borrador: nada se guarda hasta registrar al jefe o jefa de familia.
+                if (miembro.parentesco != "JEFE/A DE FAMILIA") {
+                    Toast.makeText(
+                        context,
+                        "Primero registra al jefe o jefa de familia. Hasta entonces no se guarda nada.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    scope.launch {
+                        val creada = runCatching { alCrearFicha(miembro, telefonoJefe) }.getOrDefault(false)
+                        if (creada) {
+                            mostrandoFormulario = false
+                            miembroEditando = null
+                        } else {
+                            Toast.makeText(context, "No se pudo guardar la ficha.", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+              } else
                 scope.launch {
                     runCatching {
                         withContext(Dispatchers.IO) {
@@ -314,7 +338,17 @@ fun MiembrosFamiliaScreen(
                     texto = "Guardar información de esta sección",
                     descripcion = "Los integrantes registrados ya están guardados",
                     color = AzulClinico,
-                    onClick = onContinuar
+                    onClick = {
+                    if (fichaId == 0L && alCrearFicha != null) {
+                        Toast.makeText(
+                            context,
+                            "Registra primero al jefe o jefa de familia para guardar la ficha.",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } else {
+                        onContinuar()
+                    }
+                }
                 )
 
         }
@@ -395,9 +429,17 @@ private fun FormularioMiembroScreen(
     miembro: MiembroFamiliaEntity?,
     telefonoJefeInicial: String,
     sugerirJefe: Boolean,
+    mostrarAvance: Boolean = false,
     onGuardar: (MiembroFamiliaEntity, String) -> Unit,
     onCancelar: () -> Unit
 ) {
+    // Preguntas respondidas por el usuario (solo para la barra de llenado al crear).
+    val tocados = remember { mutableStateListOf<String>() }
+    fun marcar(clave: String) { if (clave !in tocados) tocados.add(clave) }
+    fun avance(vararg respondidas: Boolean): Float? =
+        if (mostrarAvance && miembro == null && respondidas.isNotEmpty())
+            respondidas.count { it }.toFloat() / respondidas.size
+        else null
     var telefonoJefe by remember { mutableStateOf(telefonoJefeInicial) }
     var nombres by remember { mutableStateOf(miembro?.apellidosNombres.orEmpty()) }
     var parentesco by remember {
@@ -580,6 +622,8 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "1. Identificación personal",
             desplegable = true,
+            progreso = avance(*(listOf(nombres.isNotBlank(), true, cedula.isNotBlank(), fechaNacimiento.isNotBlank()) +
+                (if (parentesco == "JEFE/A DE FAMILIA") listOf(telefonoJefe.isNotBlank()) else emptyList())).toBooleanArray()),
             abiertaInicial = true,
             descripcion = "Apellidos y nombres, parentesco, cédula y fecha de nacimiento."
         ) {
@@ -623,10 +667,13 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "2. Características personales",
             desplegable = true,
+            progreso = avance(*(listOf("sexo" in tocados) +
+                (if (camposPermitidos.escolaridades.isNotEmpty()) listOf("escolaridad" in tocados) else emptyList()) +
+                (if (camposPermitidos.ocupacion) listOf(ocupacion.isNotBlank()) else emptyList())).toBooleanArray()),
             abiertaInicial = false,
             descripcion = "Sexo, escolaridad y ocupación según el grupo de edad."
         ) {
-            SeleccionTextoMiembro("Sexo", listOf("H" to "Hombre", "M" to "Mujer"), sexo, MoradoClinico) { sexo = it }
+            SeleccionTextoMiembro("Sexo", listOf("H" to "Hombre", "M" to "Mujer"), sexo, MoradoClinico) { sexo = it; marcar("sexo") }
             if (camposPermitidos.escolaridades.isNotEmpty()) {
                 SeleccionTextoMiembro(
                     "Escolaridad",
@@ -634,7 +681,7 @@ private fun FormularioMiembroScreen(
                         .filter { it.first in camposPermitidos.escolaridades },
                     escolaridad,
                     AzulClinico
-                ) { escolaridad = it }
+                ) { escolaridad = it; marcar("escolaridad") }
             } else {
                 MensajeEstadoRuralitos(
                     titulo = "Escolaridad bloqueada",
@@ -659,27 +706,28 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "3. Seguimiento preventivo",
             desplegable = true,
+            progreso = avance("vacunas" in tocados, "saludBucal" in tocados, "nutricion" in tocados, "consumo" in tocados),
             abiertaInicial = false,
             descripcion = "Vacunas, nutrición, salud bucal y consumo. Estos datos alimentan la dispensarización automática."
         ) {
             SeleccionBooleanMiembro(
                 "Esquema completo de vacunas",
                 vacunas
-            ) { vacunas = it }
+            ) { vacunas = it; marcar("vacunas") }
             SeleccionBooleanMiembro(
                 "Salud bucal adecuada",
                 saludBucal
-            ) { saludBucal = it }
+            ) { saludBucal = it; marcar("saludBucal") }
             SeleccionOpcionMiembro(
                 "Estado nutricional evaluado",
                 DispensarizacionAutomatica.opcionesNutricion,
                 estadoNutricional,
                 NaranjaClinico
-            ) { estadoNutricional = it }
+            ) { estadoNutricional = it; marcar("nutricion") }
             SeleccionBooleanMiembro(
                 "Consumo de alcohol u otras drogas",
                 consumo
-            ) { consumo = it }
+            ) { consumo = it; marcar("consumo") }
             OutlinedTextField(
                 value = consultaCie10,
                 onValueChange = { consultaCie10 = it },
@@ -733,6 +781,7 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "4. Estrategias Nacionales",
             desplegable = true,
+            progreso = avance("estrategias" in tocados),
             abiertaInicial = false,
             descripcion = "¿Esta persona pertenece a uno o varios de los siguientes grupos?"
         ) {
@@ -757,6 +806,7 @@ private fun FormularioMiembroScreen(
                     if (vih) add("VIH")
                 },
                 onSeleccion = { seleccion ->
+                    marcar("estrategias")
                     estadoNutricional = if ("DESNUTRICION" in seleccion) {
                         DispensarizacionAutomatica.NUTRICION_DESNUTRICION_CRONICA
                     } else if (estadoNutricional == DispensarizacionAutomatica.NUTRICION_DESNUTRICION_CRONICA) {
@@ -779,6 +829,8 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "5. Discapacidad",
             desplegable = true,
+            progreso = avance(*(listOf("discTipo" in tocados) +
+                (if (tipoDiscapacidad != "NINGUNA") listOf(porcentajeDiscapacidad.isNotBlank(), "ayudaTecnica" in tocados) else emptyList())).toBooleanArray()),
             abiertaInicial = false,
             descripcion = "Selecciona un tipo. Los campos relacionados se habilitan solo cuando corresponda."
         ) {
@@ -796,6 +848,7 @@ private fun FormularioMiembroScreen(
                 seleccion = tipoDiscapacidad,
                 color = MoradoClinico
             ) { seleccion ->
+                marcar("discTipo")
                 tipoDiscapacidad = seleccion
                 if (seleccion == "NINGUNA") {
                     porcentajeDiscapacidad = ""
@@ -815,11 +868,12 @@ private fun FormularioMiembroScreen(
                 titulo = "Necesita ayuda técnica",
                 seleccion = necesitaAyudaTecnica,
                 enabled = tipoDiscapacidad != "NINGUNA"
-            ) { necesitaAyudaTecnica = it }
+            ) { necesitaAyudaTecnica = it; marcar("ayudaTecnica") }
         }
         SeccionFormularioRuralitos(
             titulo = "6. Alertas Epidemiológicas",
             desplegable = true,
+            progreso = avance("alertas" in tocados),
             abiertaInicial = false,
             descripcion = "Registra eventos y casos epidemiológicos."
         ) {
@@ -836,6 +890,7 @@ private fun FormularioMiembroScreen(
                     if (casoConfirmado) add("CONFIRMADO")
                 },
                 onSeleccion = { seleccion ->
+                    marcar("alertas")
                     eventoSalud = "EVENTO" in seleccion
                     casoSospechosoUno = "SOSPECHOSO" in seleccion
                     if (!casoSospechosoUno) casoSospechosoDos = false
@@ -846,6 +901,7 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "7. Actores comunitarios",
             desplegable = true,
+            progreso = avance("actores" in tocados),
             abiertaInicial = false,
             descripcion = "Selecciona únicamente las funciones comunitarias que correspondan."
         ) {
@@ -862,6 +918,7 @@ private fun FormularioMiembroScreen(
                     if (sabiduriaAncestral) add("SABIDURIA")
                 },
                 onSeleccion = { seleccion ->
+                    marcar("actores")
                     prestadorComunitario = "PRESTADOR" in seleccion
                     parteroAncestral = "PARTERO" in seleccion
                     sabiduriaAncestral = "SABIDURIA" in seleccion
@@ -871,6 +928,7 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "8. Otros riesgos prioritarios",
             desplegable = true,
+            progreso = avance("riesgoPrioritario" in tocados),
             abiertaInicial = false,
             descripcion = "Selecciona la condición registrada o Ninguno."
         ) {
@@ -884,7 +942,7 @@ private fun FormularioMiembroScreen(
                 ),
                 seleccion = riesgoPrioritario,
                 color = NaranjaClinico
-            ) { riesgoPrioritario = it }
+            ) { riesgoPrioritario = it; marcar("riesgoPrioritario") }
         }
         error?.let {
             MensajeEstadoRuralitos(
