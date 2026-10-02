@@ -90,6 +90,10 @@ dependencies {
     }
     // El JAR original de XMLBeans 2.6.0 contiene ocho clases duplicadas que D8 no admite.
     implementation(files("libs/xmlbeans-2.6.0-dedup.jar"))
+    // Apache POI usa StAX (javax.xml.stream), que Android no incluye.
+    // Sin esto el Excel y el PDF fallan con NoClassDefFoundError.
+    implementation("stax:stax-api:1.0.1")
+    implementation("com.fasterxml.woodstox:woodstox-core:5.4.0")
     implementation(libs.sqlcipher.android)
     implementation(libs.androidx.sqlite)
     implementation(libs.androidx.work.runtime.ktx)
