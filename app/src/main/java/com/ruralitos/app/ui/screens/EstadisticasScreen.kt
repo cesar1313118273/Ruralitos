@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import androidx.compose.ui.graphics.Color
@@ -86,19 +87,14 @@ fun EstadisticasScreen(
     val completasFecha = fichasFecha.count { it.estado == "COMPLETA" }
     val archivadasFecha = fichasFecha.count { it.estado == "ARCHIVADA" }
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().formularioSeguro().padding(horizontal = 16.dp, vertical = 20.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+    PantallaListaRuralitos(
+        titulo = "Estadísticas",
+        descripcion = "Mide el avance diario y encuentra rápidamente las fichas que requieren seguimiento.",
+        subtitulo = "Actividad de fichas",
     ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Estadísticas",
-                descripcion = "Mide el avance diario y encuentra rápidamente las fichas que requieren seguimiento.",
-                paso = "Actividad de fichas",
-                color = AzulClinico
-            )
+item {
             TarjetasResumen(resumen)
-        }
+}
         item { GraficoEstadoFichas(resumen) }
         item {
             Card(
@@ -144,7 +140,6 @@ fun EstadisticasScreen(
                 }
             }
         }
-
         if (fichasVisibles.isEmpty()) {
             item {
                 Card(
@@ -159,7 +154,6 @@ fun EstadisticasScreen(
                 }
             }
         }
-
         items(fichasVisibles, key = { it.id }) { ficha ->
             Card(
                 modifier = Modifier.fillMaxWidth().clickable { onFichaSeleccionada(ficha) },
@@ -189,7 +183,6 @@ fun EstadisticasScreen(
                 }
             }
         }
-
         item {
             Spacer(Modifier.height(4.dp))
             BotonSecundarioRuralitos(

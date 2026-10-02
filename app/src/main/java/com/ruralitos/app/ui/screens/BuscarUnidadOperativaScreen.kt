@@ -39,6 +39,7 @@ import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.EstablecimientoSaludEntity
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaListaRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
@@ -73,21 +74,11 @@ fun BuscarUnidadOperativaScreen(
     }
     val resultados by resultadosFlow.collectAsState(initial = emptyList())
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(13.dp)
+    PantallaListaRuralitos(
+        titulo = "Unidad operativa",
+        descripcion = "Encuentra el centro de salud correspondiente a tu territorio.",
+        subtitulo = "Red de atención",
     ) {
-        item {
-            EncabezadoRuralitos(
-                titulo = "Unidad operativa",
-                descripcion = "Encuentra el centro de salud correspondiente a tu territorio.",
-                paso = "Red de atención",
-                color = AzulClinico
-            )
-        }
         item {
             BotonSecundarioRuralitos(
                 texto = "Regresar",
@@ -95,7 +86,6 @@ fun BuscarUnidadOperativaScreen(
                 onClick = onRegresar
             )
         }
-
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -138,7 +128,6 @@ fun BuscarUnidadOperativaScreen(
                 }
             }
         }
-
         if (textoBusqueda.isNotBlank() && textoBusqueda.trim().length < 3) {
             item {
                 Surface(
@@ -154,7 +143,6 @@ fun BuscarUnidadOperativaScreen(
                 }
             }
         }
-
         if (textoConsulta.length >= 3 && resultados.isEmpty()) {
             item {
                 Card(
@@ -179,7 +167,6 @@ fun BuscarUnidadOperativaScreen(
                 }
             }
         }
-
         items(resultados, key = { it.id }) { establecimiento ->
             EstablecimientoCard(
                 establecimiento = establecimiento,

@@ -71,7 +71,7 @@ import com.ruralitos.app.data.local.entity.HistorialFichaEntity
 import com.ruralitos.app.domain.ValidadorFicha
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
-import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
@@ -222,21 +222,43 @@ fun RevisionFinalFichaScreen(
         )
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    PantallaRuralitos(
+        titulo = "Revisión y finalización",
+        descripcion = "Comprueba los datos, elige qué archivos deseas descargar y finaliza la ficha.",
+        subtitulo = "Último paso",
+        barraAccion = {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val descripcionFinal = if (pendientes.isEmpty()) {
+                    "Guardar como completa y procesar la selección"
+                } else {
+                    "Guardar como pendiente y procesar la selección"
+                }
+                if (maxWidth >= 650.dp) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        BotonSecundarioRuralitos(
+                            "Regresar a la página anterior", onRegresar, Modifier.weight(1f),
+                            "Volver sin finalizar", !procesando
+                        )
+                        BotonPrincipalRuralitos(
+                            "Finalizar ficha", finalizarFicha, Modifier.weight(1f),
+                            descripcionFinal, !procesando, CianRuralitos
+                        )
+                    }
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        BotonPrincipalRuralitos(
+                            "Finalizar ficha", finalizarFicha,
+                            descripcion = descripcionFinal, enabled = !procesando, color = CianRuralitos
+                        )
+                        BotonSecundarioRuralitos(
+                            "Regresar a la página anterior", onRegresar,
+                            descripcion = "Volver sin finalizar", enabled = !procesando
+                        )
+                    }
+                }
+            }
+        }
     ) {
-        EncabezadoRuralitos(
-            titulo = "Revisión y finalización",
-            descripcion = "Comprueba los datos, elige qué archivos deseas descargar y finaliza la ficha.",
-            paso = "Último paso",
-            color = MoradoClinico
-        )
-
         SeccionFormularioRuralitos(
             titulo = "Comprobación de información",
             descripcion = "Toca un elemento pendiente para ir directamente a la sección que debes completar."
@@ -390,37 +412,6 @@ fun RevisionFinalFichaScreen(
                         Text("Finalizando ficha…", fontWeight = FontWeight.Bold)
                         Text("Guardando y preparando los archivos seleccionados.")
                     }
-                }
-            }
-        }
-
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(bottom = 28.dp)) {
-            val descripcionFinal = if (pendientes.isEmpty()) {
-                "Guardar como completa y procesar la selección"
-            } else {
-                "Guardar como pendiente y procesar la selección"
-            }
-            if (maxWidth >= 650.dp) {
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BotonSecundarioRuralitos(
-                        "Regresar a la página anterior", onRegresar, Modifier.weight(1f),
-                        "Volver sin finalizar", !procesando
-                    )
-                    BotonPrincipalRuralitos(
-                        "Finalizar ficha", finalizarFicha, Modifier.weight(1f),
-                        descripcionFinal, !procesando, CianRuralitos
-                    )
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    BotonSecundarioRuralitos(
-                        "Regresar a la página anterior", onRegresar,
-                        descripcion = "Volver sin finalizar", enabled = !procesando
-                    )
-                    BotonPrincipalRuralitos(
-                        "Finalizar ficha", finalizarFicha,
-                        descripcion = descripcionFinal, enabled = !procesando, color = CianRuralitos
-                    )
                 }
             }
         }

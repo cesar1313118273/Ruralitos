@@ -35,6 +35,7 @@ import com.ruralitos.app.data.local.entity.UsuarioEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
@@ -171,27 +172,19 @@ fun SeguridadRespaldoScreen(
         )
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().formularioSeguro()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
-    ) {
-        EncabezadoRuralitos(
-            titulo = when (modo) {
+    PantallaRuralitos(
+        titulo = when (modo) {
                 "crear" -> "Crear respaldo portable"
                 "restaurar" -> "Importar respaldo"
                 else -> "Seguridad y respaldo"
             },
-            descripcion = when (modo) {
+        descripcion = when (modo) {
                 null -> "Protege y traslada tus fichas con archivos cifrados bajo tu control."
                 "crear" -> "El respaldo incluirá datos clínicos, historial, firmas e imágenes disponibles."
                 else -> "Las fichas se reasignarán a tu cuenta y Sala activa sin copiar otra sesión."
             },
-            paso = "Protección de datos",
-            color = if (modo == "restaurar") NaranjaClinico else AzulClinico
-        )
-
+        subtitulo = "Protección de datos",
+    ) {
         if (modo == null) {
             MensajeEstadoRuralitos(
                 titulo = "Respaldo portable y cifrado",
