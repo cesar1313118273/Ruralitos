@@ -1,5 +1,7 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.theme.AzulClinicoOscuro
+import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -165,19 +167,14 @@ fun FichaSeccionesScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .offset(y = (-26).dp)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White.copy(alpha = 0.97f),
-                shape = RoundedCornerShape(24.dp),
-                shadowElevation = 5.dp,
-                border = BorderStroke(
-                    1.dp,
-                    AzulClinico.copy(alpha = 0.08f)
-                )
+                shape = RoundedCornerShape(16.dp),
+                border = BorderStroke(1.dp, BordeClinico)
             ) {
                 Column(
                     modifier = Modifier
@@ -221,87 +218,37 @@ fun FichaSeccionesScreen(
 private fun BannerFichaPanel(
     ficha: FichaFamiliarEntity
 ) {
-    Box(
-        modifier = Modifier.fillMaxWidth()
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AzulClinicoOscuro)
+            .statusBarsPadding()
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 22.dp)
     ) {
-        Image(
-            painter = painterResource(R.drawable.panel_ficha_cabecera_medico),
-            contentDescription = null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(168.dp),
-            contentScale = ContentScale.Crop
+        Text(
+            text = "Panel de la ficha",
+            color = Color.White.copy(alpha = 0.75f),
+            style = MaterialTheme.typography.labelLarge
         )
 
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .offset(y = 108.dp),
-            color = Color.White.copy(alpha = 0.97f),
-            shape = RoundedCornerShape(
-                topStart = 30.dp,
-                topEnd = 30.dp,
-                bottomStart = 30.dp,
-                bottomEnd = 30.dp
-            ),
-            shadowElevation = 5.dp
+        Text(
+            text = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha familiar" },
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.White,
+            modifier = Modifier.padding(top = 4.dp)
+        )
+
+        Row(
+            modifier = Modifier.padding(top = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        start = 18.dp,
-                        end = 18.dp,
-                        top = 18.dp,
-                        bottom = 18.dp
-                    )
-            ) {
-                Text(
-                    text = "PANEL DE LA FICHA",
-                    color = AzulClinico,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha familiar" },
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFF0A2A5E),
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-
-                Row(
-                    modifier = Modifier.padding(top = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Ficha ${ficha.numeroFichaFamiliar}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-
-                    Text(
-                        text = " · ",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-
-                    Text(
-                        text = "Estado: ${ficha.estado.replace('_', ' ')}",
-                        color = colorEstadoFicha(ficha.estado),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+            Text(
+                text = "Ficha ${ficha.numeroFichaFamiliar} · Estado: ${ficha.estado.replace('_', ' ')}",
+                color = Color.White.copy(alpha = 0.85f),
+                style = MaterialTheme.typography.bodyMedium
+            )
         }
-
-        Spacer(modifier = Modifier.height(188.dp))
     }
-
-    Spacer(Modifier.height(118.dp))
 }
 
 @Composable
@@ -316,7 +263,7 @@ private fun GrupoFichaDesplegable(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = color.copy(alpha = 0.05f),
-        shape = RoundedCornerShape(24.dp),
+        shape = RoundedCornerShape(16.dp),
         border = BorderStroke(
             1.dp,
             color.copy(alpha = 0.16f)
