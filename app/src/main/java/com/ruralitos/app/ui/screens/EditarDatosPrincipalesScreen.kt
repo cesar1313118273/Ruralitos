@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -338,7 +339,7 @@ private fun CampoFechaPersonal(
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
-                trailingIcon = { Text("▾", color = AzulClinico, fontWeight = FontWeight.SemiBold) },
+                trailingIcon = { FlechaDesplegable(color = AzulClinico) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AzulClinico,

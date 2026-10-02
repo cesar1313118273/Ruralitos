@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.Arrangement
@@ -1032,12 +1033,7 @@ private fun PanelDesplegableSala(
                     Box(
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = if (abierto) "⌃" else "⌄",
-                            color = color,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        FlechaDesplegable(color = color, arriba = abierto)
                     }
                 }
             }

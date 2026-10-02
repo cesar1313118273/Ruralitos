@@ -401,6 +401,34 @@ fun PantallaListaRuralitos(
     }
 }
 
+/** Flecha de desplegable dibujada: centrada, ancha y de poca altura. */
+@Composable
+fun FlechaDesplegable(
+    color: Color,
+    modifier: Modifier = Modifier,
+    arriba: Boolean = false,
+    tamano: Dp = 16.dp
+) {
+    androidx.compose.foundation.Canvas(modifier.size(tamano)) {
+        val w = size.width
+        val h = size.height
+        val yAlta = if (arriba) h * 0.62f else h * 0.38f
+        val yBaja = if (arriba) h * 0.38f else h * 0.62f
+        val grosor = 2.2.dp.toPx()
+        val trazo = androidx.compose.ui.graphics.drawscope.Stroke(
+            width = grosor,
+            cap = androidx.compose.ui.graphics.StrokeCap.Round,
+            join = androidx.compose.ui.graphics.StrokeJoin.Round
+        )
+        val camino = androidx.compose.ui.graphics.Path().apply {
+            moveTo(w * 0.18f, yAlta)
+            lineTo(w * 0.50f, yBaja)
+            lineTo(w * 0.82f, yAlta)
+        }
+        drawPath(camino, color, style = trazo)
+    }
+}
+
 /** Campo tipo "spinner": muestra el valor elegido y una flecha para desplegar opciones. */
 @Composable
 fun BotonSelectorRuralitos(
@@ -430,12 +458,7 @@ fun BotonSelectorRuralitos(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                "⌄",
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            FlechaDesplegable(color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -549,12 +572,7 @@ fun SeccionFormularioRuralitos(
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        if (abierta) "⌃" else "⌄",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    FlechaDesplegable(color = MaterialTheme.colorScheme.primary, arriba = abierta)
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.foundation.layout.heightIn
 import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.BorderStroke
@@ -564,12 +565,7 @@ private fun TarjetaBusquedaFichas(
                         )
                     }
 
-                    Text(
-                        text = if (filtrosAvanzados) "⌃" else "›",
-                        color = CianRuralitos,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 20.sp
-                    )
+                    FlechaDesplegable(color = CianRuralitos, arriba = filtrosAvanzados)
                 }
             }
 

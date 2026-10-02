@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
 import com.ruralitos.app.ui.theme.TextoSecundario
 import androidx.compose.material3.HorizontalDivider
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
@@ -310,12 +311,7 @@ private fun GrupoFichaDesplegable(
                     )
                 }
 
-                Text(
-                    text = if (abierto) "⌃" else "⌄",
-                    color = color,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                FlechaDesplegable(color = color, arriba = abierto)
             }
 
             if (abierto) {

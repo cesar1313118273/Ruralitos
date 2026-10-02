@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -431,12 +432,7 @@ fun CampoFecha(
                 )
             }
 
-            Text(
-                text = "⌄",
-                color = AzulAccionFicha,
-                fontSize = 23.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            FlechaDesplegable(color = AzulAccionFicha)
         }
     }
 }

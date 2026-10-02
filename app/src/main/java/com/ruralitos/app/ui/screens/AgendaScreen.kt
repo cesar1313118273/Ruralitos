@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.ui.draw.clip
 import com.ruralitos.app.ui.theme.CianRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -1043,7 +1044,7 @@ private fun CampoAgenda(texto: String, icono: Int, onClick: () -> Unit) {
                 Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFE3F4F7)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("⌄", color = agendaVerde, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                FlechaDesplegable(color = agendaVerde)
             }
         }
     }
