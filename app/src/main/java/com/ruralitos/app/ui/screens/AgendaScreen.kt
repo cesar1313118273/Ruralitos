@@ -73,6 +73,7 @@ import com.ruralitos.app.data.agenda.PlanificadorSeguimiento
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.ActividadAgendaEntity
 import com.ruralitos.app.data.local.entity.PersonaAgenda
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -497,16 +498,7 @@ internal fun CabeceraAgenda(onRegresar: () -> Unit) {
             Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                onClick = onRegresar,
-                modifier = Modifier.size(40.dp),
-                shape = CircleShape,
-                color = Color(0xFFF6F9FB)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text("‹", fontSize = 28.sp, color = agendaAzul)
-                }
-            }
+            BotonVolverRuralitos(onRegresar)
         }
         HorizontalDivider(color = Color(0xFFE2ECF1))
     }

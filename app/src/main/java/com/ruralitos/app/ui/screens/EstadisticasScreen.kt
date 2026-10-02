@@ -91,6 +91,7 @@ fun EstadisticasScreen(
         titulo = "Estadísticas",
         descripcion = "Mide el avance diario y encuentra rápidamente las fichas que requieren seguimiento.",
         subtitulo = "Actividad de fichas",
+        onVolver = onRegresar
     ) {
 item {
             TarjetasResumen(resumen)
@@ -182,15 +183,6 @@ item {
                     )
                 }
             }
-        }
-        item {
-            Spacer(Modifier.height(4.dp))
-            BotonSecundarioRuralitos(
-                texto = "Regresar al inicio",
-                descripcion = "Volver al panel principal",
-                onClick = onRegresar
-            )
-            Spacer(Modifier.height(14.dp))
         }
     }
 

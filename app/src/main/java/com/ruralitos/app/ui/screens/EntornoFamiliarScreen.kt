@@ -267,6 +267,7 @@ fun FormularioContaminacionScreen(
         titulo = if (item == null) "Agregar contaminación" else "Editar contaminación",
         descripcion = "Completa por separado la fecha, el tipo de contaminación y su posible causante.",
         subtitulo = "Entorno familiar",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (item == null) "Guardar informe ambiental" else "Guardar cambios del informe",
@@ -288,11 +289,7 @@ fun FormularioContaminacionScreen(
                     }
                 }
             )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                descripcion = "No guardar los cambios del informe",
-                onClick = onCancelar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

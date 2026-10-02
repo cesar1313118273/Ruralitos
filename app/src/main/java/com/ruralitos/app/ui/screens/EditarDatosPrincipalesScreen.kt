@@ -70,6 +70,7 @@ fun EditarDatosPrincipalesScreen(
         paso = 1,
         totalPasos = 10,
         etiquetaPaso = "Información del hogar",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = "Guardar datos principales",
@@ -95,11 +96,7 @@ fun EditarDatosPrincipalesScreen(
                 },
                 color = CianRuralitos
             )
-            BotonSecundarioRuralitos(
-                texto = "Regresar al panel de la ficha",
-                descripcion = "Salir de esta sección sin guardar cambios",
-                onClick = onCancelar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

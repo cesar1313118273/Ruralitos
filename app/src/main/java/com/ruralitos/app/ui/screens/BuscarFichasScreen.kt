@@ -232,7 +232,8 @@ Column(
             subtitulo = "Encuentra una familia por cualquiera de sus integrantes.",
             paso = null,
             totalPasos = null,
-            etiquetaPaso = ""
+            etiquetaPaso = "",
+            onVolver = onRegresar
         )
 
         LazyColumn(
@@ -384,13 +385,6 @@ Column(
                     )
                 }
             }
-        }
-
-        BarraAccionPantallaRuralitos {
-            BotonRegresarBusqueda(
-                onClick = onRegresar,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }

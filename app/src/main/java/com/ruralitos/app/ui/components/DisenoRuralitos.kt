@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.FondoRuralitosWeb
@@ -228,13 +229,39 @@ fun BarraAvanceRuralitos(
     }
 }
 
+/** Botón de regreso a la ventana anterior, siempre arriba a la izquierda. */
+@Composable
+fun BotonVolverRuralitos(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(RuralitosRadius.input))
+            .background(Color.White)
+            .border(1.5.dp, AzulClinicoOscuro.copy(alpha = 0.55f), RoundedCornerShape(RuralitosRadius.input))
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "‹",
+            color = AzulClinicoOscuro,
+            fontSize = 30.sp,
+            lineHeight = 30.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
 @Composable
 fun EncabezadoPantallaRuralitos(
     titulo: String,
     subtitulo: String?,
     paso: Int?,
     totalPasos: Int?,
-    etiquetaPaso: String
+    etiquetaPaso: String,
+    onVolver: (() -> Unit)? = null
 ) {
     Column(
         Modifier
@@ -244,20 +271,27 @@ fun EncabezadoPantallaRuralitos(
             .padding(horizontal = RuralitosSpacing.base)
             .padding(top = RuralitosSpacing.md, bottom = RuralitosSpacing.md)
     ) {
-        Text(
-            titulo,
-            style = MaterialTheme.typography.titleLarge,
-            color = AzulClinicoOscuro,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        subtitulo?.takeIf { it.isNotBlank() }?.let {
-            Text(
-                it,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 2.dp)
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            onVolver?.let {
+                BotonVolverRuralitos(it, Modifier.padding(end = RuralitosSpacing.md))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(
+                    titulo,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = AzulClinicoOscuro,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                subtitulo?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+            }
         }
         if (paso != null && totalPasos != null) {
             BarraAvanceRuralitos(
@@ -307,6 +341,7 @@ fun PantallaRuralitos(
     paso: Int? = null,
     totalPasos: Int? = null,
     etiquetaPaso: String = "",
+    onVolver: (() -> Unit)? = null,
     barraAccion: (@Composable ColumnScope.() -> Unit)? = null,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
@@ -316,7 +351,7 @@ fun PantallaRuralitos(
             .background(FondoRuralitosWeb)
             .formularioSeguro()
     ) {
-        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso)
+        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver)
         Column(
             Modifier
                 .weight(1f)
@@ -342,6 +377,7 @@ fun PantallaListaRuralitos(
     paso: Int? = null,
     totalPasos: Int? = null,
     etiquetaPaso: String = "",
+    onVolver: (() -> Unit)? = null,
     barraAccion: (@Composable ColumnScope.() -> Unit)? = null,
     contenido: LazyListScope.() -> Unit
 ) {
@@ -351,7 +387,7 @@ fun PantallaListaRuralitos(
             .background(FondoRuralitosWeb)
             .formularioSeguro()
     ) {
-        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso)
+        EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver)
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(RuralitosSpacing.base),

@@ -279,6 +279,7 @@ fun MiembrosFamiliaScreen(
         paso = 3,
         totalPasos = 10,
         etiquetaPaso = "Información del hogar",
+        onVolver = onSalir,
         barraAccion = {
                 BotonPrincipalRuralitos(
                     texto = "Guardar información de esta sección",
@@ -286,11 +287,7 @@ fun MiembrosFamiliaScreen(
                     color = AzulClinico,
                     onClick = onContinuar
                 )
-                BotonSecundarioRuralitos(
-                    texto = textoRegresar,
-                    descripcion = descripcionRegresar,
-                    onClick = onSalir
-                )
+
         }
     ) {
         item {
@@ -461,6 +458,7 @@ private fun FormularioMiembroScreen(
         titulo = if (miembro == null) "Agregar integrante" else "Editar integrante",
         descripcion = "Completa los datos por bloques. Los campos que no corresponden a la edad se bloquearán automáticamente.",
         subtitulo = "Integrantes de la familia",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (miembro == null) "Guardar nuevo integrante" else "Guardar cambios del integrante",
@@ -541,11 +539,7 @@ private fun FormularioMiembroScreen(
                     }
                 }
             )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                descripcion = "No guardar los cambios de este formulario",
-                onClick = onCancelar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
@@ -161,7 +162,8 @@ fun FichaSeccionesScreen(
             .verticalScroll(rememberScrollState())
     ) {
         BannerFichaPanel(
-            ficha = ficha
+            ficha = ficha,
+            onVolver = onRegresar
         )
 
         Column(
@@ -201,14 +203,6 @@ fun FichaSeccionesScreen(
                 onEliminar = { confirmarEliminacion = true }
             )
 
-            AccionBordeFicha(
-                texto = "Volver al listado de fichas",
-                descripcion = "Los cambios guardados se conservan",
-                color = AzulClinico,
-                icono = "↩",
-                onClick = onRegresar
-            )
-
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -216,7 +210,8 @@ fun FichaSeccionesScreen(
 
 @Composable
 private fun BannerFichaPanel(
-    ficha: FichaFamiliarEntity
+    ficha: FichaFamiliarEntity,
+    onVolver: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -225,6 +220,8 @@ private fun BannerFichaPanel(
             .statusBarsPadding()
             .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 22.dp)
     ) {
+        BotonVolverRuralitos(onVolver, Modifier.padding(bottom = 12.dp))
+
         Text(
             text = "Panel de la ficha",
             color = Color.White.copy(alpha = 0.75f),

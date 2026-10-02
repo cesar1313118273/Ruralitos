@@ -224,6 +224,7 @@ fun FamiliogramaScreen(
         titulo = "Imagen del familiograma",
         descripcion = "Sube la fotografía, ajusta la eliminación del papel blanco y guarda un PNG transparente.",
         subtitulo = "Evidencias familiares",
+        onVolver = onSalir,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = "Guardar información de esta sección",
@@ -232,12 +233,7 @@ fun FamiliogramaScreen(
                 enabled = !procesando && !cargandoImagen && !procesandoFondo,
                 onClick = onContinuar
             )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir,
-                enabled = !procesando && !cargandoImagen && !procesandoFondo
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(
@@ -433,6 +429,7 @@ fun ContaminacionAmbientalScreen(
         titulo = "Contaminación ambiental",
         descripcion = "Registra la fecha, el tipo de contaminación y su posible causante.",
         subtitulo = "Entorno familiar",
+        onVolver = onSalir,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = "Guardar información de esta sección",
@@ -440,11 +437,7 @@ fun ContaminacionAmbientalScreen(
                 color = CianRuralitos,
                 onClick = onContinuar
             )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(
@@ -539,6 +532,7 @@ fun LugaresTratamientoScreen(
         titulo = "Lugar o persona para la atención",
         descripcion = "Registra centros de salud, lugares alternativos o personas de confianza a quienes acude la familia.",
         subtitulo = "Red de atención",
+        onVolver = onSalir,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = "Guardar información de esta sección",
@@ -546,11 +540,7 @@ fun LugaresTratamientoScreen(
                 color = MoradoClinico,
                 onClick = onContinuar
             )
-            BotonSecundarioRuralitos(
-                texto = textoRegresar,
-                descripcion = descripcionRegresar,
-                onClick = onSalir
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

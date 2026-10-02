@@ -146,6 +146,7 @@ fun RiesgoFamiliarScreen(
         paso = 5,
         totalPasos = 10,
         etiquetaPaso = "Salud y evaluación",
+        onVolver = onSalir,
         barraAccion = {
                 BotonPrincipalRuralitos(
                     texto = "Guardar información de esta sección",
@@ -153,11 +154,7 @@ fun RiesgoFamiliarScreen(
                     color = AzulClinico,
                     onClick = onContinuar
                 )
-                BotonSecundarioRuralitos(
-                    texto = textoRegresar,
-                    descripcion = descripcionRegresar,
-                    onClick = onSalir
-                )
+
         }
     ) {
         item {
@@ -260,6 +257,7 @@ private fun FormularioRiesgoScreen(
         titulo = if (calificacion == null) "Nueva calificación" else "Editar calificación",
         descripcion = "Lee cada descripción y marca una sola opción. Los valores numéricos se procesan internamente.",
         subtitulo = "Instrumento de riesgo familiar",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (seleccionCompleta) "Guardar calificación completa" else "Faltan ${18 - seleccionadas} componentes",
@@ -284,11 +282,7 @@ private fun FormularioRiesgoScreen(
                     )
                 }
             )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                descripcion = "No guardar los cambios de esta calificación",
-                onClick = onCancelar
-            )
+
         }
     ) {
         Text(

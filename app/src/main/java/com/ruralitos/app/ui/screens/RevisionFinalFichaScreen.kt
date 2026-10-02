@@ -226,6 +226,7 @@ fun RevisionFinalFichaScreen(
         titulo = "Revisión y finalización",
         descripcion = "Comprueba los datos, elige qué archivos deseas descargar y finaliza la ficha.",
         subtitulo = "Último paso",
+        onVolver = onRegresar,
         barraAccion = {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val descripcionFinal = if (pendientes.isEmpty()) {
@@ -235,10 +236,6 @@ fun RevisionFinalFichaScreen(
                 }
                 if (maxWidth >= 650.dp) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        BotonSecundarioRuralitos(
-                            "Regresar a la página anterior", onRegresar, Modifier.weight(1f),
-                            "Volver sin finalizar", !procesando
-                        )
                         BotonPrincipalRuralitos(
                             "Finalizar ficha", finalizarFicha, Modifier.weight(1f),
                             descripcionFinal, !procesando, CianRuralitos
@@ -249,10 +246,6 @@ fun RevisionFinalFichaScreen(
                         BotonPrincipalRuralitos(
                             "Finalizar ficha", finalizarFicha,
                             descripcion = descripcionFinal, enabled = !procesando, color = CianRuralitos
-                        )
-                        BotonSecundarioRuralitos(
-                            "Regresar a la página anterior", onRegresar,
-                            descripcion = "Volver sin finalizar", enabled = !procesando
                         )
                     }
                 }

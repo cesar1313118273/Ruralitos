@@ -62,6 +62,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
@@ -154,7 +155,7 @@ Box(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            CabeceraIdentidadProfesional()
+            CabeceraIdentidadProfesional(if (!obligatorio) onRegresar else null)
 
             Column(
                 modifier = Modifier
@@ -513,14 +514,6 @@ Box(
                     }
                 )
 
-                if (!obligatorio) {
-                    BotonContornoAzul(
-                        texto = "Regresar al inicio",
-                        simbolo = "⌂",
-                        enabled = !procesando,
-                        onClick = onRegresar
-                    )
-                }
 
                 Spacer(
                     modifier = Modifier.height(32.dp)
@@ -535,7 +528,7 @@ private val AzulMarcaOscuro = Color(0xFF0A2A5E)
 private val AzulMarcaMuyClaro = Color(0xFFE8EFFA)
 
 @Composable
-private fun CabeceraIdentidadProfesional() {
+private fun CabeceraIdentidadProfesional(onVolver: (() -> Unit)?) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -543,6 +536,7 @@ private fun CabeceraIdentidadProfesional() {
             .statusBarsPadding()
             .padding(horizontal = 16.dp, vertical = 14.dp)
     ) {
+        onVolver?.let { BotonVolverRuralitos(it, Modifier.padding(bottom = 10.dp)) }
         Text(
             text = "Identidad profesional",
             color = AzulMarcaOscuro,

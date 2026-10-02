@@ -103,6 +103,7 @@ fun DatosFamiliaScreen(
         paso = 1,
         totalPasos = 10,
         etiquetaPaso = "Información del hogar",
+        onVolver = onRegresar,
         barraAccion = {
             BotonGuardarYContinuar(
                 onClick = {
@@ -115,7 +116,6 @@ fun DatosFamiliaScreen(
                     )
                 }
             )
-            BotonVolverCentroSalud(onClick = onRegresar)
         }
     ) {
         TarjetaFormularioRuralitos {

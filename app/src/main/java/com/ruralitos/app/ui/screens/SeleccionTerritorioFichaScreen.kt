@@ -116,6 +116,7 @@ fun SeleccionTerritorioFichaScreen(
         titulo = "Ubicación organizativa",
         descripcion = "Selecciona el territorio de la nueva familia.",
         subtitulo = "Nueva ficha · paso 1",
+        onVolver = onRegresar,
         barraAccion = {
         BotonPrincipal(
             texto = "Continuar con los datos de la familia",
@@ -131,12 +132,6 @@ fun SeleccionTerritorioFichaScreen(
             texto = "Administrar mis Salas",
             iconoRes = R.drawable.seleccion_territorio_ajustes,
             onClick = onConfigurarSala
-        )
-
-        BotonSecundario(
-            texto = "Regresar al inicio",
-            iconoRes = R.drawable.seleccion_territorio_inicio,
-            onClick = onRegresar
         )
         }
     ) {

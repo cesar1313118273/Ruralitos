@@ -194,6 +194,7 @@ fun SaludFamiliarScreen(
         paso = 4,
         totalPasos = 10,
         etiquetaPaso = "Salud y evaluación",
+        onVolver = onSalir,
         barraAccion = {
                 BotonPrincipalRuralitos(
                     texto = "Guardar información de esta sección",
@@ -201,11 +202,7 @@ fun SaludFamiliarScreen(
                     color = AzulClinico,
                     onClick = onContinuar
                 )
-                BotonSecundarioRuralitos(
-                    texto = textoRegresar,
-                    descripcion = descripcionRegresar,
-                    onClick = onSalir
-                )
+
         }
     ) {
         item {
@@ -426,6 +423,7 @@ private fun FormularioEmbarazadaScreen(
         titulo = if (item == null) "Agregar embarazo" else "Editar embarazo",
         descripcion = "Completa las fechas, vacunación y antecedentes en bloques separados.",
         subtitulo = "Registro obstétrico",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (item == null) "Guardar nuevo embarazo" else "Guardar cambios del embarazo",
@@ -469,11 +467,7 @@ private fun FormularioEmbarazadaScreen(
                     }
                 }
             )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                descripcion = "No guardar los cambios de este embarazo",
-                onClick = onCancelar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(
@@ -592,6 +586,7 @@ private fun FormularioMortalidadScreen(
         titulo = if (item == null) "Agregar fallecimiento" else "Editar fallecimiento",
         descripcion = "Registra únicamente antecedentes de mortalidad familiar de los últimos cinco años.",
         subtitulo = "Mortalidad familiar",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (item == null) "Guardar fallecimiento" else "Guardar cambios",
@@ -615,11 +610,7 @@ private fun FormularioMortalidadScreen(
                     }
                 }
             )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                descripcion = "No guardar los cambios de este registro",
-                onClick = onCancelar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

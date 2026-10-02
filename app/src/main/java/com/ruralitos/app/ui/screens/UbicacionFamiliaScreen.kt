@@ -54,6 +54,7 @@ fun UbicacionFamiliaScreen(
         paso = 2,
         totalPasos = 10,
         etiquetaPaso = "Información del hogar",
+        onVolver = onRegresar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = "Guardar información de esta sección",
@@ -74,11 +75,7 @@ fun UbicacionFamiliaScreen(
                 },
                 color = CianRuralitos
             )
-            BotonSecundarioRuralitos(
-                texto = "Regresar al panel de la ficha",
-                descripcion = "Salir de esta sección sin guardar cambios",
-                onClick = onRegresar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

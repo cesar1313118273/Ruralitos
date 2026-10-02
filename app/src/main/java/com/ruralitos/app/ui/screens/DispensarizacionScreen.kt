@@ -76,6 +76,7 @@ import com.ruralitos.app.domain.CalculadorRegistroComunitario
 import com.ruralitos.app.domain.GrupoDispensarizacion
 import com.ruralitos.app.domain.PictogramaDispensarizacion
 import com.ruralitos.app.domain.ResultadoDispensarizacion
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.IconoMais
@@ -341,7 +342,8 @@ fun DispensarizacionScreen(
             EncabezadoRegistroCurvo(
                 titulo = "Registro general",
                 descripcion = "Dispensarización y consolidado en una sola vista.",
-                paso = seccion.etiqueta
+                paso = seccion.etiqueta,
+                onVolver = onRegresar
             )
         }
 
@@ -687,19 +689,6 @@ fun DispensarizacionScreen(
             }
         }
 
-        item(key = "volver") {
-            BotonSecundarioRuralitos(
-                texto = if (fichaInicialId == null) {
-                    "Volver al inicio"
-                } else {
-                    "Volver al panel de la ficha"
-                },
-                onClick = onRegresar,
-                modifier = Modifier
-                    .padding(horizontal = 16.dp)
-                    .padding(bottom = 24.dp)
-            )
-        }
     }
 
     archivoExportado?.let { archivo ->
@@ -864,7 +853,8 @@ private fun SelectorIdentificadoUnico(
 private fun EncabezadoRegistroCurvo(
     titulo: String,
     descripcion: String,
-    paso: String
+    paso: String,
+    onVolver: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -880,6 +870,7 @@ private fun EncabezadoRegistroCurvo(
                 bottom = 12.dp
             )
         ) {
+            BotonVolverRuralitos(onVolver, Modifier.padding(bottom = 10.dp))
             Text(
                 text = paso.uppercase(Locale.getDefault()),
                 color = AzulClinico,

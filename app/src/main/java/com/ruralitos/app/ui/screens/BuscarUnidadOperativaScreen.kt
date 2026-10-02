@@ -78,14 +78,8 @@ fun BuscarUnidadOperativaScreen(
         titulo = "Unidad operativa",
         descripcion = "Encuentra el centro de salud correspondiente a tu territorio.",
         subtitulo = "Red de atención",
+        onVolver = onRegresar
     ) {
-        item {
-            BotonSecundarioRuralitos(
-                texto = "Regresar",
-                descripcion = "Volver a la pantalla anterior",
-                onClick = onRegresar
-            )
-        }
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),

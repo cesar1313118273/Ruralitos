@@ -125,6 +125,7 @@ fun PerfilScreen(
         titulo = "Datos personales",
         descripcion = "Actualiza la información que identifica tu cuenta profesional en Ruralitos.",
         subtitulo = if (usuario.esAdministrador) "Perfil de administrador" else "Perfil del personal de salud",
+        onVolver = onRegresar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (guardando) "Guardando datos…" else "Guardar mis datos personales",
@@ -133,12 +134,7 @@ fun PerfilScreen(
                 enabled = !guardando,
                 color = CianRuralitos
             )
-            BotonSecundarioRuralitos(
-                texto = "Regresar al menú principal",
-                descripcion = "Salir de Datos personales",
-                onClick = onRegresar,
-                enabled = !guardando
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

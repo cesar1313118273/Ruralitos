@@ -133,6 +133,7 @@ fun GestionRiesgoScreen(
         paso = 6,
         totalPasos = 10,
         etiquetaPaso = "Salud y evaluación",
+        onVolver = onSalir,
         barraAccion = {
                 BotonPrincipalRuralitos(
                     texto = "Guardar información de esta sección",
@@ -140,11 +141,7 @@ fun GestionRiesgoScreen(
                     color = MoradoClinico,
                     onClick = onContinuar
                 )
-                BotonSecundarioRuralitos(
-                    texto = textoRegresar,
-                    descripcion = descripcionRegresar,
-                    onClick = onSalir
-                )
+
         }
     ) {
         item {
@@ -240,6 +237,7 @@ private fun FormularioGestionRiesgoScreen(
         titulo = if (item == null) "Agregar seguimiento" else "Editar seguimiento",
         descripcion = "Completa el plan en cuatro bloques: control, compromisos, evaluación y observaciones.",
         subtitulo = "Plan de acción familiar",
+        onVolver = onCancelar,
         barraAccion = {
             BotonPrincipalRuralitos(
                 texto = if (item == null) "Guardar nuevo seguimiento" else "Guardar cambios del seguimiento",
@@ -266,11 +264,7 @@ private fun FormularioGestionRiesgoScreen(
                     }
                 }
             )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                descripcion = "No guardar los cambios de este seguimiento",
-                onClick = onCancelar
-            )
+
         }
     ) {
         SeccionFormularioRuralitos(

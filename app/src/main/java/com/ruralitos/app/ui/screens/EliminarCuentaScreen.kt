@@ -92,13 +92,9 @@ fun EliminarCuentaScreen(
         titulo = "Eliminar mi cuenta",
         descripcion = "Proceso protegido mediante un código temporal enviado al correo confirmado.",
         subtitulo = "Acción irreversible",
+        onVolver = onRegresar,
         barraAccion = {
-            BotonSecundarioRuralitos(
-                texto = "Conservar mi cuenta y regresar",
-                descripcion = "Salir sin eliminar información",
-                onClick = onRegresar,
-                enabled = !procesando
-            )
+
         }
     ) {
         MensajeEstadoRuralitos(

@@ -42,6 +42,7 @@ import com.ruralitos.app.data.local.entity.TerritorioSalaEntity
 import com.ruralitos.app.data.remote.SupabaseApi
 import com.ruralitos.app.data.sync.SincronizadorSalas
 import com.ruralitos.app.data.sync.ProgramadorSincronizacion
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
@@ -249,7 +250,10 @@ fun SalaScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            Spacer(Modifier.statusBarsPadding().height(8.dp))
+            BotonVolverRuralitos(
+                onRegresar,
+                Modifier.statusBarsPadding().padding(start = 16.dp, top = 12.dp)
+            )
 
             // Contenedor blanco superpuesto al paisaje, con la forma escogida por el usuario:
             // sin onda, solo esquinas superiores grandes y redondeadas.
@@ -871,11 +875,6 @@ fun SalaScreen(
                             }
                         )
                     }
-
-                    BotonSecundarioRuralitos(
-                        texto = "Regresar al inicio",
-                        onClick = onRegresar
-                    )
 
                     Spacer(Modifier.height(16.dp))
                 }

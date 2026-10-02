@@ -184,6 +184,16 @@ fun SeguridadRespaldoScreen(
                 else -> "Las fichas se reasignarán a tu cuenta y Sala activa sin copiar otra sesión."
             },
         subtitulo = "Protección de datos",
+        onVolver = {
+            if (modo == null) {
+                onRegresar()
+            } else {
+                modo = null
+                clave = ""
+                confirmacion = ""
+                mensaje = null
+            }
+        }
     ) {
         if (modo == null) {
             MensajeEstadoRuralitos(
@@ -240,7 +250,6 @@ fun SeguridadRespaldoScreen(
                     simbolo = "15"
                 )
             }
-            BotonSecundarioRuralitos(texto = "Regresar al inicio", onClick = onRegresar)
         } else {
             SeccionFormularioRuralitos(
                 titulo = if (modo == "crear") "Contraseña del respaldo" else "Abrir respaldo cifrado",
@@ -318,16 +327,6 @@ fun SeguridadRespaldoScreen(
                 },
                 enabled = !procesando,
                 color = if (modo == "crear") CianRuralitos else NaranjaClinico
-            )
-            BotonSecundarioRuralitos(
-                texto = "Cancelar y regresar",
-                onClick = {
-                    modo = null
-                    clave = ""
-                    confirmacion = ""
-                    mensaje = null
-                },
-                enabled = !procesando
             )
         }
         Spacer(Modifier.padding(bottom = 12.dp))

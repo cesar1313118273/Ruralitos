@@ -70,6 +70,7 @@ import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.NotaDiariaConPersona
 import com.ruralitos.app.data.local.entity.NotaDiariaEntity
 import com.ruralitos.app.data.local.entity.PersonaParaNota
+import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -230,7 +231,7 @@ fun NotasDiariasScreen(
              * La onda blanca inferior NO depende de la imagen.
              * Se dibuja con Canvas para que siempre aparezca.
              */
-            CabeceraNotasConOnda()
+            CabeceraNotasConOnda(onRegresar)
         }
 
         item {
@@ -349,11 +350,6 @@ fun NotasDiariasScreen(
             }
         }
 
-        item {
-            BotonVolverNotas(
-                onClick = onRegresar
-            )
-        }
 
         item {
             Spacer(
@@ -418,9 +414,9 @@ private class SesionNotaEnPantalla(
 ) { val mutex = Mutex() }
 
 @Composable
-private fun CabeceraNotasConOnda() {
+private fun CabeceraNotasConOnda(onVolver: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(Color.White).statusBarsPadding()) {
-        Spacer(Modifier.height(10.dp))
+        BotonVolverRuralitos(onVolver, Modifier.padding(start = 12.dp, top = 8.dp, bottom = 8.dp))
         HorizontalDivider(color = Color(0xFFE2ECF1))
     }
 }
