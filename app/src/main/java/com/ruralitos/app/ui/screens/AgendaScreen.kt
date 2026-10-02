@@ -1,5 +1,10 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.ui.draw.clip
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
 import androidx.compose.material3.HorizontalDivider
@@ -868,104 +873,17 @@ private fun FormularioAgenda(
         )
     }
 
-    Column(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
-        CabeceraAgenda(onVolver)
-        LazyColumn(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(17.dp)
-        ) {
-            item {
-                Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text(if (original == null) "Nueva actividad" else "Editar actividad",
-                        color = agendaAzul, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
-                    Text("☁  Disponible sin internet", color = Color(0xFF548A7B), fontSize = 13.sp)
-                }
-            }
-            item {
-                Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text("Paciente o familia", color = agendaAzul, fontWeight = FontWeight.SemiBold)
-                    CampoAgenda(
-                        texto = if (personaModificada) persona?.apellidosNombres ?: "Actividad general"
-                            else original?.persona?.takeIf { it.isNotBlank() } ?: "Actividad general",
-                        icono = R.drawable.ruralitos_icono_red,
-                        onClick = { elegirPersona = true }
-                    )
-                }
-            }
-            item {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 21.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f)) {
-                        Text("Fecha", color = agendaAzul, fontWeight = FontWeight.SemiBold)
-                        CampoAgenda(formato(fechaHora, "dd/MM/yyyy"), R.drawable.ruralitos_icono_agenda) {
-                            val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
-                            DatePickerDialog(context, { _, y, m, d ->
-                                fechaHora = Calendar.getInstance().apply {
-                                    timeInMillis = fechaHora
-                                    set(y, m, d)
-                                }.timeInMillis
-                            }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
-                        }
-                    }
-                    Column(Modifier.weight(1f)) {
-                        Text("Hora", color = agendaAzul, fontWeight = FontWeight.SemiBold)
-                        CampoAgenda(formato(fechaHora, "HH:mm"), R.drawable.ruralitos_icono_agenda) {
-                            val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
-                            TimePickerDialog(context, { _, h, m ->
-                                fechaHora = Calendar.getInstance().apply {
-                                    timeInMillis = fechaHora
-                                    set(Calendar.HOUR_OF_DAY, h)
-                                    set(Calendar.MINUTE, m)
-                                }.timeInMillis
-                            }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show()
-                        }
-                    }
-                }
-            }
-            item {
-                Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text("Tipo de actividad", color = agendaAzul, fontWeight = FontWeight.SemiBold)
-                    Box {
-                        CampoAgenda(tipo, iconoActividad(tipo)) {
-                            if (original?.origen != "SEGUIMIENTO") elegirTipo = true
-                        }
-                        MenuDesplegableRuralitos(expanded = elegirTipo && original?.origen != "SEGUIMIENTO", onDismissRequest = { elegirTipo = false }) {
-                            agendaTipos.forEach { opcion ->
-                                ItemMenuRuralitos(text = { Text(opcion) }, onClick = { tipo = opcion; elegirTipo = false })
-                            }
-                        }
-                    }
-                }
-            }
-            item {
-                Column(Modifier.padding(horizontal = 21.dp)) {
-                    Text("Notas (opcional)", color = agendaAzul, fontWeight = FontWeight.SemiBold)
-                    OutlinedTextField(nota, { nota = it },
-                        placeholder = { Text("Motivo de la visita, observaciones…") },
-                        minLines = 3, modifier = Modifier.fillMaxWidth())
-                }
-            }
-            item {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 21.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(R.drawable.ruralitos_icono_agenda), null, Modifier.size(26.dp))
-                    Spacer(Modifier.width(10.dp))
-                    Column(Modifier.weight(1f)) {
-                        Text("Recordatorio", color = agendaAzul, fontWeight = FontWeight.SemiBold)
-                        Text("Aviso en este dispositivo a la hora indicada", color = agendaSecundario, fontSize = 11.sp)
-                    }
-                    Switch(checked = recordar, onCheckedChange = { activo ->
-                        if (activo && Build.VERSION.SDK_INT >= 33) permiso.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        else recordar = activo
-                    })
-                }
-            }
-            if (error.isNotBlank()) item { Text(error, color = Color(0xFFC83E4D), modifier = Modifier.padding(horizontal = 21.dp)) }
-            item { Spacer(Modifier.height(12.dp)) }
-        }
-        HorizontalDivider(color = Color(0xFFE2ECF1))
-        Column(Modifier.fillMaxWidth().background(Color.White).padding(vertical = 12.dp)) {
-            Button(
-                    onClick = {
-                        onGuardar(ActividadAgendaEntity(
+    PantallaRuralitos(
+        titulo = if (original == null) "Nueva actividad" else "Editar actividad",
+        subtitulo = "Disponible sin internet",
+        onVolver = onVolver,
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = if (guardando) "Guardando…" else "Guardar actividad",
+                enabled = !guardando,
+                color = CianRuralitos,
+                onClick = {
+                    onGuardar(ActividadAgendaEntity(
                             id = original?.id ?: 0,
                             usuarioId = usuarioId,
                             fichaId = if (original?.origen == "SEGUIMIENTO") original.fichaId else if (personaModificada) persona?.fichaId else original?.fichaId,
@@ -991,12 +909,103 @@ private fun FormularioAgenda(
                             actualizadoEn = original?.actualizadoEn ?: System.currentTimeMillis(),
                             eliminadoEn = original?.eliminadoEn
                         ))
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 21.dp).heightIn(min = 54.dp),
-                    enabled = !guardando,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = agendaVerde)
-                ) { Text(if (guardando) "Guardando…" else "Guardar actividad", fontWeight = FontWeight.SemiBold) }
+                }
+            )
+        }
+    ) {
+        SeccionFormularioRuralitos(
+            titulo = "Paciente o familia",
+            descripcion = "Elige a quién corresponde la visita o deja una actividad general."
+        ) {
+            CampoAgenda(
+                texto = if (personaModificada) persona?.apellidosNombres ?: "Actividad general"
+                    else original?.persona?.takeIf { it.isNotBlank() } ?: "Actividad general",
+                icono = R.drawable.ruralitos_icono_red,
+                onClick = { elegirPersona = true }
+            )
+        }
+
+        SeccionFormularioRuralitos(
+            titulo = "Fecha y hora",
+            descripcion = "Cuándo se realizará la actividad."
+        ) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text("Fecha", color = agendaSecundario, style = MaterialTheme.typography.labelLarge)
+                    CampoAgenda(formato(fechaHora, "dd/MM/yyyy"), R.drawable.ruralitos_icono_agenda) {
+                        val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
+                        DatePickerDialog(context, { _, y, m, d ->
+                            fechaHora = Calendar.getInstance().apply {
+                                timeInMillis = fechaHora
+                                set(y, m, d)
+                            }.timeInMillis
+                        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    Text("Hora", color = agendaSecundario, style = MaterialTheme.typography.labelLarge)
+                    CampoAgenda(formato(fechaHora, "HH:mm"), R.drawable.ruralitos_icono_agenda) {
+                        val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
+                        TimePickerDialog(context, { _, h, m ->
+                            fechaHora = Calendar.getInstance().apply {
+                                timeInMillis = fechaHora
+                                set(Calendar.HOUR_OF_DAY, h)
+                                set(Calendar.MINUTE, m)
+                            }.timeInMillis
+                        }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show()
+                    }
+                }
+            }
+        }
+
+        SeccionFormularioRuralitos(
+            titulo = "Tipo de actividad",
+            descripcion = "Control, visita domiciliaria u otra actividad de salud."
+        ) {
+            Box {
+                CampoAgenda(tipo, iconoActividad(tipo)) {
+                    if (original?.origen != "SEGUIMIENTO") elegirTipo = true
+                }
+                MenuDesplegableRuralitos(expanded = elegirTipo && original?.origen != "SEGUIMIENTO", onDismissRequest = { elegirTipo = false }) {
+                    agendaTipos.forEach { opcion ->
+                        ItemMenuRuralitos(text = { Text(opcion) }, onClick = { tipo = opcion; elegirTipo = false })
+                    }
+                }
+            }
+        }
+
+        SeccionFormularioRuralitos(
+            titulo = "Notas",
+            descripcion = "Opcional. Escribe el motivo de la visita u observaciones."
+        ) {
+            OutlinedTextField(
+                nota, { nota = it },
+                placeholder = { Text("Motivo de la visita, observaciones…") },
+                minLines = 3,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        SeccionFormularioRuralitos(
+            titulo = "Recordatorio"
+        ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Image(painterResource(R.drawable.ruralitos_icono_agenda), null, Modifier.size(28.dp))
+                Spacer(Modifier.width(10.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("Avisarme a la hora indicada", color = agendaAzul, fontWeight = FontWeight.SemiBold)
+                    Text("El aviso aparece en este dispositivo", color = agendaSecundario, style = MaterialTheme.typography.bodySmall)
+                }
+                Switch(checked = recordar, onCheckedChange = { activo ->
+                    if (activo && Build.VERSION.SDK_INT >= 33) permiso.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    else recordar = activo
+                })
+            }
+        }
+
+        if (error.isNotBlank()) {
+            Text(error, color = Color(0xFFD93F4C), style = MaterialTheme.typography.bodyMedium)
         }
     }
 }
@@ -1021,15 +1030,21 @@ private fun FilaBusquedaAgenda(titulo: String, detalle: String?, onClick: () -> 
 private fun CampoAgenda(texto: String, icono: Int, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().padding(top = 7.dp).heightIn(min = 56.dp),
-        shape = RoundedCornerShape(11.dp),
-        color = Color(0xFFF6F9FB),
-        border = BorderStroke(1.dp, agendaBorde)
+        modifier = Modifier.fillMaxWidth().padding(top = 6.dp).heightIn(min = 52.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFCFDDE5))
     ) {
-        Row(Modifier.padding(horizontal = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(icono), null, Modifier.size(26.dp))
-            Text(texto, modifier = Modifier.weight(1f).padding(start = 9.dp), color = agendaAzul)
-            Text("⌄", color = agendaSecundario, fontSize = 18.sp)
+        Row(Modifier.padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Image(painterResource(icono), null, Modifier.size(28.dp))
+            Text(texto, modifier = Modifier.weight(1f).padding(start = 10.dp), color = agendaAzul,
+                style = MaterialTheme.typography.bodyLarge)
+            Box(
+                Modifier.size(32.dp).clip(RoundedCornerShape(10.dp)).background(Color(0xFFE3F4F7)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("⌄", color = agendaVerde, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+            }
         }
     }
 }
