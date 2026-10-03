@@ -63,8 +63,15 @@ fun PerfilScreen(
 ) {
     val scope = rememberCoroutineScope()
     var cedula by remember(usuario.id) { mutableStateOf(usuario.cedula) }
-    var nombres by remember(usuario.id) { mutableStateOf(usuario.nombres) }
-    var cargo by remember(usuario.id) { mutableStateOf(usuario.cargo) }
+    val sexoInicial = usuario.sexo.ifBlank { SaludoProfesional.inferirSexo(usuario.cargo) }
+    val (apellidosInicial, nombresInicial) =
+        SaludoProfesional.separarNombre(usuario.nombres, usuario.apellidos)
+    var sexo by remember(usuario.id) { mutableStateOf(sexoInicial) }
+    var apellidos by remember(usuario.id) { mutableStateOf(apellidosInicial) }
+    var nombres by remember(usuario.id) { mutableStateOf(nombresInicial) }
+    var cargo by remember(usuario.id) {
+        mutableStateOf(SaludoProfesional.cargoEquivalente(usuario.cargo, sexoInicial))
+    }
     var correo by remember(usuario.id) { mutableStateOf(usuario.correo) }
     var telefono by remember(usuario.id) { mutableStateOf(usuario.telefono) }
     var mensaje by remember { mutableStateOf<String?>(null) }
@@ -77,8 +84,10 @@ fun PerfilScreen(
         val error = when {
             !ValidadorIdentidadEcuador.esIdentificacionAceptable(cedula) ->
                 "Ingresa una cédula o RUC válido."
-            nombres.trim().length < 4 -> "Ingresa tus apellidos y nombres."
-            cargo.isBlank() -> "Ingresa el cargo."
+            sexo.isBlank() -> "Elige tu sexo."
+            apellidos.trim().length < 2 -> "Ingresa tus apellidos."
+            nombres.trim().length < 2 -> "Ingresa tus nombres."
+            cargo.isBlank() -> "Elige tu cargo."
             !correoValido -> "Ingresa un correo electrónico válido."
             telefono.isNotBlank() && telefono.length < 7 -> "Ingresa un teléfono válido."
             else -> null
@@ -93,10 +102,12 @@ fun PerfilScreen(
         scope.launch {
             val actualizado = usuario.copy(
                 cedula = cedula.trim(),
-                nombres = nombres.trim(),
+                nombres = "${apellidos.trim()} ${nombres.trim()}".replace(Regex("\\s+"), " "),
                 cargo = cargo.trim(),
                 correo = correo.trim(),
-                telefono = telefono.trim()
+                telefono = telefono.trim(),
+                sexo = sexo,
+                apellidos = apellidos.trim()
             )
             runCatching {
                 onGuardarRemoto(actualizado)
@@ -108,7 +119,9 @@ fun PerfilScreen(
                         actualizado.cargo,
                         actualizado.correo,
                         actualizado.telefono,
-                        actualizado.codigoSenescyt
+                        actualizado.codigoSenescyt,
+                        actualizado.sexo,
+                        actualizado.apellidos
                     )
                 }
             }.onSuccess {
@@ -141,90 +154,61 @@ fun PerfilScreen(
     ) {
         SeccionFormularioRuralitos(
             titulo = "Identificación personal",
-            descripcion = "Las etiquetas permanecen separadas de los cuadros para facilitar la lectura."
+            descripcion = "Tu sexo define la lista de cargos y el título del saludo (Dr., Dra., Lcda.…)."
         ) {
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-                if (maxWidth >= 700.dp) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            CampoPerfilSeparado(
-                                valor = cedula,
-                                onCambio = {
-                                    cedula = it.filter(Char::isDigit).take(13)
-                                    mensaje = null
-                                },
-                                etiqueta = "Cédula o identificación",
-                                teclado = KeyboardType.Number,
-                                modifier = Modifier.weight(1f)
-                            )
-                            CampoPerfilSeparado(
-                                valor = nombres,
-                                onCambio = {
-                                    nombres = it.take(120)
-                                    mensaje = null
-                                },
-                                etiqueta = "Apellidos y nombres",
-                                modifier = Modifier.weight(2f)
-                            )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            CampoCargoPredeterminado(
-                                valor = cargo,
-                                onCambio = {
-                                    cargo = it.take(80)
-                                    mensaje = null
-                                },
-                                modifier = Modifier.weight(1f)
-                            )
-                            CampoPerfilSeparado(
-                                valor = telefono,
-                                onCambio = {
-                                    telefono = it.filter(Char::isDigit).take(15)
-                                    mensaje = null
-                                },
-                                etiqueta = "Número de teléfono",
-                                teclado = KeyboardType.Phone,
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                CampoPerfilSeparado(
+                    valor = cedula,
+                    onCambio = {
+                        cedula = it.filter(Char::isDigit).take(13)
+                        mensaje = null
+                    },
+                    etiqueta = "Cédula o identificación",
+                    teclado = KeyboardType.Number
+                )
+                SelectorSexoProfesional(
+                    valor = sexo,
+                    onCambio = {
+                        sexo = it
+                        cargo = SaludoProfesional.cargoEquivalente(cargo, it)
+                        mensaje = null
                     }
-                } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        CampoPerfilSeparado(
-                            cedula,
-                            {
-                                cedula = it.filter(Char::isDigit).take(13)
-                                mensaje = null
-                            },
-                            "Cédula o identificación",
-                            teclado = KeyboardType.Number
-                        )
-                        CampoPerfilSeparado(
-                            nombres,
-                            {
-                                nombres = it.take(120)
-                                mensaje = null
-                            },
-                            "Apellidos y nombres"
-                        )
-                        CampoCargoPredeterminado(
-                            valor = cargo,
-                            onCambio = {
-                                cargo = it.take(80)
-                                mensaje = null
-                            }
-                        )
-                        CampoPerfilSeparado(
-                            telefono,
-                            {
-                                telefono = it.filter(Char::isDigit).take(15)
-                                mensaje = null
-                            },
-                            "Número de teléfono",
-                            teclado = KeyboardType.Phone
-                        )
+                )
+                CampoPerfilSeparado(
+                    valor = apellidos,
+                    onCambio = {
+                        apellidos = it.take(80)
+                        mensaje = null
+                    },
+                    etiqueta = "Apellidos",
+                    ayuda = "Primero los dos apellidos, por ejemplo: Pérez Gómez."
+                )
+                CampoPerfilSeparado(
+                    valor = nombres,
+                    onCambio = {
+                        nombres = it.take(80)
+                        mensaje = null
+                    },
+                    etiqueta = "Nombres",
+                    ayuda = "Por ejemplo: Ana María. El saludo usa tu primer nombre."
+                )
+                CampoCargoPredeterminado(
+                    valor = cargo,
+                    sexo = sexo,
+                    onCambio = {
+                        cargo = it.take(80)
+                        mensaje = null
                     }
-                }
+                )
+                CampoPerfilSeparado(
+                    valor = telefono,
+                    onCambio = {
+                        telefono = it.filter(Char::isDigit).take(15)
+                        mensaje = null
+                    },
+                    etiqueta = "Número de teléfono",
+                    teclado = KeyboardType.Phone
+                )
             }
         }
         SeccionFormularioRuralitos(
@@ -264,19 +248,65 @@ fun PerfilScreen(
     }
 }
 
+/** Elección de sexo (Hombre / Mujer): de ella dependen la lista de cargos y el título del saludo. */
+@Composable
+internal fun SelectorSexoProfesional(
+    valor: String,
+    onCambio: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier.padding(top = 10.dp, bottom = 4.dp)) {
+        Text(
+            "Sexo",
+            style = MaterialTheme.typography.labelLarge,
+            color = Color(0xFF5B7083),
+            fontWeight = FontWeight.SemiBold
+        )
+        Row(
+            Modifier.fillMaxWidth().padding(top = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            listOf(SaludoProfesional.SEXO_HOMBRE to "Hombre", SaludoProfesional.SEXO_MUJER to "Mujer")
+                .forEach { (clave, etiqueta) ->
+                    val seleccionado = valor == clave
+                    Surface(
+                        onClick = { onCambio(clave) },
+                        modifier = Modifier.weight(1f).heightIn(min = 52.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (seleccionado) Color(0xFFE3F4F7) else Color.White,
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (seleccionado) 1.5.dp else 1.dp,
+                            if (seleccionado) CianRuralitos else BordeCampo
+                        )
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth().padding(horizontal = 12.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                        ) {
+                            Text(
+                                etiqueta,
+                                color = if (seleccionado) CianRuralitos else Color(0xFF0A2A5E),
+                                fontWeight = if (seleccionado) FontWeight.SemiBold else FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CampoCargoPredeterminado(
     valor: String,
     onCambio: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sexo: String = ""
 ) {
     var abierto by remember { mutableStateOf(false) }
-    val predeterminados = SaludoProfesional.cargosPredeterminados
-    val opciones = remember(valor) {
-        if (valor.isNotBlank() && valor !in predeterminados) listOf(valor) + predeterminados
-        else predeterminados
-    }
+    // Sin repetidos: cada sexo tiene su propia lista de cargos.
+    val opciones = SaludoProfesional.cargosPara(sexo)
     Column(modifier.padding(top = 10.dp, bottom = 4.dp)) {
         Text(
             "Cargo profesional",
@@ -285,8 +315,8 @@ internal fun CampoCargoPredeterminado(
             fontWeight = FontWeight.SemiBold
         )
         ExposedDropdownMenuBox(
-            expanded = abierto,
-            onExpandedChange = { abierto = !abierto },
+            expanded = abierto && opciones.isNotEmpty(),
+            onExpandedChange = { if (opciones.isNotEmpty()) abierto = !abierto },
             modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
         ) {
             OutlinedTextField(
@@ -294,7 +324,10 @@ internal fun CampoCargoPredeterminado(
                 onValueChange = {},
                 readOnly = true,
                 singleLine = true,
-                placeholder = { Text("Selecciona tu cargo") },
+                enabled = opciones.isNotEmpty(),
+                placeholder = {
+                    Text(if (opciones.isEmpty()) "Primero elige tu sexo" else "Selecciona tu cargo")
+                },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(abierto) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
@@ -306,7 +339,7 @@ internal fun CampoCargoPredeterminado(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp).menuAnchor()
             )
             ExposedDropdownMenu(
-                expanded = abierto,
+                expanded = abierto && opciones.isNotEmpty(),
                 onDismissRequest = { abierto = false }
             ) {
                 opciones.forEach { opcion ->
@@ -332,13 +365,14 @@ internal fun CampoCargoPredeterminado(
             }
         }
         Text(
-            "Este cargo se utilizará en el saludo profesional de la sesión.",
+            "Este cargo y tu sexo se usan en el saludo de la pantalla de inicio (por ejemplo: Dra. Ana Pérez).",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 5.dp, start = 2.dp)
         )
     }
 }
+
 @Composable
 private fun CampoPerfilSeparado(
     valor: String,

@@ -562,7 +562,7 @@ fun RuralitosApp() {
                 "crearAdministrador" -> CrearAdministradorScreen(
                     procesando = procesandoAcceso,
                     mensajeError = mensajeAcceso,
-                    onCrear = { cedula, nombres, cargo, clave ->
+                    onCrear = { cedula, nombres, cargo, clave, sexo ->
                         procesandoAcceso = true
                         mensajeAcceso = null
                         scope.launch {
@@ -574,6 +574,7 @@ fun RuralitosApp() {
                                     cedula = cedula,
                                     nombres = nombres,
                                     cargo = cargo,
+                                    sexo = sexo,
                                     rol = UsuarioEntity.ROL_ADMIN,
                                     claveHash = protegida.hash,
                                     claveSalt = protegida.salt
@@ -642,12 +643,12 @@ fun RuralitosApp() {
                 "registro" -> RegistroSupabaseScreen(
                     procesando = procesandoAcceso,
                     mensaje = mensajeAcceso,
-                    onRegistrar = { correo, clave, cedula, nombres, cargo, telefono, codigoSenescyt ->
+                    onRegistrar = { correo, clave, cedula, nombres, cargo, telefono, codigoSenescyt, sexo, apellidos ->
                         procesandoAcceso = true
                         mensajeAcceso = null
                         scope.launch {
                             runCatching {
-                                supabase.registrar(correo, clave, cedula, nombres, cargo, telefono, codigoSenescyt)
+                                supabase.registrar(correo, clave, cedula, nombres, cargo, telefono, codigoSenescyt, sexo, apellidos)
                             }.onSuccess { resultado ->
                                 if (resultado.requiereConfirmarCorreo) {
                                     estadoAcceso = "login"
@@ -920,6 +921,8 @@ fun RuralitosApp() {
                         usuarioId = usuarioActual?.id ?: 0L,
                         usuarioNombre = usuarioActual?.nombres.orEmpty(),
                         usuarioCargo = usuarioActual?.cargo.orEmpty(),
+                        usuarioSexo = usuarioActual?.sexo.orEmpty(),
+                        usuarioApellidos = usuarioActual?.apellidos.orEmpty(),
                         codigoSenescyt = usuarioActual?.codigoSenescyt.orEmpty(),
                         fichasPendientesSync = fichasPendientesSync,
                         estadoSincronizacion = estadoSincronizacion,
@@ -1119,7 +1122,9 @@ fun RuralitosApp() {
                                         cargo = actualizado.cargo,
                                         correo = actualizado.correo,
                                         telefono = actualizado.telefono,
-                                        codigoSenescyt = actualizado.codigoSenescyt
+                                        codigoSenescyt = actualizado.codigoSenescyt,
+                                        sexo = actualizado.sexo,
+                                        apellidos = actualizado.apellidos
                                     )
                                 )
                             },
@@ -1917,7 +1922,9 @@ private suspend fun guardarIdentidadProfesional(
             cargo = actualizado.cargo,
             correo = actualizado.correo,
             telefono = actualizado.telefono,
-            codigoSenescyt = actualizado.codigoSenescyt
+            codigoSenescyt = actualizado.codigoSenescyt,
+            sexo = actualizado.sexo,
+            apellidos = actualizado.apellidos
         )
     )
     withContext(Dispatchers.IO) {
@@ -1968,7 +1975,9 @@ private suspend fun prepararUsuarioDesdeSupabase(
                 activo = activa.activa,
                 supabaseId = perfil.id,
                 organizacionId = activa.organizacionId,
-                establecimientoRemotoId = activa.establecimientoId
+                establecimientoRemotoId = activa.establecimientoId,
+                sexo = perfil.sexo,
+                apellidos = perfil.apellidos
             )
         )
     } else {
@@ -1984,7 +1993,9 @@ private suspend fun prepararUsuarioDesdeSupabase(
             activo = activa.activa,
             supabaseId = perfil.id,
             organizacionId = activa.organizacionId,
-            establecimientoRemotoId = activa.establecimientoId
+            establecimientoRemotoId = activa.establecimientoId,
+            sexo = perfil.sexo,
+            apellidos = perfil.apellidos
         )
         existente.id
     }
@@ -2015,6 +2026,8 @@ private suspend fun registrarEvento(
 fun PantallaPrincipal(
     usuarioNombre: String,
     usuarioCargo: String,
+    usuarioSexo: String = "",
+    usuarioApellidos: String = "",
     codigoSenescyt: String,
     fichasPendientesSync: Int,
     estadoSincronizacion: String,
@@ -2036,6 +2049,8 @@ fun PantallaPrincipal(
     InicioRuralitosScreen(
         usuarioNombre = usuarioNombre,
         usuarioCargo = usuarioCargo,
+        usuarioSexo = usuarioSexo,
+        usuarioApellidos = usuarioApellidos,
         codigoSenescyt = codigoSenescyt,
         fichasPendientesSync = fichasPendientesSync,
         estadoSincronizacion = estadoSincronizacion,

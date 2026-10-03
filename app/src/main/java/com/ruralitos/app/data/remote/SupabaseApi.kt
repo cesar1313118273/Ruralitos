@@ -36,7 +36,9 @@ data class PerfilRemoto(
     val cargo: String,
     val correo: String,
     val telefono: String,
-    val codigoSenescyt: String
+    val codigoSenescyt: String,
+    val sexo: String = "",
+    val apellidos: String = ""
 )
 
 data class MembresiaRemota(
@@ -127,7 +129,9 @@ class SupabaseApi(context: Context) {
         nombres: String,
         cargo: String,
         telefono: String,
-        codigoSenescyt: String
+        codigoSenescyt: String,
+        sexo: String = "",
+        apellidos: String = ""
     ): RegistroRemotoResultado {
         val data = JSONObject()
             .put("cedula", cedula)
@@ -135,6 +139,8 @@ class SupabaseApi(context: Context) {
             .put("cargo", cargo)
             .put("telefono", telefono)
             .put("codigo_senescyt", codigoSenescyt.uppercase())
+            .put("sexo", sexo)
+            .put("apellidos", apellidos)
         val cuerpo = JSONObject()
             .put("email", correo.lowercase())
             .put("password", clave)
@@ -249,13 +255,23 @@ class SupabaseApi(context: Context) {
     suspend fun obtenerPerfil(): PerfilRemoto? {
         val token = tokenValido()
         val usuarioId = checkNotNull(sesionSegura.obtener()?.usuarioId.takeUnless { it.isNullOrBlank() })
-        val arreglo = solicitar(
-            "GET",
-            "/rest/v1/perfiles?id=eq.${codificar(usuarioId)}&select=id,cedula,nombres,cargo,correo,telefono,codigo_senescyt",
-            accessToken = token
-        ).jsonArreglo()
+        val base = "id,cedula,nombres,cargo,correo,telefono,codigo_senescyt"
+        // Las columnas sexo y apellidos existen solo si se aplicó la migración nueva de Supabase.
+        val arreglo = runCatching {
+            solicitar(
+                "GET",
+                "/rest/v1/perfiles?id=eq.${codificar(usuarioId)}&select=$base,sexo,apellidos",
+                accessToken = token
+            ).jsonArreglo()
+        }.getOrElse {
+            solicitar(
+                "GET",
+                "/rest/v1/perfiles?id=eq.${codificar(usuarioId)}&select=$base",
+                accessToken = token
+            ).jsonArreglo()
+        }
         if (arreglo.length() == 0) return null
-        return arreglo.getJSONObject(0).let {
+        val perfil = arreglo.getJSONObject(0).let {
             PerfilRemoto(
                 id = it.getString("id"),
                 cedula = it.optString("cedula"),
@@ -263,9 +279,20 @@ class SupabaseApi(context: Context) {
                 cargo = it.optString("cargo"),
                 correo = it.optString("correo"),
                 telefono = it.optString("telefono"),
-                codigoSenescyt = it.optString("codigo_senescyt")
+                codigoSenescyt = it.optString("codigo_senescyt"),
+                sexo = it.optString("sexo"),
+                apellidos = it.optString("apellidos")
             )
         }
+        if (perfil.sexo.isNotBlank() && perfil.apellidos.isNotBlank()) return perfil
+        // Sin las columnas nuevas, el sexo y los apellidos se leen de los datos guardados con la cuenta.
+        val metadatos = runCatching {
+            solicitar("GET", "/auth/v1/user", accessToken = token).jsonObjeto().optJSONObject("user_metadata")
+        }.getOrNull()
+        return perfil.copy(
+            sexo = perfil.sexo.ifBlank { metadatos?.optString("sexo").orEmpty() },
+            apellidos = perfil.apellidos.ifBlank { metadatos?.optString("apellidos").orEmpty() }
+        )
     }
 
     suspend fun obtenerMembresia(): MembresiaRemota? {
@@ -565,18 +592,47 @@ class SupabaseApi(context: Context) {
         }
     }
     suspend fun actualizarPerfil(perfil: PerfilRemoto) {
-        solicitar(
-            metodo = "PATCH",
-            ruta = "/rest/v1/perfiles?id=eq.${codificar(perfil.id)}",
-            cuerpo = JSONObject()
-                .put("cedula", perfil.cedula)
-                .put("nombres", perfil.nombres)
-                .put("cargo", perfil.cargo)
-                .put("telefono", perfil.telefono)
-                .put("codigo_senescyt", perfil.codigoSenescyt.uppercase()),
-            accessToken = tokenValido(),
-            headers = mapOf("Prefer" to "return=minimal")
-        )
+        val basico = JSONObject()
+            .put("cedula", perfil.cedula)
+            .put("nombres", perfil.nombres)
+            .put("cargo", perfil.cargo)
+            .put("telefono", perfil.telefono)
+            .put("codigo_senescyt", perfil.codigoSenescyt.uppercase())
+        val token = tokenValido()
+        val ruta = "/rest/v1/perfiles?id=eq.${codificar(perfil.id)}"
+        val cabeceras = mapOf("Prefer" to "return=minimal")
+        // Si la migración de sexo/apellidos aún no está en Supabase, se guardan solo los datos básicos.
+        runCatching {
+            solicitar(
+                metodo = "PATCH",
+                ruta = ruta,
+                cuerpo = JSONObject(basico.toString())
+                    .put("sexo", perfil.sexo)
+                    .put("apellidos", perfil.apellidos),
+                accessToken = token,
+                headers = cabeceras
+            )
+        }.getOrElse {
+            solicitar(
+                metodo = "PATCH",
+                ruta = ruta,
+                cuerpo = basico,
+                accessToken = token,
+                headers = cabeceras
+            )
+        }
+        // Respaldo en los datos de la cuenta, que no dependen de columnas nuevas.
+        runCatching {
+            solicitar(
+                metodo = "PUT",
+                ruta = "/auth/v1/user",
+                cuerpo = JSONObject().put(
+                    "data",
+                    JSONObject().put("sexo", perfil.sexo).put("apellidos", perfil.apellidos)
+                ),
+                accessToken = token
+            )
+        }
     }
 
     suspend fun crearOrganizacion(nombre: String, codigo: String): String {

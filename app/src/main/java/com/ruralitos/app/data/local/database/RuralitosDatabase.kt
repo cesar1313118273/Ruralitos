@@ -60,7 +60,7 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         NotaDiariaEntity::class,
         ActividadAgendaEntity::class
     ],
-    version = 19,
+    version = 20,
     exportSchema = false
 )
 abstract class RuralitosDatabase : RoomDatabase() {
@@ -110,7 +110,8 @@ abstract class RuralitosDatabase : RoomDatabase() {
                             MIGRATION_15_16,
                             MIGRATION_16_17,
                             MIGRATION_17_18,
-                            MIGRATION_18_19
+                            MIGRATION_18_19,
+                            MIGRATION_19_20
                         )
                         .addCallback(SINCRONIZACION_CALLBACK)
                         .build()
@@ -930,6 +931,13 @@ abstract class RuralitosDatabase : RoomDatabase() {
                 database.execSQL("UPDATE `notas_diarias` SET `syncId` = $uuid, `syncEstado` = 'LOCAL', `actualizadoEn` = `creadaEn`")
                 database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_notas_diarias_syncId` ON `notas_diarias` (`syncId`)")
                 database.execSQL("CREATE INDEX IF NOT EXISTS `index_notas_diarias_usuarioId` ON `notas_diarias` (`usuarioId`)")
+            }
+        }
+
+        private val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `usuarios` ADD COLUMN `sexo` TEXT NOT NULL DEFAULT ''")
+                database.execSQL("ALTER TABLE `usuarios` ADD COLUMN `apellidos` TEXT NOT NULL DEFAULT ''")
             }
         }
     }

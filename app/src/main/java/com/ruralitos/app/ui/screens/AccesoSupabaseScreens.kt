@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.domain.SaludoProfesional
 import androidx.compose.foundation.layout.statusBarsPadding
 import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.layout.Arrangement
@@ -788,11 +789,13 @@ private fun FondoAbstractoLogin(
 fun RegistroSupabaseScreen(
     procesando: Boolean,
     mensaje: String?,
-    onRegistrar: (String, String, String, String, String, String, String) -> Unit,
+    onRegistrar: (String, String, String, String, String, String, String, String, String) -> Unit,
     onVolver: () -> Unit
 ) {
     var correo by remember { mutableStateOf("") }
     var cedula by remember { mutableStateOf("") }
+    var sexo by remember { mutableStateOf("") }
+    var apellidos by remember { mutableStateOf("") }
     var nombres by remember { mutableStateOf("") }
     var cargo by remember { mutableStateOf("") }
     var telefono by remember { mutableStateOf("") }
@@ -826,9 +829,19 @@ fun RegistroSupabaseScreen(
             shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
             modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
         )
-        CampoTexto(nombres, "Apellidos y nombres") { nombres = it.take(160); error = null }
+        SelectorSexoProfesional(
+            valor = sexo,
+            onCambio = {
+                sexo = it
+                cargo = SaludoProfesional.cargoEquivalente(cargo, it)
+                error = null
+            }
+        )
+        CampoTexto(apellidos, "Apellidos") { apellidos = it.take(80); error = null }
+        CampoTexto(nombres, "Nombres") { nombres = it.take(80); error = null }
         CampoCargoPredeterminado(
             valor = cargo,
+            sexo = sexo,
             onCambio = { cargo = it; error = null }
         )
         CampoCodigoProfesional(codigoSenescyt) { codigoSenescyt = it; error = null }
@@ -859,8 +872,10 @@ fun RegistroSupabaseScreen(
                 error = when {
                     !correoValido(correo) -> "Ingresa un correo válido."
                     !ValidadorIdentidadEcuador.esIdentificacionAceptable(cedula) -> "Ingresa una cédula o RUC válido."
-                    nombres.isBlank() -> "Ingresa tus apellidos y nombres."
-                    cargo.isBlank() -> "Ingresa tu cargo."
+                    sexo.isBlank() -> "Elige tu sexo."
+                    apellidos.isBlank() -> "Ingresa tus apellidos."
+                    nombres.isBlank() -> "Ingresa tus nombres."
+                    cargo.isBlank() -> "Elige tu cargo."
                     !codigoSenescytValido(codigoSenescyt) -> "Completa el código SENESCYT con sus 15 dígitos."
                     clave.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
                     clave != confirmar -> "Las contraseñas no coinciden."
@@ -871,10 +886,12 @@ fun RegistroSupabaseScreen(
                         correo.trim(),
                         clave,
                         cedula.trim(),
-                        nombres.trim(),
+                        "${apellidos.trim()} ${nombres.trim()}".replace(Regex("\\s+"), " "),
                         cargo.trim(),
                         telefono.trim(),
-                        codigoSenescyt.trim()
+                        codigoSenescyt.trim(),
+                        sexo,
+                        apellidos.trim()
                     )
                 }
             },

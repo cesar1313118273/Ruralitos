@@ -114,6 +114,8 @@ private val Montana3 = Color(0xFFE2ECF1)
 fun InicioRuralitosScreen(
     usuarioNombre: String,
     usuarioCargo: String,
+    usuarioSexo: String = "",
+    usuarioApellidos: String = "",
     codigoSenescyt: String,
     fichasPendientesSync: Int,
     estadoSincronizacion: String,
@@ -158,12 +160,14 @@ fun InicioRuralitosScreen(
         }
     }
 
-    val nombreBreve = usuarioNombre
-        .trim()
-        .substringBefore(' ')
-        .ifBlank { "profesional" }
-
-    val saludo = SaludoProfesional.completo(hora, usuarioCargo, nombreBreve)
+    // Dr./Dra. + primer nombre + primer apellido, según el cargo y el sexo del perfil.
+    val saludo = SaludoProfesional.completo(
+        hora = hora,
+        cargo = usuarioCargo,
+        sexo = usuarioSexo.ifBlank { SaludoProfesional.inferirSexo(usuarioCargo) },
+        apellidos = usuarioApellidos,
+        nombresCompletos = usuarioNombre
+    )
 
     val inicial = usuarioNombre
         .trim()

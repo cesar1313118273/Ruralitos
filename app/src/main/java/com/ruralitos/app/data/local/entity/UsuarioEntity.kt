@@ -40,7 +40,11 @@ data class UsuarioEntity(
     @ColumnInfo(defaultValue = "''")
     val codigoSenescyt: String = "",
     @ColumnInfo(defaultValue = "NULL")
-    val firmaUri: String? = null
+    val firmaUri: String? = null,
+    @ColumnInfo(defaultValue = "''")
+    val sexo: String = "",
+    @ColumnInfo(defaultValue = "''")
+    val apellidos: String = ""
 ) {
     val esAdministrador: Boolean
         get() = rol == ROL_ADMIN

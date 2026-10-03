@@ -74,3 +74,10 @@ Validación de la carga:
 Las contraseñas de usuarios no se almacenan en las tablas públicas. Supabase Auth
 administra la contraseña de la cuenta; el PIN y la biometría sin conexión se
 protegerán localmente con Android Keystore y la base SQLite cifrada.
+
+## Migración pendiente de aplicar
+
+- `202610020001_perfil_sexo_apellidos.sql`
+  - Columnas `sexo` (`H`/`M`) y `apellidos` en `perfiles`, y el trigger que las toma del registro.
+  - La app funciona aunque aún no se aplique: guarda el sexo y los apellidos en el teléfono y en los datos
+    de la cuenta (`user_metadata`). Al aplicarla, también quedan en la tabla `perfiles`.

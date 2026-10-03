@@ -43,7 +43,9 @@ interface UsuarioDao {
             cargo = :cargo,
             correo = :correo,
             telefono = :telefono,
-            codigoSenescyt = :codigoSenescyt
+            codigoSenescyt = :codigoSenescyt,
+            sexo = :sexo,
+            apellidos = :apellidos
         WHERE id = :id
     """)
     suspend fun actualizarPerfil(
@@ -53,7 +55,9 @@ interface UsuarioDao {
         cargo: String,
         correo: String,
         telefono: String,
-        codigoSenescyt: String
+        codigoSenescyt: String,
+        sexo: String,
+        apellidos: String
     )
 
     @Query("UPDATE usuarios SET codigoSenescyt = :codigo, firmaUri = :firmaUri WHERE id = :id")
@@ -71,7 +75,9 @@ interface UsuarioDao {
             supabaseId = :supabaseId,
             organizacionId = :organizacionId,
             establecimientoRemotoId = :establecimientoRemotoId,
-            codigoSenescyt = :codigoSenescyt
+            codigoSenescyt = :codigoSenescyt,
+            sexo = CASE WHEN :sexo <> '' THEN :sexo ELSE sexo END,
+            apellidos = CASE WHEN :apellidos <> '' THEN :apellidos ELSE apellidos END
         WHERE id = :id
     """)
     suspend fun actualizarDesdeSupabase(
@@ -86,7 +92,9 @@ interface UsuarioDao {
         supabaseId: String,
         organizacionId: String,
         establecimientoRemotoId: Long?,
-        codigoSenescyt: String
+        codigoSenescyt: String,
+        sexo: String,
+        apellidos: String
     )
 
     @Query("""

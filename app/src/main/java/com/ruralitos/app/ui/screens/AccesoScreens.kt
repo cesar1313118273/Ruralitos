@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.domain.SaludoProfesional
 import com.ruralitos.app.ui.theme.FondoClinico
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -453,7 +454,7 @@ private fun FondoCargaMascota(
 fun CrearAdministradorScreen(
     procesando: Boolean,
     mensajeError: String?,
-    onCrear: (cedula: String, nombres: String, cargo: String, clave: String) -> Unit
+    onCrear: (cedula: String, nombres: String, cargo: String, clave: String, sexo: String) -> Unit
 ) {
     FormularioAcceso(
         titulo = "Configurar Ruralitos",
@@ -527,10 +528,11 @@ private fun FormularioAcceso(
     textoBoton: String,
     procesando: Boolean,
     mensajeError: String?,
-    onEnviar: (String, String, String, String) -> Unit
+    onEnviar: (String, String, String, String, String) -> Unit
 ) {
     var cedula by remember { mutableStateOf("") }
     var nombres by remember { mutableStateOf("") }
+    var sexo by remember { mutableStateOf("") }
     var cargo by remember { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
     var confirmar by remember { mutableStateOf("") }
@@ -560,12 +562,17 @@ private fun FormularioAcceso(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
             )
-            OutlinedTextField(
-                value = cargo,
-                onValueChange = { cargo = it },
-                label = { Text("Cargo") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+            SelectorSexoProfesional(
+                valor = sexo,
+                onCambio = {
+                    sexo = it
+                    cargo = SaludoProfesional.cargoEquivalente(cargo, it)
+                }
+            )
+            CampoCargoPredeterminado(
+                valor = cargo,
+                sexo = sexo,
+                onCambio = { cargo = it }
             )
         }
         OutlinedTextField(
@@ -590,12 +597,13 @@ private fun FormularioAcceso(
                 errorLocal = when {
                     cedula.length < 10 -> "Ingresa una cédula válida."
                     nombres.isBlank() -> "Ingresa los apellidos y nombres."
-                    cargo.isBlank() -> "Ingresa el cargo."
+                    sexo.isBlank() -> "Elige el sexo."
+                    cargo.isBlank() -> "Elige el cargo."
                     clave.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
                     clave != confirmar -> "Las contraseñas no coinciden."
                     else -> null
                 }
-                if (errorLocal == null) onEnviar(cedula.trim(), nombres.trim(), cargo.trim(), clave)
+                if (errorLocal == null) onEnviar(cedula.trim(), nombres.trim(), cargo.trim(), clave, sexo)
             },
             enabled = !procesando,
             modifier = Modifier.fillMaxWidth().padding(top = 18.dp)
@@ -654,7 +662,7 @@ fun GestionUsuariosScreen(
             textoBoton = "Guardar usuario",
             procesando = procesando,
             mensajeError = mensaje,
-            onEnviar = { cedula, nombres, cargo, clave ->
+            onEnviar = { cedula, nombres, cargo, clave, sexo ->
                 procesando = true
                 mensaje = null
                 scope.launch {
@@ -667,6 +675,7 @@ fun GestionUsuariosScreen(
                                     cedula = cedula,
                                     nombres = nombres,
                                     cargo = cargo,
+                                    sexo = sexo,
                                     rol = UsuarioEntity.ROL_MEDICO,
                                     claveHash = protegida.hash,
                                     claveSalt = protegida.salt
