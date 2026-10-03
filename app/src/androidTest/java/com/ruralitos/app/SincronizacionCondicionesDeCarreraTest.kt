@@ -45,7 +45,7 @@ class SincronizacionCondicionesDeCarreraTest {
     @After fun despues() = limpiar()
 
     private fun fichaLocal(syncId: String, estado: String = "SINCRONIZADO", version: Long = 3) = FichaFamiliarEntity(
-        cedulaJefeHogar = "0000000002", institucionSistema = "MSP", unidadOperativa = "QA", codigoUo = "1",
+        cedulaJefeHogar = "0000000002", institucionSistema = "CLINICA DE PRUEBA", unidadOperativa = "QA", codigoUo = "1",
         areaNumero = "1", codigoLocalizacion = "1", parroquiaCodigoLocalizacion = "1", cantonCodigoLocalizacion = "1",
         provinciaCodigoLocalizacion = "1", numeroFichaFamiliar = "QA-CARRERA-$syncId",
         provincia = "P", canton = "C", parroquia = "R", sector = "S", manzana = "1", numeroFamilia = "1",

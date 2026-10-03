@@ -117,7 +117,8 @@ object FichaExcelExporter {
     }
 
     internal fun abrirPlantilla(context: Context): XSSFWorkbook {
-        val original = context.assets.open("ficha_familiar.xlsx").use { it.readBytes() }
+        val original = PlantillaPropia.bytes(context)
+            ?: context.assets.open("ficha_familiar.xlsx").use { it.readBytes() }
         return XSSFWorkbook(ByteArrayInputStream(sanitizarPlantillaXlsx(original)))
     }
 
@@ -180,7 +181,7 @@ object FichaExcelExporter {
 
     private fun rellenarHojaUno(sheet: Sheet, data: FichaExportData) {
         val ficha = data.ficha
-        sheet.texto("B2", ficha.institucionSistema)
+        sheet.texto("B2", com.ruralitos.app.domain.InstitucionVisible.limpiar(ficha.institucionSistema))
         sheet.texto("R2", ficha.unidadOperativa)
         sheet.texto("AK2", ficha.codigoUo)
         sheet.texto("AP2", ficha.areaNumero)

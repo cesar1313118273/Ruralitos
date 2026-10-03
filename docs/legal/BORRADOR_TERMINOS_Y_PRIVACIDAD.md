@@ -14,6 +14,10 @@
 
 ## Términos de uso — propuesta
 
+**Independencia.** Ruralitos es una herramienta independiente. No es un producto oficial ni está afiliada, avalada ni patrocinada por el Ministerio de Salud Pública ni por ninguna otra institución del sector salud. Los nombres y marcas de terceros que pudieran mencionarse pertenecen a sus titulares y no implican relación alguna.
+
+**Autorización institucional.** Cuando el usuario trabaja para un centro de salud, municipio u otra institución, declara contar con la autorización de esa institución para usar Ruralitos y para registrar en ella datos de las personas atendidas. Ruralitos no verifica esa autorización; la responsabilidad de obtenerla y de cumplir las normas internas de su institución es del usuario y de la institución.
+
 Ruralitos es una herramienta de apoyo para registrar fichas familiares, organizar visitas y consultar información territorial. Está destinada a profesionales y equipos autorizados. No sustituye el criterio clínico ni garantiza la exactitud de mapas, GPS, rutas automáticas o datos introducidos por usuarios.
 
 Según el modelo operativo previsto, cada profesional usuario responde por los datos clínicos que registra, modifica y comparte, sin perjuicio de las responsabilidades que correspondan a su institución o al proveedor conforme a la ley y los contratos. Cada usuario debe proteger sus credenciales, acceder solo a la información necesaria para su trabajo, verificar la identidad y permisos de las personas con quienes comparte fichas y corregir los registros inexactos. Está prohibido compartir cuentas o consultar información clínica sin autorización. El administrador de cada equipo debe asignar permisos proporcionales a las funciones reales.
@@ -26,7 +30,7 @@ El acceso puede restringirse por motivos de seguridad o incumplimiento. Las cond
 
 Ruralitos trata datos de identificación y contacto de usuarios profesionales, así como datos personales y de salud incluidos en fichas familiares, agendas, notas, ubicaciones y adjuntos. Las finalidades previstas son registrar y consultar la atención comunitaria, coordinar visitas, generar reportes y facilitar acceso entre miembros autorizados de un equipo. No se debe usar la información para publicidad ni vender datos de pacientes.
 
-Los datos se guardan en una base cifrada del dispositivo y, cuando hay conexión y acceso autorizado, se sincronizan con el servicio remoto. Las fichas pueden compartirse dentro del equipo según permisos; los documentos exportados quedan bajo control de quien los recibe. La agenda y las notas diarias **actualmente se guardan solo en el dispositivo**; esta limitación debe corregirse o explicarse expresamente en la versión final.
+Los datos se guardan en una base cifrada del dispositivo y, cuando hay conexión y acceso autorizado, se sincronizan con el servicio remoto. Las fichas pueden compartirse dentro del equipo según permisos; los documentos exportados quedan bajo control de quien los recibe. La agenda y las notas diarias son privadas de cada cuenta: se sincronizan con el servicio remoto asociadas a esa cuenta y a la Sala, y no las ven otros miembros del equipo. Si se retira el acceso a una Sala, el teléfono de esa persona deja de mostrar las fichas ya sincronizadas de esa Sala; un teléfono guarda los datos de una sola cuenta, y al entrar con otra se borran los de la anterior (o se impide el cambio si hay cambios sin sincronizar).
 
 El aviso definitivo debe informar la identidad del responsable y encargados, bases jurídicas, categorías y fuentes de datos, transferencias, destinatarios, conservación, medidas de seguridad, consecuencias de no aportar datos y mecanismos para ejercer derechos y reclamar ante la autoridad. No se debe prometer eliminación inmediata de copias sin conexión o respaldos si el sistema no puede garantizarla.
 

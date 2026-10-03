@@ -24,7 +24,7 @@ class CambioDeCuentaTest {
     private val supabase = SupabaseApi(context)
 
     private fun ficha(estado: String) = FichaFamiliarEntity(
-        cedulaJefeHogar = "0000000003", institucionSistema = "MSP", unidadOperativa = "QA", codigoUo = "1",
+        cedulaJefeHogar = "0000000003", institucionSistema = "CLINICA DE PRUEBA", unidadOperativa = "QA", codigoUo = "1",
         areaNumero = "1", codigoLocalizacion = "1", parroquiaCodigoLocalizacion = "1", cantonCodigoLocalizacion = "1",
         provinciaCodigoLocalizacion = "1", numeroFichaFamiliar = "QA-CUENTA-${UUID.randomUUID()}",
         provincia = "P", canton = "C", parroquia = "R", sector = "S", manzana = "1", numeroFamilia = "1",

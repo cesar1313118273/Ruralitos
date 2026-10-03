@@ -44,7 +44,7 @@ class FamiliogramaFlujoUiTest {
         val context = rule.activity
         val database = RuralitosDatabase.obtenerBaseDatos(context)
         val ficha = FichaFamiliarEntity(
-            cedulaJefeHogar = "0000000001", institucionSistema = "MSP", unidadOperativa = "QA", codigoUo = "1",
+            cedulaJefeHogar = "0000000001", institucionSistema = "CLINICA DE PRUEBA", unidadOperativa = "QA", codigoUo = "1",
             areaNumero = "1", codigoLocalizacion = "1", parroquiaCodigoLocalizacion = "1", cantonCodigoLocalizacion = "1",
             provinciaCodigoLocalizacion = "1", numeroFichaFamiliar = "QA-FAMILIOGRAMA-${System.currentTimeMillis()}",
             provincia = "P", canton = "C", parroquia = "R", sector = "S", manzana = "1", numeroFamilia = "1",

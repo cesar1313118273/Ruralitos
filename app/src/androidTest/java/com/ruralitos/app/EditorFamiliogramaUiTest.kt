@@ -73,9 +73,12 @@ class EditorFamiliogramaUiTest {
         val total = raices.fetchSemanticsNodes().size
         val destino = File(rule.activity.getExternalFilesDir(null), "familiograma").apply { mkdirs() }
         for (i in 0 until total) {
-            val bitmap = raices[i].captureToImage().asAndroidBitmap()
-            val sufijo = if (total > 1) "_v$i" else ""
-            FileOutputStream(File(destino, "ui_$nombre$sufijo.png")).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            // La captura solo sirve para revisar a ojo; si el emulador no la entrega (PixelCopy), la prueba sigue.
+            runCatching {
+                val bitmap = raices[i].captureToImage().asAndroidBitmap()
+                val sufijo = if (total > 1) "_v$i" else ""
+                FileOutputStream(File(destino, "ui_$nombre$sufijo.png")).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            }
         }
     }
 

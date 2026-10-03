@@ -69,7 +69,7 @@ class FichaPdfPlantillaInstrumentedTest {
         }
         val ficha = FichaFamiliarEntity(
             cedulaJefeHogar = "1300000000",
-            institucionSistema = "MSP",
+            institucionSistema = "CLINICA DE PRUEBA",
             unidadOperativa = "CENTRO DE SALUD RURALITOS",
             codigoUo = "001234",
             areaNumero = "4",

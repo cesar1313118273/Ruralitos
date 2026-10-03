@@ -139,7 +139,7 @@ class FamiliogramaRenderAndroidTest {
         val archivoPng = File(context.getExternalFilesDir(null), "familiograma/familiograma_para_pdf.png")
         archivoPng.writeBytes(png)
         val ficha = com.ruralitos.app.data.local.entity.FichaFamiliarEntity(
-            cedulaJefeHogar = "1300000000", institucionSistema = "MSP", unidadOperativa = "CENTRO PRUEBA",
+            cedulaJefeHogar = "1300000000", institucionSistema = "CLINICA DE PRUEBA", unidadOperativa = "CENTRO PRUEBA",
             codigoUo = "001234", areaNumero = "4", codigoLocalizacion = "010203", parroquiaCodigoLocalizacion = "03",
             cantonCodigoLocalizacion = "02", provinciaCodigoLocalizacion = "01", numeroFichaFamiliar = "1",
             provincia = "MANABI", canton = "PEDERNALES", parroquia = "COJIMIES", sector = "RURAL", manzana = "1",

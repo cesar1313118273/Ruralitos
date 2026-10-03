@@ -134,7 +134,8 @@ fun InicioRuralitosScreen(
     onCambiarClave: () -> Unit,
     onEliminarCuenta: () -> Unit,
     onCerrarSesion: () -> Unit,
-    usuarioId: Long = 0L
+    usuarioId: Long = 0L,
+    onAcercaDe: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -332,6 +333,13 @@ fun InicioRuralitosScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 modifier = Modifier.padding(start = 8.dp, bottom = 10.dp)
                             )
+
+                            ItemMenu(
+                                titulo = "Acerca de y licencias",
+                                color = AzulClinico
+                            ) {
+                                navegar(onAcercaDe)
+                            }
 
                             ItemMenu(
                                 titulo = "Eliminar mi cuenta",

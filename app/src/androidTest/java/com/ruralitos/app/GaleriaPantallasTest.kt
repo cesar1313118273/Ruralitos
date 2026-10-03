@@ -76,7 +76,7 @@ class GaleriaPantallasTest {
         val context = rule.activity
         val database = RuralitosDatabase.obtenerBaseDatos(context)
         val ficha = FichaFamiliarEntity(
-            cedulaJefeHogar = "0000000009", institucionSistema = "MSP", unidadOperativa = "CENTRO DE SALUD EJEMPLO",
+            cedulaJefeHogar = "0000000009", institucionSistema = "CLINICA DE PRUEBA", unidadOperativa = "CENTRO DE SALUD EJEMPLO",
             codigoUo = "1", areaNumero = "1", codigoLocalizacion = "1", parroquiaCodigoLocalizacion = "1",
             cantonCodigoLocalizacion = "1", provinciaCodigoLocalizacion = "1",
             numeroFichaFamiliar = "QA-GALERIA-${System.currentTimeMillis()}",

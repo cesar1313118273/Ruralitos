@@ -8,7 +8,7 @@ import org.junit.Test
 class ValidadorFichaTest {
     private fun fichaValida() = FichaFamiliarEntity(
         cedulaJefeHogar = "0926687856",
-        institucionSistema = "MSP",
+        institucionSistema = "CLINICA DE PRUEBA",
         unidadOperativa = "Centro",
         codigoUo = "001",
         areaNumero = "1",

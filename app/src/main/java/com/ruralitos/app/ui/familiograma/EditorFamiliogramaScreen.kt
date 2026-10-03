@@ -147,7 +147,9 @@ internal fun EditorFamiliogramaContenido(
             guardando = false
             if (ok) {
                 estado.marcarGuardado()
-                estado.mensaje = "Familiograma guardado."
+                estado.mensaje = if (com.ruralitos.app.domain.familiograma.HojaFamiliograma.hayElementosFuera(estado.doc)) {
+                    "Guardado. Atención: hay elementos fuera de la hoja y el dibujo se redujo para que quepa en el Excel y el PDF."
+                } else "Familiograma guardado."
                 despues?.invoke()
             } else {
                 estado.mensaje = "No se pudo guardar el familiograma."
@@ -163,7 +165,7 @@ internal fun EditorFamiliogramaContenido(
 
     LaunchedEffect(estado.mensaje) {
         if (estado.mensaje != null) {
-            delay(2600)
+            delay(if (estado.mensaje?.startsWith("Guardado. Atención") == true) 5000 else 2600)
             estado.mensaje = null
         }
     }

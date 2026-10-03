@@ -24,7 +24,7 @@ class FichaExcelAndroidTest {
     fun laFichaSeExportaAExcelEnAndroid() {
         val ficha = FichaFamiliarEntity(
             cedulaJefeHogar = "1300000000",
-            institucionSistema = "MSP",
+            institucionSistema = "CLINICA DE PRUEBA",
             unidadOperativa = "CENTRO PRUEBA",
             codigoUo = "001234",
             areaNumero = "4",

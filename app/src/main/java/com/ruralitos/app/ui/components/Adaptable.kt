@@ -118,10 +118,9 @@ private class RegistroDeLista : LazyListScope {
         }
     }
 
-    @Suppress("OVERRIDE_DEPRECATION")
     @androidx.compose.foundation.ExperimentalFoundationApi
-    override fun stickyHeader(key: Any?, contentType: Any?, content: @Composable LazyItemScope.(Int) -> Unit) {
-        celdas += Celda(key, tarjeta = false) { content(0) }
+    override fun stickyHeader(key: Any?, contentType: Any?, content: @Composable LazyItemScope.() -> Unit) {
+        celdas += Celda(key, tarjeta = false, content)
     }
 }
 

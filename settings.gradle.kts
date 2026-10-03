@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "ruralitos"
 include(":app")
+include(":mapas")
  

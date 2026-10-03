@@ -156,7 +156,7 @@ class FichaExcelExporterTest {
                     .orEmpty()
             }
 
-            assertEquals("MSP", valor("1", "B2"))
+            assertEquals("la institución del Ministerio ya no se escribe en el documento", "", valor("1", "B2"))
             assertEquals("PERSONA PRUEBA", valor("1", "AF7"))
             assertEquals("", valor("1", "AK12"))
             assertEquals("", valor("1", "BD12"))

@@ -111,6 +111,7 @@ import com.ruralitos.app.ui.screens.PerfilScreen
 import com.ruralitos.app.ui.screens.EstadisticasScreen
 import com.ruralitos.app.ui.screens.InicioRuralitosScreen
 import com.ruralitos.app.ui.screens.NotasDiariasScreen
+import com.ruralitos.app.ui.screens.AcercaDeScreen
 import com.ruralitos.app.ui.screens.AgendaScreen
 import com.ruralitos.app.ui.screens.RutaSeguimientoScreen
 import com.ruralitos.app.data.agenda.PlanificadorSeguimiento
@@ -362,7 +363,7 @@ fun RuralitosApp() {
                     val id = database.fichaFamiliarDao().guardarFicha(
                         FichaFamiliarEntity(
                             cedulaJefeHogar = miembro.cedula.trim(),
-                            institucionSistema = establecimiento.institucionSistema,
+                            institucionSistema = com.ruralitos.app.domain.InstitucionVisible.limpiar(establecimiento.institucionSistema),
                             unidadOperativa = establecimiento.nombreCentroSalud,
                             codigoUo = establecimiento.codigoUo,
                             areaNumero = establecimiento.areaNumero,
@@ -970,6 +971,7 @@ fun RuralitosApp() {
                         onEliminarCuenta = {
                             pantallaActual = "eliminarCuenta"
                         },
+                        onAcercaDe = { pantallaActual = "acercaDe" },
                         onCambiarClave = {
                             pantallaActual = "miClave"
                         },
@@ -985,6 +987,8 @@ fun RuralitosApp() {
                         }
                     )
                 }
+
+                "acercaDe" -> AcercaDeScreen(onRegresar = { pantallaActual = "inicio" })
 
                 "usuarios" -> {
                     val usuario = usuarioActual
@@ -2075,6 +2079,7 @@ fun PantallaPrincipal(
     onEliminarCuenta: () -> Unit,
     onCambiarClave: () -> Unit,
     onCerrarSesion: () -> Unit,
+    onAcercaDe: () -> Unit = {},
     usuarioId: Long = 0L
 )  {
     InicioRuralitosScreen(
@@ -2098,7 +2103,8 @@ fun PantallaPrincipal(
         onEliminarCuenta = onEliminarCuenta,
         onCambiarClave = onCambiarClave,
         onCerrarSesion = onCerrarSesion,
-        usuarioId = usuarioId
+        usuarioId = usuarioId,
+        onAcercaDe = onAcercaDe
     )
 }
 

@@ -171,7 +171,7 @@ class PersistenciaFichaInstrumentedTest {
 
     private fun fichaBase(syncEstado: String, actualizadoEn: Long) = FichaFamiliarEntity(
         cedulaJefeHogar = "1710034065",
-        institucionSistema = "MSP",
+        institucionSistema = "CLINICA DE PRUEBA",
         unidadOperativa = "Centro de salud",
         codigoUo = "UO-1",
         areaNumero = "1",

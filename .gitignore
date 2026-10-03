@@ -42,6 +42,9 @@ outputs/
 Registro Comunitario.xlsx
 
 # Mapas pesados (más de 100 MB): se copian a mano, ver docs/MAPAS.md
-app/src/main/assets/ecuador_base.mbtiles
-app/src/main/assets/ecuador_valhalla_tiles.tar
-app/src/main/assets/ecuador_zoom15.pmtiles
+mapas/src/main/assets/ecuador_base.mbtiles
+mapas/src/main/assets/ecuador_valhalla_tiles.tar
+mapas/src/main/assets/ecuador_zoom15.pmtiles
+keystore.properties
+*.jks
+*.keystore
