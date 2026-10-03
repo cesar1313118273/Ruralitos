@@ -25,11 +25,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,6 +56,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,24 +66,28 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ruralitos.app.data.local.dao.ViviendaMapaFila
 import com.ruralitos.app.data.local.database.RuralitosDatabase
+import com.ruralitos.app.data.local.entity.ActividadAgendaEntity
 import com.ruralitos.app.data.location.GestorUbicacionActual
+import com.ruralitos.app.data.location.rememberUbicacionEnVivo
+import com.ruralitos.app.data.location.vibrarAviso
 import com.ruralitos.app.data.mapa.GestorMapaCampo
 import com.ruralitos.app.data.mapa.GestorMapaDetalle
 import com.ruralitos.app.data.mapa.GestorRutasOffline
 import com.ruralitos.app.data.mapa.RutaCalculada
-import com.ruralitos.app.domain.EstadoVivienda
+import com.ruralitos.app.domain.EstadoVisita
+import com.ruralitos.app.domain.FiltroEstadoVisita
 import com.ruralitos.app.domain.FiltroVivienda
+import com.ruralitos.app.domain.LlegadaVivienda
+import com.ruralitos.app.domain.MapaSeguimiento
 import com.ruralitos.app.domain.MapaViviendas
+import com.ruralitos.app.domain.PeriodoVisita
+import com.ruralitos.app.domain.PuntoSeguimiento
 import com.ruralitos.app.domain.RecorridoVisitas
 import com.ruralitos.app.ui.components.ClaseAncho
-import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.LocalClaseAncho
-import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
-import com.ruralitos.app.ui.theme.AzulClinicoOscuro
 import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.CianRuralitos
-import com.ruralitos.app.ui.theme.FondoClinico
 import kotlinx.coroutines.launch
 import org.maplibre.android.MapLibre
 import org.maplibre.android.camera.CameraPosition
@@ -95,16 +100,16 @@ import org.maplibre.android.maps.Style
 import org.maplibre.android.style.expressions.Expression
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.LineLayer
-import org.maplibre.android.style.layers.PropertyFactory.lineColor
-import org.maplibre.android.style.layers.PropertyFactory.lineWidth
-import org.maplibre.android.style.layers.PropertyFactory.lineCap
-import org.maplibre.android.style.layers.PropertyFactory.lineJoin
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory.circleColor
 import org.maplibre.android.style.layers.PropertyFactory.circleOpacity
 import org.maplibre.android.style.layers.PropertyFactory.circleRadius
 import org.maplibre.android.style.layers.PropertyFactory.circleStrokeColor
 import org.maplibre.android.style.layers.PropertyFactory.circleStrokeWidth
+import org.maplibre.android.style.layers.PropertyFactory.lineCap
+import org.maplibre.android.style.layers.PropertyFactory.lineColor
+import org.maplibre.android.style.layers.PropertyFactory.lineJoin
+import org.maplibre.android.style.layers.PropertyFactory.lineWidth
 import org.maplibre.android.style.layers.PropertyFactory.textAllowOverlap
 import org.maplibre.android.style.layers.PropertyFactory.textColor
 import org.maplibre.android.style.layers.PropertyFactory.textField
@@ -114,9 +119,13 @@ import org.maplibre.android.style.layers.PropertyFactory.textSize
 import org.maplibre.android.style.layers.SymbolLayer
 import org.maplibre.android.style.sources.GeoJsonOptions
 import org.maplibre.android.style.sources.GeoJsonSource
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 private val AzulTexto = Color(0xFF0A2A5E)
 private val GrisTexto = Color(0xFF5B7083)
+private val VerdeAgenda = Color(0xFF0889A0)
 private const val VACIO = """{"type":"FeatureCollection","features":[]}"""
 
 /** Modos de viaje que ofrece el mapa; el valor es el nombre que entiende el motor de rutas. */
@@ -129,9 +138,14 @@ private fun textoModo(modo: String) = when (modo) {
     else -> "en auto"
 }
 
+private fun fecha(t: Long, patron: String = "EEE d MMM · HH:mm"): String =
+    SimpleDateFormat(patron, Locale("es", "EC")).format(Date(t)).replaceFirstChar { it.uppercase() }
+
+private fun colorDe(e: EstadoVisita) = Color(android.graphics.Color.parseColor(e.colorHex))
+
 /** Recorrido ya ordenado: viviendas en orden de visita y la ruta que las une (si hay vías) o la línea recta. */
-private data class PlanRecorrido(
-    val paradas: List<ViviendaMapaFila>,
+data class PlanRecorrido(
+    val paradas: List<PuntoSeguimiento>,
     val ruta: RutaCalculada?,
     val kilometros: Double,
     val minutos: Int?,
@@ -139,34 +153,64 @@ private data class PlanRecorrido(
     val desdeMiUbicacion: Boolean
 )
 
-private fun colorDe(e: EstadoVivienda) = Color(android.graphics.Color.parseColor(e.colorHex))
+/**
+ * Todo lo que el mapa de seguimiento recuerda al salir a otra pantalla (abrir una ficha, ir a una ruta) y volver:
+ * filtros, viviendas elegidas, recorrido ordenado y por cuál parada va.
+ */
+class EstadoMapaSeguimiento {
+    var filtroEstado by mutableStateOf(FiltroEstadoVisita.TODAS)
+    var periodo by mutableStateOf(PeriodoVisita.TODAS)
+    var riesgo by mutableStateOf(FiltroVivienda.TODAS)
+    var barrio by mutableStateOf("")
+    var consulta by mutableStateOf("")
+    var modoViaje by mutableStateOf("pedestrian")
+    var seleccionadaId by mutableStateOf<Long?>(null)
+    var modoRecorrido by mutableStateOf(false)
+    val paradasIds = mutableStateListOf<Long>()
+    var plan by mutableStateOf<PlanRecorrido?>(null)
+    var paradaActual by mutableStateOf(0)
+    /** Viviendas del recorrido a las que ya se llegó, para avisar una sola vez por cada una. */
+    val llegadas = mutableStateListOf<Long>()
+    var avisoLlegadaId by mutableStateOf<Long?>(null)
+
+    fun reiniciarRecorrido() {
+        modoRecorrido = false
+        paradasIds.clear()
+        plan = null
+        paradaActual = 0
+        llegadas.clear()
+        avisoLlegadaId = null
+    }
+}
 
 /**
- * Mapa general de viviendas: todas las fichas con ubicación como puntos de colores, con búsqueda, filtros,
- * agrupación al alejar el mapa y una tarjeta al tocar una vivienda. En pantallas anchas, la lista y la tarjeta van
- * en un panel a la izquierda. Funciona sin internet con los mapas incluidos en la app.
+ * Mapa de seguimiento, dentro de la agenda: las viviendas con visitas como puntos de colores según el estado de la
+ * visita (por confirmar, confirmada, atrasada, realizada), con filtros por estado, fecha, barrio y riesgo; una tarjeta
+ * para abrir la ficha, ver o cambiar la visita, agendar otra y trazar la ruta; y el recorrido ordenado con avisos de
+ * llegada. Funciona sin internet con los mapas incluidos en la app.
  */
 @Composable
-fun MapaViviendasScreen(
+fun MapaSeguimientoVista(
     usuarioId: Long,
-    onRegresar: () -> Unit,
+    actividades: List<ActividadAgendaEntity>,
+    ahora: Long,
+    estado: EstadoMapaSeguimiento,
+    onAbrirVisita: (List<ActividadAgendaEntity>) -> Unit,
+    onAgendar: (Long?) -> Unit,
     onAbrirFicha: (Long) -> Unit,
     onAbrirRuta: (Long) -> Unit,
-    onUbicarFicha: (Long) -> Unit = {}
+    onUbicarFicha: (Long) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val db = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
-    val ahora = remember { System.currentTimeMillis() }
-    val viviendas by remember(db, usuarioId) { db.fichaFamiliarDao().observarViviendasMapa(usuarioId, ahora) }
+    val viviendas by remember(db, usuarioId) { db.fichaFamiliarDao().observarViviendasMapa(usuarioId, System.currentTimeMillis()) }
         .collectAsState(initial = emptyList())
     val sinUbicacion by remember(db) { db.fichaFamiliarDao().observarSinUbicacion() }
         .collectAsState(initial = emptyList())
 
-    var consulta by remember { mutableStateOf("") }
-    var filtro by remember { mutableStateOf(FiltroVivienda.TODAS) }
-    var seleccionadaId by remember { mutableStateOf<Long?>(null) }
     var verSinUbicacion by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf<Location?>(null) }
     var permiso by remember { mutableStateOf(GestorUbicacionActual.tienePermiso(context)) }
@@ -176,29 +220,39 @@ fun MapaViviendasScreen(
     var estiloListo by remember { mutableStateOf(false) }
     var ajusteInicial by remember { mutableStateOf(false) }
     var buscandoGps by remember { mutableStateOf(false) }
-    var barrio by remember { mutableStateOf("") }
-    var modoViaje by remember { mutableStateOf("pedestrian") }
-    var modoRecorrido by remember { mutableStateOf(false) }
-    val paradasIds = remember { mutableStateListOf<Long>() }
-    var plan by remember { mutableStateOf<PlanRecorrido?>(null) }
     var planificando by remember { mutableStateOf(false) }
     var avisoRecorrido by remember { mutableStateOf<String?>(null) }
     var rutaSel by remember { mutableStateOf<RutaCalculada?>(null) }
     var calculandoRutaSel by remember { mutableStateOf(false) }
 
-    val visibles = remember(viviendas, filtro, consulta, barrio) { MapaViviendas.filtrar(viviendas, filtro, consulta, barrio) }
+    // El GPS en vivo solo se enciende mientras hay un recorrido que avisar; si no, basta una lectura puntual.
+    val gpsVivo by rememberUbicacionEnVivo(activo = estado.plan != null && permiso)
+    val posicion = gpsVivo ?: ubicacion
+
     val barrios = remember(viviendas) { MapaViviendas.barrios(viviendas) }
-    val seleccionada = remember(viviendas, seleccionadaId) { viviendas.firstOrNull { it.fichaId == seleccionadaId } }
-    val conteos = remember(viviendas) { MapaViviendas.conteos(viviendas) }
+    val viviendasFiltradas = remember(viviendas, estado.riesgo, estado.consulta, estado.barrio) {
+        MapaViviendas.filtrar(viviendas, estado.riesgo, estado.consulta, estado.barrio)
+    }
+    val puntos = remember(viviendasFiltradas, actividades, estado.filtroEstado, estado.periodo, ahora) {
+        MapaSeguimiento.puntos(viviendasFiltradas, actividades, estado.filtroEstado, estado.periodo, ahora)
+    }
+    val conteos = remember(viviendasFiltradas, actividades, estado.periodo, ahora) {
+        MapaSeguimiento.conteos(viviendasFiltradas, actividades, estado.periodo, ahora)
+    }
+    val seleccionado = remember(puntos, estado.seleccionadaId) { puntos.firstOrNull { it.vivienda.fichaId == estado.seleccionadaId } }
+    val sinUbicacionConVisita = remember(sinUbicacion, actividades, estado.filtroEstado, estado.periodo, ahora) {
+        val conVisita = MapaSeguimiento.fichasConVisita(actividades, estado.filtroEstado, estado.periodo, ahora)
+        sinUbicacion.filter { it.fichaId in conVisita }
+    }
     val ancho = LocalClaseAncho.current != ClaseAncho.COMPACTA
 
     fun alternarParada(id: Long) {
         avisoRecorrido = null
-        plan = null
-        if (!paradasIds.remove(id)) {
-            if (paradasIds.size >= RecorridoVisitas.MAXIMO_PARADAS) {
+        estado.plan = null
+        if (!estado.paradasIds.remove(id)) {
+            if (estado.paradasIds.size >= RecorridoVisitas.MAXIMO_PARADAS) {
                 avisoRecorrido = "Máximo ${RecorridoVisitas.MAXIMO_PARADAS} viviendas por recorrido."
-            } else paradasIds.add(id)
+            } else estado.paradasIds.add(id)
         }
     }
 
@@ -253,6 +307,8 @@ fun MapaViviendasScreen(
             )
             actual.addSource(GeoJsonSource("vivienda-seleccionada", VACIO))
             actual.addSource(GeoJsonSource("mi-ubicacion", VACIO))
+            actual.addSource(GeoJsonSource("recorrido-linea", VACIO))
+            actual.addSource(GeoJsonSource("recorrido-paradas", VACIO))
             actual.addLayer(
                 CircleLayer("viv-cluster", "viviendas").withFilter(Expression.has("point_count")).withProperties(
                     circleColor("#0A2A5E"),
@@ -285,8 +341,6 @@ fun MapaViviendasScreen(
                     textAllowOverlap(true), textIgnorePlacement(true)
                 )
             )
-            actual.addSource(GeoJsonSource("recorrido-linea", VACIO))
-            actual.addSource(GeoJsonSource("recorrido-paradas", VACIO))
             actual.addLayerBelow(
                 LineLayer("rec-linea", "recorrido-linea").withProperties(
                     lineColor("#2B7CF0"), lineWidth(5f), lineCap(Property.LINE_CAP_ROUND), lineJoin(Property.LINE_JOIN_ROUND)
@@ -329,110 +383,127 @@ fun MapaViviendasScreen(
             val zona = RectF(p.x - 28f, p.y - 28f, p.x + 28f, p.y + 28f)
             val tocada = vista.queryRenderedFeatures(zona, "viv-punto", "viv-cluster", "viv-cluster-numero").firstOrNull()
             when {
-                tocada == null -> { seleccionadaId = null; false }
+                tocada == null -> { estado.seleccionadaId = null; false }
                 tocada.hasProperty("point_count") -> {
                     vista.animateCamera(CameraUpdateFactory.newLatLngZoom(punto, vista.cameraPosition.zoom + 2.0), 450)
                     true
                 }
-                modoRecorrido -> { alternarParada(tocada.getNumberProperty("id").toLong()); true }
-                else -> { seleccionadaId = tocada.getNumberProperty("id").toLong(); true }
+                estado.modoRecorrido -> { alternarParada(tocada.getNumberProperty("id").toLong()); true }
+                else -> { estado.seleccionadaId = tocada.getNumberProperty("id").toLong(); true }
             }
         }
     }
 
     // Datos de los puntos
-    LaunchedEffect(estiloListo, visibles) {
+    LaunchedEffect(estiloListo, puntos) {
         if (!estiloListo) return@LaunchedEffect
-        mapa?.style?.getSourceAs<GeoJsonSource>("viviendas")?.setGeoJson(MapaViviendas.geoJson(visibles))
+        mapa?.style?.getSourceAs<GeoJsonSource>("viviendas")?.setGeoJson(MapaSeguimiento.geoJson(puntos))
     }
-    // Cuadrar la cámara en lo que se ve: la primera vez y cada vez que cambia la búsqueda o el filtro
-    LaunchedEffect(estiloListo, visibles.map { it.fichaId }) {
+    // Cuadrar la cámara en lo que se ve: la primera vez y cada vez que cambia la búsqueda o un filtro
+    LaunchedEffect(estiloListo, puntos.map { it.vivienda.fichaId }) {
         val vista = mapa ?: return@LaunchedEffect
-        if (!estiloListo || visibles.isEmpty()) return@LaunchedEffect
-        if (visibles.size == 1) {
-            vista.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(visibles[0].latitud, visibles[0].longitud), 16.0), 500)
+        if (!estiloListo || puntos.isEmpty() || estado.plan != null) return@LaunchedEffect
+        if (puntos.size == 1) {
+            vista.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(puntos[0].vivienda.latitud, puntos[0].vivienda.longitud), 16.0), 500)
         } else {
-            val limites = LatLngBounds.Builder().apply { visibles.forEach { include(LatLng(it.latitud, it.longitud)) } }.build()
+            val limites = LatLngBounds.Builder().apply { puntos.forEach { include(LatLng(it.vivienda.latitud, it.vivienda.longitud)) } }.build()
             val animar = ajusteInicial
             vista.moveCamera(CameraUpdateFactory.newLatLngBounds(limites, 90))
             if (animar && vista.cameraPosition.zoom > 17.5) vista.moveCamera(CameraUpdateFactory.zoomTo(17.0))
         }
         ajusteInicial = true
     }
-    LaunchedEffect(estiloListo, seleccionada, modoRecorrido, paradasIds.toList(), plan) {
+    LaunchedEffect(estiloListo, seleccionado, estado.modoRecorrido, estado.paradasIds.toList(), estado.plan) {
         if (!estiloListo) return@LaunchedEffect
         val fuente = mapa?.style?.getSourceAs<GeoJsonSource>("vivienda-seleccionada") ?: return@LaunchedEffect
-        val puntos = when {
-            modoRecorrido && plan == null -> viviendas.filter { it.fichaId in paradasIds }
-            modoRecorrido -> emptyList()
-            else -> listOfNotNull(seleccionada)
+        val resaltadas = when {
+            estado.modoRecorrido && estado.plan == null -> viviendas.filter { it.fichaId in estado.paradasIds }
+            estado.modoRecorrido -> emptyList()
+            else -> listOfNotNull(seleccionado?.vivienda)
         }
         fuente.setGeoJson(
-            if (puntos.isEmpty()) VACIO
-            else puntos.joinToString(",", """{"type":"FeatureCollection","features":[""", "]}") {
+            if (resaltadas.isEmpty()) VACIO
+            else resaltadas.joinToString(",", """{"type":"FeatureCollection","features":[""", "]}") {
                 """{"type":"Feature","geometry":{"type":"Point","coordinates":[${it.longitud},${it.latitud}]},"properties":{}}"""
             }
         )
     }
     // Recorrido ordenado: línea y números sobre el mapa, y la cámara ajustada a todo el trayecto
-    LaunchedEffect(estiloListo, plan) {
+    LaunchedEffect(estiloListo, estado.plan) {
         val vista = mapa ?: return@LaunchedEffect
         if (!estiloListo) return@LaunchedEffect
         val estilo = vista.style ?: return@LaunchedEffect
-        val actual = plan
+        val actual = estado.plan
         val linea = estilo.getSourceAs<GeoJsonSource>("recorrido-linea") ?: return@LaunchedEffect
         val numeros = estilo.getSourceAs<GeoJsonSource>("recorrido-paradas") ?: return@LaunchedEffect
         if (actual == null) { linea.setGeoJson(VACIO); numeros.setGeoJson(VACIO); return@LaunchedEffect }
         val trazo = actual.ruta?.puntos?.map { it.longitude to it.latitude } ?: buildList {
-            ubicacion?.takeIf { actual.desdeMiUbicacion }?.let { add(it.longitude to it.latitude) }
-            actual.paradas.forEach { add(it.longitud to it.latitud) }
+            posicion?.takeIf { actual.desdeMiUbicacion }?.let { add(it.longitude to it.latitude) }
+            actual.paradas.forEach { add(it.vivienda.longitud to it.vivienda.latitud) }
         }
         linea.setGeoJson(
             """{"type":"Feature","geometry":{"type":"LineString","coordinates":[${trazo.joinToString(",") { "[${it.first},${it.second}]" }}]},"properties":{}}"""
         )
         numeros.setGeoJson(
-            actual.paradas.mapIndexed { i, v ->
-                """{"type":"Feature","geometry":{"type":"Point","coordinates":[${v.longitud},${v.latitud}]},"properties":{"n":"${i + 1}"}}"""
+            actual.paradas.mapIndexed { i, p ->
+                """{"type":"Feature","geometry":{"type":"Point","coordinates":[${p.vivienda.longitud},${p.vivienda.latitud}]},"properties":{"n":"${i + 1}"}}"""
             }.joinToString(",", """{"type":"FeatureCollection","features":[""", "]}")
         )
-        val limites = LatLngBounds.Builder().apply {
-            actual.paradas.forEach { include(LatLng(it.latitud, it.longitud)) }
-            ubicacion?.takeIf { actual.desdeMiUbicacion }?.let { include(LatLng(it.latitude, it.longitude)) }
-        }.build()
-        runCatching { vista.animateCamera(CameraUpdateFactory.newLatLngBounds(limites, 110), 600) }
+        // Un encuadre necesita al menos dos puntos; con uno solo se centra en él.
+        val extremos = actual.paradas.map { LatLng(it.vivienda.latitud, it.vivienda.longitud) } +
+            listOfNotNull(posicion?.takeIf { actual.desdeMiUbicacion }?.let { LatLng(it.latitude, it.longitude) })
+        if (extremos.size == 1) {
+            vista.animateCamera(CameraUpdateFactory.newLatLngZoom(extremos.single(), 16.0), 600)
+        } else if (extremos.size > 1) {
+            val limites = LatLngBounds.Builder().apply { extremos.forEach { include(it) } }.build()
+            runCatching { vista.animateCamera(CameraUpdateFactory.newLatLngBounds(limites, 110), 600) }
+        }
     }
     // Distancia por camino hasta la vivienda elegida, con la red vial de la app (sin internet)
-    val claveUbicacion = ubicacion?.let { (it.latitude * 2000).toInt() to (it.longitude * 2000).toInt() }
-    LaunchedEffect(seleccionadaId, modoViaje, claveUbicacion, modoRecorrido) {
+    val claveUbicacion = posicion?.let { (it.latitude * 2000).toInt() to (it.longitude * 2000).toInt() }
+    LaunchedEffect(estado.seleccionadaId, estado.modoViaje, claveUbicacion, estado.modoRecorrido) {
         rutaSel = null
-        val u = ubicacion
-        val destino = seleccionada
-        if (modoRecorrido || u == null || destino == null) { calculandoRutaSel = false; return@LaunchedEffect }
+        val u = posicion
+        val destino = seleccionado
+        if (estado.modoRecorrido || u == null || destino == null) { calculandoRutaSel = false; return@LaunchedEffect }
         calculandoRutaSel = true
         rutaSel = GestorRutasOffline.calcular(
-            context, LatLng(u.latitude, u.longitude), LatLng(destino.latitud, destino.longitud), modoViaje
+            context, LatLng(u.latitude, u.longitude), LatLng(destino.vivienda.latitud, destino.vivienda.longitud), estado.modoViaje
         ).getOrNull()
         calculandoRutaSel = false
     }
-    LaunchedEffect(estiloListo, ubicacion) {
+    LaunchedEffect(estiloListo, posicion) {
         if (!estiloListo) return@LaunchedEffect
         val fuente = mapa?.style?.getSourceAs<GeoJsonSource>("mi-ubicacion") ?: return@LaunchedEffect
-        val u = ubicacion
+        val u = posicion
         fuente.setGeoJson(
             if (u == null) VACIO
             else """{"type":"Feature","geometry":{"type":"Point","coordinates":[${u.longitude},${u.latitude}]},"properties":{}}"""
         )
+    }
+    // Aviso de llegada: al acercarse a la parada que toca, una sola vez por vivienda
+    LaunchedEffect(gpsVivo, estado.plan, estado.paradaActual) {
+        val u = gpsVivo ?: return@LaunchedEffect
+        val parada = estado.plan?.paradas?.getOrNull(estado.paradaActual) ?: return@LaunchedEffect
+        val id = parada.vivienda.fichaId
+        if (id in estado.llegadas) return@LaunchedEffect
+        val metros = MapaViviendas.distanciaMetros(u.latitude, u.longitude, parada.vivienda.latitud, parada.vivienda.longitud)
+        if (LlegadaVivienda.haLlegado(metros, if (u.hasAccuracy()) u.accuracy else null)) {
+            estado.llegadas.add(id)
+            estado.avisoLlegadaId = id
+            vibrarAviso(context)
+        }
     }
 
     DisposableEffect(lifecycle, mapView) {
         var iniciado = false
         var reanudado = false
         fun sincronizar() {
-            val estado = lifecycle.currentState
-            if (estado.isAtLeast(Lifecycle.State.STARTED) && !iniciado) { mapView.onStart(); iniciado = true }
-            if (estado.isAtLeast(Lifecycle.State.RESUMED) && !reanudado) { mapView.onResume(); reanudado = true }
-            if (!estado.isAtLeast(Lifecycle.State.RESUMED) && reanudado) { mapView.onPause(); reanudado = false }
-            if (!estado.isAtLeast(Lifecycle.State.STARTED) && iniciado) { mapView.onStop(); iniciado = false }
+            val e = lifecycle.currentState
+            if (e.isAtLeast(Lifecycle.State.STARTED) && !iniciado) { mapView.onStart(); iniciado = true }
+            if (e.isAtLeast(Lifecycle.State.RESUMED) && !reanudado) { mapView.onResume(); reanudado = true }
+            if (!e.isAtLeast(Lifecycle.State.RESUMED) && reanudado) { mapView.onPause(); reanudado = false }
+            if (!e.isAtLeast(Lifecycle.State.STARTED) && iniciado) { mapView.onStop(); iniciado = false }
         }
         val observer = LifecycleEventObserver { _, _ -> sincronizar() }
         lifecycle.addObserver(observer)
@@ -445,97 +516,125 @@ fun MapaViviendasScreen(
         }
     }
 
-    val distanciaSeleccion = remember(seleccionada, ubicacion) {
-        val u = ubicacion
-        if (seleccionada == null || u == null) null
-        else MapaViviendas.distanciaMetros(u.latitude, u.longitude, seleccionada.latitud, seleccionada.longitud)
+    val distanciaSeleccion = remember(seleccionado, posicion) {
+        val u = posicion
+        if (seleccionado == null || u == null) null
+        else MapaViviendas.distanciaMetros(u.latitude, u.longitude, seleccionado.vivienda.latitud, seleccionado.vivienda.longitud)
     }
 
     fun planificar() {
-        val elegidas = paradasIds.mapNotNull { id -> viviendas.firstOrNull { it.fichaId == id } }
-        if (elegidas.size < 2 && !(elegidas.size == 1 && ubicacion != null)) {
+        val elegidas = estado.paradasIds.mapNotNull { id -> puntos.firstOrNull { it.vivienda.fichaId == id } }
+        if (elegidas.size < 2 && !(elegidas.size == 1 && posicion != null)) {
             avisoRecorrido = "Elige al menos 2 viviendas."
             return
         }
+        val modo = estado.modoViaje
         scope.launch {
             planificando = true
             avisoRecorrido = null
-            val origen = ubicacion?.let { LatLng(it.latitude, it.longitude) }
-            val puntos = listOfNotNull(origen) + elegidas.map { LatLng(it.latitud, it.longitud) }
-            val costos = GestorRutasOffline.matriz(context, puntos, modoViaje).getOrNull()
-                ?: RecorridoVisitas.matrizEnLinea(puntos.map { it.latitude to it.longitude })
+            val origen = posicion?.let { LatLng(it.latitude, it.longitude) }
+            val coordenadas = listOfNotNull(origen) + elegidas.map { LatLng(it.vivienda.latitud, it.vivienda.longitud) }
+            val costos = GestorRutasOffline.matriz(context, coordenadas, modo).getOrNull()
+                ?: RecorridoVisitas.matrizEnLinea(coordenadas.map { it.latitude to it.longitude })
             val orden = RecorridoVisitas.ordenar(costos, if (origen != null) 0 else null)
             val desplazamiento = if (origen != null) 1 else 0
             val paradas = orden.filter { it >= desplazamiento }.map { elegidas[it - desplazamiento] }
-            val trazo = listOfNotNull(origen) + paradas.map { LatLng(it.latitud, it.longitud) }
-            val ruta = GestorRutasOffline.calcularVarios(context, trazo, modoViaje).getOrNull()
+            val trazo = listOfNotNull(origen) + paradas.map { LatLng(it.vivienda.latitud, it.vivienda.longitud) }
+            val ruta = GestorRutasOffline.calcularVarios(context, trazo, modo).getOrNull()
             val enLinea = (0 until trazo.size - 1).sumOf {
                 MapaViviendas.distanciaMetros(trazo[it].latitude, trazo[it].longitude, trazo[it + 1].latitude, trazo[it + 1].longitude)
             } / 1000.0
-            plan = PlanRecorrido(paradas, ruta, ruta?.kilometros ?: enLinea, ruta?.minutos, modoViaje, origen != null)
+            estado.llegadas.clear()
+            estado.avisoLlegadaId = null
+            estado.paradaActual = 0
+            estado.plan = PlanRecorrido(paradas, ruta, ruta?.kilometros ?: enLinea, ruta?.minutos, modo, origen != null)
             planificando = false
         }
     }
 
-    fun salirDeRecorrido() {
-        modoRecorrido = false
-        paradasIds.clear()
-        plan = null
-        avisoRecorrido = null
-    }
-
-    fun seleccionar(vivienda: ViviendaMapaFila) {
-        if (modoRecorrido) {
-            alternarParada(vivienda.fichaId)
-            mapa?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(vivienda.latitud, vivienda.longitud), 16.0), 450)
+    fun seleccionar(punto: PuntoSeguimiento) {
+        val v = punto.vivienda
+        if (estado.modoRecorrido) {
+            if (estado.plan == null) alternarParada(v.fichaId)
+            mapa?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(v.latitud, v.longitud), 16.0), 450)
             return
         }
-        seleccionadaId = vivienda.fichaId
-        mapa?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(vivienda.latitud, vivienda.longitud), 17.0), 450)
+        estado.seleccionadaId = v.fichaId
+        mapa?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(v.latitud, v.longitud), 17.0), 450)
     }
 
-    Column(Modifier.fillMaxSize().background(FondoClinico).formularioSeguro()) {
-        EncabezadoPantallaRuralitos(
-            titulo = "Mapa de viviendas",
-            subtitulo = null,
-            paso = null, totalPasos = null, etiquetaPaso = "",
-            onVolver = onRegresar,
-            descripcion = when {
-                viviendas.isEmpty() -> "Aún no hay viviendas con ubicación"
-                visibles.size == viviendas.size -> "${viviendas.size} viviendas con ubicación"
-                else -> "${visibles.size} de ${viviendas.size} viviendas"
-            }
-        )
+    fun abrirVisita(p: PuntoSeguimiento) = onAbrirVisita(MapaSeguimiento.grupoDe(p.principal, actividades))
+
+    val avisoLlegada = estado.avisoLlegadaId?.let { id -> estado.plan?.paradas?.firstOrNull { it.vivienda.fichaId == id } }
+
+    Column(modifier.fillMaxSize().background(Color(0xFFF6F9FB))) {
         val panelBusqueda: @Composable () -> Unit = {
             Column(Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 8.dp)) {
-                CampoBusquedaMapa(consulta) { consulta = it }
+                CampoBusquedaMapa(estado.consulta) { estado.consulta = it }
                 Row(
                     Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    ChipFiltro(
-                        if (modoRecorrido) "Recorrido · ${paradasIds.size}" else "Recorrido del día", modoRecorrido,
-                        Modifier.testTag("chip_recorrido")
-                    ) { if (modoRecorrido) salirDeRecorrido() else { modoRecorrido = true; seleccionadaId = null } }
+                    FiltroEstadoVisita.entries.forEach { f ->
+                        ChipFiltro(
+                            "${f.etiqueta} · ${conteos[f] ?: 0}", f == estado.filtroEstado,
+                            Modifier.testTag("chip_estado_${f.name}")
+                        ) { estado.filtroEstado = f }
+                    }
+                }
+                Row(
+                    Modifier.padding(top = 6.dp).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    PeriodoVisita.entries.forEach { p ->
+                        ChipFiltro(
+                            if (p == PeriodoVisita.HOY) "Hoy y atrasadas" else p.etiqueta, p == estado.periodo,
+                            Modifier.testTag("chip_periodo_${p.name}")
+                        ) { estado.periodo = p }
+                    }
                     if (barrios.size > 1) {
                         var abierto by remember { mutableStateOf(false) }
                         Box {
                             ChipFiltro(
-                                if (barrio.isEmpty()) "Barrio ▾" else "$barrio ▾", barrio.isNotEmpty(),
+                                if (estado.barrio.isEmpty()) "Barrio ▾" else "${estado.barrio} ▾", estado.barrio.isNotEmpty(),
                                 Modifier.testTag("chip_barrio")
                             ) { abierto = true }
                             DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
-                                DropdownMenuItem(text = { Text("Todos los barrios (${viviendas.size})") }, onClick = { barrio = ""; abierto = false })
+                                DropdownMenuItem(text = { Text("Todos los barrios (${viviendas.size})") }, onClick = { estado.barrio = ""; abierto = false })
                                 barrios.forEach { (nombre, cantidad) ->
-                                    DropdownMenuItem(text = { Text("$nombre ($cantidad)") }, onClick = { barrio = nombre; abierto = false })
+                                    DropdownMenuItem(text = { Text("$nombre ($cantidad)") }, onClick = { estado.barrio = nombre; abierto = false })
                                 }
                             }
                         }
                     }
-                    FiltroVivienda.entries.forEach { f ->
-                        val cantidad = if (f == FiltroVivienda.TODAS) viviendas.size
-                        else viviendas.count { MapaViviendas.cumpleFiltro(it, f) }
-                        ChipFiltro("${f.etiqueta} · $cantidad", f == filtro) { filtro = f }
+                    run {
+                        var abierto by remember { mutableStateOf(false) }
+                        val grupos = listOf(
+                            FiltroVivienda.TODAS, FiltroVivienda.RIESGO_ALTO, FiltroVivienda.GESTANTES,
+                            FiltroVivienda.MENORES_5, FiltroVivienda.ADULTOS_MAYORES
+                        )
+                        Box {
+                            ChipFiltro(
+                                if (estado.riesgo == FiltroVivienda.TODAS) "Riesgo ▾" else "${estado.riesgo.etiqueta} ▾",
+                                estado.riesgo != FiltroVivienda.TODAS, Modifier.testTag("chip_riesgo")
+                            ) { abierto = true }
+                            DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
+                                grupos.forEach { g ->
+                                    val n = if (g == FiltroVivienda.TODAS) viviendas.size else viviendas.count { MapaViviendas.cumpleFiltro(it, g) }
+                                    DropdownMenuItem(
+                                        text = { Text(if (g == FiltroVivienda.TODAS) "Todos los grupos ($n)" else "${g.etiqueta} ($n)") },
+                                        onClick = { estado.riesgo = g; abierto = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    ChipFiltro(
+                        if (estado.modoRecorrido) "Recorrido · ${estado.paradasIds.size}" else "Recorrido del día", estado.modoRecorrido,
+                        Modifier.testTag("chip_recorrido")
+                    ) {
+                        if (estado.modoRecorrido) estado.reiniciarRecorrido()
+                        else { estado.modoRecorrido = true; estado.seleccionadaId = null }
                     }
                 }
             }
@@ -543,37 +642,43 @@ fun MapaViviendasScreen(
         val mapaConControles: @Composable (Modifier) -> Unit = { modificador ->
             Box(modificador) {
                 AndroidView(factory = { mapView }, modifier = Modifier.fillMaxSize().testTag("mapa_viviendas"))
-                if (modoRecorrido) {
+                if (estado.modoRecorrido && estado.plan == null) {
                     BarraRecorrido(
-                        elegidas = paradasIds.size, modo = modoViaje, aviso = avisoRecorrido,
-                        planificando = planificando, hayPlan = plan != null, hayGps = ubicacion != null,
-                        onModo = { modoViaje = it; plan = null },
-                        onAtrasadas = {
-                            plan = null; avisoRecorrido = null
-                            val atrasadas = visibles.filter { it.visitasAtrasadas > 0 }.map { it.fichaId }
-                            paradasIds.clear()
-                            paradasIds.addAll(atrasadas.take(RecorridoVisitas.MAXIMO_PARADAS))
-                            if (atrasadas.isEmpty()) avisoRecorrido = "No hay visitas atrasadas en lo que se ve."
-                            else if (atrasadas.size > RecorridoVisitas.MAXIMO_PARADAS)
-                                avisoRecorrido = "Se eligieron las primeras ${RecorridoVisitas.MAXIMO_PARADAS} de ${atrasadas.size}."
+                        elegidas = estado.paradasIds.size, modo = estado.modoViaje, aviso = avisoRecorrido,
+                        planificando = planificando, hayPlan = estado.plan != null, hayGps = posicion != null,
+                        onModo = { estado.modoViaje = it; estado.plan = null },
+                        onElegirVisibles = {
+                            estado.plan = null; avisoRecorrido = null
+                            val porHacer = puntos.filter { it.estado != EstadoVisita.REALIZADA }.map { it.vivienda.fichaId }
+                            estado.paradasIds.clear()
+                            estado.paradasIds.addAll(porHacer.take(RecorridoVisitas.MAXIMO_PARADAS))
+                            if (porHacer.isEmpty()) avisoRecorrido = "No hay visitas por hacer en lo que se ve."
+                            else if (porHacer.size > RecorridoVisitas.MAXIMO_PARADAS)
+                                avisoRecorrido = "Se eligieron las primeras ${RecorridoVisitas.MAXIMO_PARADAS} de ${porHacer.size}."
                         },
-                        onLimpiar = { paradasIds.clear(); plan = null; avisoRecorrido = null },
+                        onLimpiar = { estado.paradasIds.clear(); estado.plan = null; avisoRecorrido = null },
                         onOrdenar = { planificar() },
-                        onSalir = { salirDeRecorrido() },
+                        onSalir = { estado.reiniciarRecorrido(); avisoRecorrido = null },
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp, start = 8.dp, end = 56.dp)
                     )
-                } else if (sinUbicacion.isNotEmpty()) {
-                    Surface(
-                        onClick = { verSinUbicacion = true },
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp),
-                        shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF8EF),
-                        border = BorderStroke(1.dp, Color(0xFFFFD7A3)), shadowElevation = 1.dp
+                } else if (!estado.modoRecorrido) {
+                    Row(
+                        Modifier.align(Alignment.TopCenter).padding(top = 8.dp, start = 8.dp, end = 56.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            "${sinUbicacion.size} sin ubicación · ver",
-                            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                            color = Color(0xFF8A4B00), fontSize = 12.sp, fontWeight = FontWeight.Medium
-                        )
+                        if (sinUbicacionConVisita.isNotEmpty()) {
+                            Surface(
+                                onClick = { verSinUbicacion = true },
+                                shape = RoundedCornerShape(16.dp), color = Color(0xFFFFF8EF),
+                                border = BorderStroke(1.dp, Color(0xFFFFD7A3)), shadowElevation = 1.dp
+                            ) {
+                                Text(
+                                    "${sinUbicacionConVisita.size} sin ubicación · ver",
+                                    Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                    color = Color(0xFF8A4B00), fontSize = 12.sp, fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
                 Column(Modifier.align(Alignment.CenterEnd).padding(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -581,7 +686,14 @@ fun MapaViviendasScreen(
                     BotonMapa("+", "Acercar") { mapa?.animateCamera(CameraUpdateFactory.zoomIn()) }
                     BotonMapa("−", "Alejar") { mapa?.animateCamera(CameraUpdateFactory.zoomOut()) }
                 }
-                if (!ancho) Leyenda(conteos, Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = if (seleccionada == null) 30.dp else 188.dp))
+                if (estado.plan == null) Surface(
+                    onClick = { onAgendar(null) },
+                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = if (!ancho && (seleccionado != null || estado.plan != null)) 220.dp else 30.dp).testTag("agendar_mapa"),
+                    shape = RoundedCornerShape(22.dp), color = VerdeAgenda, shadowElevation = 3.dp
+                ) {
+                    Text("＋ Agendar", Modifier.padding(horizontal = 16.dp, vertical = 11.dp), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                }
+                if (!ancho && estado.plan == null) Leyenda(conteos, Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = if (seleccionado == null && estado.plan == null) 30.dp else 220.dp))
                 if (viviendas.isEmpty()) {
                     Surface(
                         modifier = Modifier.align(Alignment.Center).padding(24.dp),
@@ -592,26 +704,51 @@ fun MapaViviendasScreen(
                             Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp
                         )
                     }
+                } else if (puntos.isEmpty()) {
+                    Surface(
+                        modifier = Modifier.align(Alignment.Center).padding(24.dp).testTag("sin_visitas_mapa"),
+                        shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp
+                    ) {
+                        Text(
+                            "No hay visitas con estos filtros. Prueba con «Todas» y «Todas las fechas», o agenda una visita.",
+                            Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp
+                        )
+                    }
                 }
                 Text(
                     "© OpenStreetMap contributors · Protomaps",
                     Modifier.align(Alignment.BottomStart).background(Color(0xEFFFFFFF)).padding(horizontal = 6.dp, vertical = 3.dp),
                     color = AzulClinico, fontSize = 10.sp
                 )
-                if (!ancho && modoRecorrido && plan != null) {
+                if (!ancho && estado.modoRecorrido && estado.plan != null) {
                     TarjetaRecorrido(
-                        plan!!, onSeleccionar = { seleccionar(it) },
-                        onIrPrimera = { onAbrirRuta(plan!!.paradas.first().fichaId) },
-                        onCerrar = { plan = null },
+                        estado.plan!!, estado.paradaActual, onSeleccionar = { seleccionar(it) },
+                        onIrParada = { onAbrirRuta(estado.plan!!.paradas[estado.paradaActual.coerceIn(0, estado.plan!!.paradas.lastIndex)].vivienda.fichaId) },
+                        onCerrar = { estado.plan = null },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
                     )
-                } else if (!ancho && !modoRecorrido && seleccionada != null) {
-                    TarjetaVivienda(
-                        seleccionada, distanciaSeleccion, rutaSel, calculandoRutaSel, modoViaje, { modoViaje = it },
-                        onCerrar = { seleccionadaId = null },
-                        onAbrirFicha = { onAbrirFicha(seleccionada.fichaId) },
-                        onAbrirRuta = { onAbrirRuta(seleccionada.fichaId) },
+                } else if (!ancho && !estado.modoRecorrido && seleccionado != null) {
+                    TarjetaVisita(
+                        seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
+                        onCerrar = { estado.seleccionadaId = null },
+                        onAbrirFicha = { onAbrirFicha(seleccionado.vivienda.fichaId) },
+                        onAbrirRuta = { onAbrirRuta(seleccionado.vivienda.fichaId) },
+                        onVerVisita = { abrirVisita(seleccionado) },
+                        onAgendar = { onAgendar(seleccionado.vivienda.fichaId) },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
+                    )
+                }
+                if (avisoLlegada != null) {
+                    AvisoLlegada(
+                        avisoLlegada, esUltima = estado.paradaActual >= (estado.plan?.paradas?.lastIndex ?: 0),
+                        onAbrirFicha = { onAbrirFicha(avisoLlegada.vivienda.fichaId) },
+                        onRegistrar = { abrirVisita(avisoLlegada) },
+                        onSiguiente = {
+                            estado.avisoLlegadaId = null
+                            estado.paradaActual = (estado.paradaActual + 1).coerceAtMost(estado.plan?.paradas?.lastIndex ?: 0)
+                        },
+                        onCerrar = { estado.avisoLlegadaId = null },
+                        modifier = Modifier.align(Alignment.TopCenter).padding(8.dp)
                     )
                 }
             }
@@ -620,41 +757,43 @@ fun MapaViviendasScreen(
         if (ancho) {
             val estadoLista = rememberLazyListState()
             // La lista conserva su posición al aparecer una tarjeta arriba: se sube para que se vea.
-            LaunchedEffect(plan, seleccionadaId) {
-                if (plan != null || seleccionadaId != null) estadoLista.animateScrollToItem(0)
+            LaunchedEffect(estado.plan, estado.seleccionadaId) {
+                if (estado.plan != null || estado.seleccionadaId != null) estadoLista.animateScrollToItem(0)
             }
             Row(Modifier.weight(1f).fillMaxWidth()) {
                 // Todo el panel se desplaza junto: en una pantalla ancha pero baja (teléfono horizontal) la tarjeta
                 // no debe empujar fuera de la pantalla sus botones.
                 LazyColumn(Modifier.width(360.dp).fillMaxHeight().background(Color.White), state = estadoLista) {
-                    if (modoRecorrido && plan != null) {
+                    if (estado.modoRecorrido && estado.plan != null) {
                         item(key = "recorrido") {
                             TarjetaRecorrido(
-                                plan!!, onSeleccionar = { seleccionar(it) },
-                                onIrPrimera = { onAbrirRuta(plan!!.paradas.first().fichaId) },
-                                onCerrar = { plan = null },
+                                estado.plan!!, estado.paradaActual, onSeleccionar = { seleccionar(it) },
+                                onIrParada = { onAbrirRuta(estado.plan!!.paradas[estado.paradaActual.coerceIn(0, estado.plan!!.paradas.lastIndex)].vivienda.fichaId) },
+                                onCerrar = { estado.plan = null },
                                 modifier = Modifier.padding(8.dp), conDesplazamiento = false
                             )
                         }
-                    } else if (!modoRecorrido && seleccionada != null) {
+                    } else if (!estado.modoRecorrido && seleccionado != null) {
                         item(key = "tarjeta") {
-                            TarjetaVivienda(
-                                seleccionada, distanciaSeleccion, rutaSel, calculandoRutaSel, modoViaje, { modoViaje = it },
-                                onCerrar = { seleccionadaId = null },
-                                onAbrirFicha = { onAbrirFicha(seleccionada.fichaId) },
-                                onAbrirRuta = { onAbrirRuta(seleccionada.fichaId) },
+                            TarjetaVisita(
+                                seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
+                                onCerrar = { estado.seleccionadaId = null },
+                                onAbrirFicha = { onAbrirFicha(seleccionado.vivienda.fichaId) },
+                                onAbrirRuta = { onAbrirRuta(seleccionado.vivienda.fichaId) },
+                                onVerVisita = { abrirVisita(seleccionado) },
+                                onAgendar = { onAgendar(seleccionado.vivienda.fichaId) },
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
                     }
                     item(key = "busqueda") { panelBusqueda() }
                     item(key = "leyenda") { Leyenda(conteos, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), horizontal = true) }
-                    items(visibles, key = { it.fichaId }) { v ->
-                        val numero = plan?.paradas?.indexOfFirst { it.fichaId == v.fichaId }?.takeIf { it >= 0 }?.plus(1)
-                        FilaVivienda(
-                            v, if (modoRecorrido) v.fichaId in paradasIds else v.fichaId == seleccionadaId,
-                            marca = if (modoRecorrido) (numero?.toString() ?: if (v.fichaId in paradasIds) "✓" else null) else null
-                        ) { seleccionar(v) }
+                    items(puntos, key = { it.vivienda.fichaId }) { p ->
+                        val numero = estado.plan?.paradas?.indexOfFirst { it.vivienda.fichaId == p.vivienda.fichaId }?.takeIf { it >= 0 }?.plus(1)
+                        FilaPunto(
+                            p, if (estado.modoRecorrido) p.vivienda.fichaId in estado.paradasIds else p.vivienda.fichaId == estado.seleccionadaId,
+                            marca = if (estado.modoRecorrido) (numero?.toString() ?: if (p.vivienda.fichaId in estado.paradasIds) "✓" else null) else null
+                        ) { seleccionar(p) }
                     }
                 }
                 mapaConControles(Modifier.weight(1f).fillMaxHeight())
@@ -676,7 +815,7 @@ fun MapaViviendasScreen(
                         style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp)
                     )
                     LazyColumn(Modifier.height(280.dp)) {
-                        items(sinUbicacion, key = { it.fichaId }) { f ->
+                        items(sinUbicacionConVisita, key = { it.fichaId }) { f ->
                             Row(
                                 Modifier.fillMaxWidth().padding(vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
@@ -755,14 +894,20 @@ private fun BotonMapa(texto: String, descripcion: String, modifier: Modifier = M
 }
 
 @Composable
-private fun Leyenda(conteos: Map<EstadoVivienda, Int>, modifier: Modifier = Modifier, horizontal: Boolean = false) {
+private fun Leyenda(conteos: Map<FiltroEstadoVisita, Int>, modifier: Modifier = Modifier, horizontal: Boolean = false) {
+    val cantidades = mapOf(
+        EstadoVisita.ATRASADA to (conteos[FiltroEstadoVisita.ATRASADAS] ?: 0),
+        EstadoVisita.POR_CONFIRMAR to (conteos[FiltroEstadoVisita.POR_CONFIRMAR] ?: 0),
+        EstadoVisita.CONFIRMADA to (conteos[FiltroEstadoVisita.CONFIRMADAS] ?: 0),
+        EstadoVisita.REALIZADA to (conteos[FiltroEstadoVisita.REALIZADAS] ?: 0)
+    )
     val contenido: @Composable () -> Unit = {
-        EstadoVivienda.entries.forEach { e ->
+        EstadoVisita.entries.forEach { e ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = if (horizontal) 10.dp else 0.dp)) {
                 Box(Modifier.size(15.dp).clip(CircleShape).background(colorDe(e)), contentAlignment = Alignment.Center) {
                     Text(e.letra, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(" ${e.etiqueta} · ${conteos[e] ?: 0}", color = AzulTexto, fontSize = 11.sp)
+                Text(" ${e.etiqueta} · ${cantidades[e] ?: 0}", color = AzulTexto, fontSize = 11.sp)
             }
         }
     }
@@ -776,20 +921,20 @@ private fun Leyenda(conteos: Map<EstadoVivienda, Int>, modifier: Modifier = Modi
 }
 
 @Composable
-private fun FilaVivienda(v: ViviendaMapaFila, activa: Boolean, marca: String? = null, onClick: () -> Unit) {
-    val estado = MapaViviendas.estado(v)
+private fun FilaPunto(p: PuntoSeguimiento, activa: Boolean, marca: String? = null, onClick: () -> Unit) {
+    val v = p.vivienda
     Row(
         Modifier.fillMaxWidth().background(if (activa) Color(0xFFE3F4F7) else Color.White)
             .clickable(onClick = onClick).padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(18.dp).clip(CircleShape).background(colorDe(estado)), contentAlignment = Alignment.Center) {
-            Text(estado.letra, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
+        Box(Modifier.size(18.dp).clip(CircleShape).background(colorDe(p.estado)), contentAlignment = Alignment.Center) {
+            Text(p.estado.letra, color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold)
         }
         Column(Modifier.padding(start = 10.dp).weight(1f)) {
             Text(v.jefe.ifBlank { "Ficha sin nombre" }, color = AzulTexto, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                listOf(v.barrio, if (v.casa.isNotBlank()) "casa ${v.casa}" else "").filter { it.isNotBlank() }.joinToString(" · "),
+                listOf(v.barrio, fecha(p.principal.fechaHora)).filter { it.isNotBlank() }.joinToString(" · "),
                 color = GrisTexto, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
@@ -797,14 +942,14 @@ private fun FilaVivienda(v: ViviendaMapaFila, activa: Boolean, marca: String? = 
             Box(Modifier.size(24.dp).clip(CircleShape).background(AzulTexto), contentAlignment = Alignment.Center) {
                 Text(marca, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
             }
-        } else Text(estado.etiqueta, color = colorDe(estado), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        } else Text(p.estado.etiqueta, color = colorDe(p.estado), fontSize = 11.sp, fontWeight = FontWeight.Medium)
     }
     Box(Modifier.fillMaxWidth().height(1.dp).background(BordeClinico))
 }
 
 @Composable
-private fun TarjetaVivienda(
-    v: ViviendaMapaFila,
+private fun TarjetaVisita(
+    p: PuntoSeguimiento,
     distanciaMetros: Double?,
     ruta: RutaCalculada?,
     calculandoRuta: Boolean,
@@ -813,9 +958,11 @@ private fun TarjetaVivienda(
     onCerrar: () -> Unit,
     onAbrirFicha: () -> Unit,
     onAbrirRuta: () -> Unit,
+    onVerVisita: () -> Unit,
+    onAgendar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val estado = MapaViviendas.estado(v)
+    val v = p.vivienda
     Surface(
         modifier = modifier.fillMaxWidth().testTag("tarjeta_vivienda"),
         shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp,
@@ -831,12 +978,23 @@ private fun TarjetaVivienda(
                 }
                 Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.clickable(onClick = onCerrar).padding(4.dp))
             }
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Etiqueta(estado.etiqueta, colorDe(estado))
-                if (v.visitasAtrasadas > 0) Etiqueta("Visita atrasada", Color(0xFFF7941D))
+            // Las visitas de la vivienda con los filtros actuales
+            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                p.visitas.take(3).forEach { a ->
+                    val e = MapaSeguimiento.estado(a, System.currentTimeMillis()) ?: p.estado
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Etiqueta(e.etiqueta, colorDe(e))
+                        Text(
+                            "  ${fecha(a.fechaHora)} · ${a.tipo}", color = AzulTexto, fontSize = 12.sp,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                if (p.visitas.size > 3) Text("y ${p.visitas.size - 3} más", color = GrisTexto, fontSize = 11.sp)
             }
-            if (v.gestantes + v.menoresCinco + v.adultosMayores > 0) {
+            if (v.gestantes + v.menoresCinco + v.adultosMayores > 0 || v.nivelRiesgo.equals("ALTO", true)) {
                 Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (v.nivelRiesgo.equals("ALTO", true)) Etiqueta("Riesgo alto", Color(0xFFD32F2F))
                     if (v.gestantes > 0) Etiqueta("Gestante${if (v.gestantes > 1) "s ${v.gestantes}" else ""}", Color(0xFF7B1FA2))
                     if (v.menoresCinco > 0) Etiqueta("Menor de 5 años", Color(0xFF1565C0))
                     if (v.adultosMayores > 0) Etiqueta("Mayor de 65", Color(0xFF5D4037))
@@ -856,20 +1014,28 @@ private fun TarjetaVivienda(
                 )
             }
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(
-                    onClick = onAbrirFicha, modifier = Modifier.weight(1f).testTag("abrir_ficha_mapa"),
-                    shape = RoundedCornerShape(12.dp), color = CianRuralitos
-                ) {
-                    Text("Abrir ficha", Modifier.padding(vertical = 10.dp).fillMaxWidth(), color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                }
-                Surface(
-                    onClick = onAbrirRuta, modifier = Modifier.weight(1f).testTag("como_llegar_mapa"),
-                    shape = RoundedCornerShape(12.dp), color = Color.White, border = BorderStroke(1.dp, CianRuralitos)
-                ) {
-                    Text("Cómo llegar", Modifier.padding(vertical = 10.dp).fillMaxWidth(), color = CianRuralitos, fontWeight = FontWeight.Medium, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-                }
+                BotonTarjeta("Abrir ficha", relleno = true, Modifier.weight(1f).testTag("abrir_ficha_mapa"), onAbrirFicha)
+                BotonTarjeta("Cómo llegar", relleno = false, Modifier.weight(1f).testTag("como_llegar_mapa"), onAbrirRuta)
+            }
+            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BotonTarjeta("Ver visita", relleno = false, Modifier.weight(1f).testTag("ver_visita_mapa"), onVerVisita)
+                BotonTarjeta("Agendar visita", relleno = false, Modifier.weight(1f).testTag("agendar_visita_mapa"), onAgendar)
             }
         }
+    }
+}
+
+@Composable
+private fun BotonTarjeta(texto: String, relleno: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick, modifier = modifier, shape = RoundedCornerShape(12.dp),
+        color = if (relleno) CianRuralitos else Color.White,
+        border = if (relleno) null else BorderStroke(1.dp, CianRuralitos)
+    ) {
+        Text(
+            texto, Modifier.padding(vertical = 10.dp).fillMaxWidth(),
+            color = if (relleno) Color.White else CianRuralitos, fontWeight = FontWeight.Medium, fontSize = 14.sp, textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -889,7 +1055,7 @@ private fun BarraRecorrido(
     hayPlan: Boolean,
     hayGps: Boolean,
     onModo: (String) -> Unit,
-    onAtrasadas: () -> Unit,
+    onElegirVisibles: () -> Unit,
     onLimpiar: () -> Unit,
     onOrdenar: () -> Unit,
     onSalir: () -> Unit,
@@ -908,8 +1074,8 @@ private fun BarraRecorrido(
                 Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.testTag("salir_recorrido").clickable(onClick = onSalir).padding(4.dp))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                ChipFiltro("Elegir visibles", false, Modifier.testTag("recorrido_visibles")) { onElegirVisibles() }
                 MODOS_VIAJE.forEach { (valor, etiqueta) -> ChipFiltro(etiqueta, valor == modo) { onModo(valor) } }
-                ChipFiltro("Atrasadas", false, Modifier.testTag("recorrido_atrasadas")) { onAtrasadas() }
                 ChipFiltro("Limpiar", false) { onLimpiar() }
             }
             val puede = !planificando && (elegidas >= 2 || (elegidas == 1 && hayGps))
@@ -924,7 +1090,7 @@ private fun BarraRecorrido(
                         else -> "Ordenar recorrido"
                     },
                     Modifier.padding(vertical = 9.dp).fillMaxWidth(), color = Color.White, fontWeight = FontWeight.Medium, fontSize = 14.sp,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    textAlign = TextAlign.Center
                 )
             }
             Text(
@@ -938,12 +1104,14 @@ private fun BarraRecorrido(
 @Composable
 private fun TarjetaRecorrido(
     plan: PlanRecorrido,
-    onSeleccionar: (ViviendaMapaFila) -> Unit,
-    onIrPrimera: () -> Unit,
+    paradaActual: Int,
+    onSeleccionar: (PuntoSeguimiento) -> Unit,
+    onIrParada: () -> Unit,
     onCerrar: () -> Unit,
     modifier: Modifier = Modifier,
     conDesplazamiento: Boolean = true
 ) {
+    val actual = paradaActual.coerceIn(0, plan.paradas.lastIndex)
     Surface(
         modifier = modifier.fillMaxWidth().testTag("tarjeta_recorrido"),
         shape = RoundedCornerShape(16.dp), color = Color.White, shadowElevation = 4.dp, border = BorderStroke(1.dp, BordeClinico)
@@ -958,22 +1126,29 @@ private fun TarjetaRecorrido(
                         color = GrisTexto, fontSize = 12.sp, modifier = Modifier.testTag("resumen_recorrido")
                     )
                 }
-                Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.clickable(onClick = onCerrar).padding(4.dp))
+                Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.testTag("cerrar_recorrido").clickable(onClick = onCerrar).padding(4.dp))
             }
             val columna: @Composable () -> Unit = {
-                plan.paradas.forEachIndexed { i, v ->
+                plan.paradas.forEachIndexed { i, p ->
                     val tramo = plan.ruta?.tramos?.getOrNull(if (plan.desdeMiUbicacion) i else i - 1)
+                    val hecha = i < actual
                     Row(
-                        Modifier.fillMaxWidth().clickable { onSeleccionar(v) }.padding(vertical = 6.dp),
+                        Modifier.fillMaxWidth().clickable { onSeleccionar(p) }.padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Box(Modifier.size(24.dp).clip(CircleShape).background(AzulTexto), contentAlignment = Alignment.Center) {
-                            Text("${i + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Box(
+                            Modifier.size(24.dp).clip(CircleShape).background(if (hecha) Color(0xFF9AB0BD) else AzulTexto),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(if (hecha) "✓" else "${i + 1}", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                         }
                         Column(Modifier.padding(start = 10.dp).weight(1f)) {
-                            Text(v.jefe.ifBlank { "Ficha sin nombre" }, color = AzulTexto, fontWeight = FontWeight.Medium, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(
-                                listOf(v.barrio, if (v.casa.isNotBlank()) "casa ${v.casa}" else "").filter { it.isNotBlank() }.joinToString(" · "),
+                                p.vivienda.jefe.ifBlank { "Ficha sin nombre" }, color = AzulTexto,
+                                fontWeight = if (i == actual) FontWeight.Bold else FontWeight.Medium, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                listOf(p.vivienda.barrio, p.estado.etiqueta, fecha(p.principal.fechaHora, "d MMM HH:mm")).filter { it.isNotBlank() }.joinToString(" · "),
                                 color = GrisTexto, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
@@ -987,14 +1162,51 @@ private fun TarjetaRecorrido(
                 Column(Modifier.padding(top = 6.dp)) { columna() }
             }
             Surface(
-                onClick = onIrPrimera, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("ir_primera_parada"),
+                onClick = onIrParada, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("ir_primera_parada"),
                 shape = RoundedCornerShape(12.dp), color = CianRuralitos
             ) {
                 Text(
-                    "Ir a la primera vivienda", Modifier.padding(vertical = 10.dp).fillMaxWidth(), color = Color.White,
-                    fontWeight = FontWeight.Medium, fontSize = 14.sp, textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    if (actual == 0) "Ir a la primera vivienda" else "Ir a la parada ${actual + 1}",
+                    Modifier.padding(vertical = 10.dp).fillMaxWidth(), color = Color.White,
+                    fontWeight = FontWeight.Medium, fontSize = 14.sp, textAlign = TextAlign.Center
                 )
             }
+        }
+    }
+}
+
+/** Aparece al acercarse a la vivienda que toca visitar; vibra una sola vez. */
+@Composable
+private fun AvisoLlegada(
+    p: PuntoSeguimiento,
+    esUltima: Boolean,
+    onAbrirFicha: () -> Unit,
+    onRegistrar: () -> Unit,
+    onSiguiente: () -> Unit,
+    onCerrar: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth().testTag("aviso_llegada"),
+        shape = RoundedCornerShape(16.dp), color = Color(0xFFE6F6EC), shadowElevation = 6.dp,
+        border = BorderStroke(1.5.dp, Color(0xFF2E9E5B))
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Llegaste a la vivienda", color = Color(0xFF1B6B3A), fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(
+                        listOf(p.vivienda.jefe.ifBlank { "Ficha sin nombre" }, p.vivienda.barrio).filter { it.isNotBlank() }.joinToString(" · "),
+                        color = AzulTexto, fontSize = 13.sp
+                    )
+                }
+                Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.clickable(onClick = onCerrar).padding(4.dp))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                BotonTarjeta("Abrir ficha", relleno = false, Modifier.weight(1f), onAbrirFicha)
+                BotonTarjeta("Registrar visita", relleno = true, Modifier.weight(1f).testTag("registrar_llegada"), onRegistrar)
+            }
+            if (!esUltima) BotonTarjeta("Siguiente parada", relleno = false, Modifier.fillMaxWidth().testTag("siguiente_parada"), onSiguiente)
         }
     }
 }

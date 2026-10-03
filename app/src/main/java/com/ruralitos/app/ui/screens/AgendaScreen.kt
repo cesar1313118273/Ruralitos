@@ -112,7 +112,11 @@ fun AgendaScreen(
     organizacionId: String,
     onRegresar: () -> Unit,
     onAbrirFicha: (Long) -> Unit,
-    onAbrirRuta: (Long) -> Unit
+    onAbrirRuta: (Long) -> Unit,
+    estadoMapa: EstadoMapaSeguimiento = remember { EstadoMapaSeguimiento() },
+    pestanaInicial: Int = 0,
+    onPestanaCambiada: (Int) -> Unit = {},
+    onUbicarFicha: (Long) -> Unit = {}
 ) {
     val context = LocalContext.current
     val database = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
@@ -128,7 +132,8 @@ fun AgendaScreen(
     var visitaPorConfirmar by remember { mutableStateOf<ActividadAgendaEntity?>(null) }
     var hoy by remember { mutableStateOf(inicioDia(System.currentTimeMillis())) }
     var ahora by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    var pestana by remember { mutableIntStateOf(0) }
+    var pestana by remember { mutableIntStateOf(pestanaInicial.coerceIn(0, 2)) }
+    var fichaParaAgendar by remember { mutableStateOf<Long?>(null) }
     var grupoDetalle by remember { mutableStateOf<List<ActividadAgendaEntity>?>(null) }
     var paginaSeguimiento by remember { mutableIntStateOf(0) }
     var paginaDia by remember { mutableIntStateOf(0) }
@@ -225,11 +230,12 @@ fun AgendaScreen(
             usuarioId = usuarioId,
             organizacionId = organizacionId,
             personas = personas,
+            personaInicial = fichaParaAgendar?.let { id -> personas.firstOrNull { it.fichaId == id } },
             original = editando,
             fechaInicial = fechaSeleccionada,
             error = error,
             guardando = guardando,
-            onVolver = { formulario = false; error = "" },
+            onVolver = { formulario = false; error = ""; fichaParaAgendar = null },
             onGuardar = { item ->
                 if (guardando) return@FormularioAgenda
                 if (item.recordar && item.fechaHora <= System.currentTimeMillis()) {
@@ -254,6 +260,7 @@ fun AgendaScreen(
                         fechaSeleccionada = inicioDia(guardada.fechaHora)
                         formulario = false
                         error = ""
+                        fichaParaAgendar = null
                     }.onFailure { error = "No se pudo guardar la actividad. Inténtalo nuevamente." }
                     guardando = false
                 }
@@ -406,22 +413,42 @@ fun AgendaScreen(
 
     Column(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
       EncabezadoPantallaRuralitos(
-          titulo = if (pestana == 0) "Seguimiento" else "Agenda",
+          titulo = when (pestana) { 0 -> "Seguimiento"; 1 -> "Agenda"; else -> "Mapa de visitas" },
           subtitulo = null,
           paso = null,
           totalPasos = null,
           etiquetaPaso = "",
           onVolver = onRegresar,
-          descripcion = if (pestana == 0) "Organiza visitas, notas y controles pendientes"
-              else "Organiza y consulta tus actividades de salud"
+          descripcion = when (pestana) {
+              0 -> "Organiza visitas, notas y controles pendientes"
+              1 -> "Organiza y consulta tus actividades de salud"
+              else -> "Ubica tus visitas, ordena el recorrido del día y agenda desde el mapa"
+          }
       )
+      if (pestana == 2) {
+        Box(Modifier.padding(top = 12.dp, bottom = 8.dp)) {
+            PestanasAgenda(pestana, onSeleccionar = { pestana = it; onPestanaCambiada(it) })
+        }
+        MapaSeguimientoVista(
+            usuarioId = usuarioId,
+            actividades = actividades,
+            ahora = ahora,
+            estado = estadoMapa,
+            onAbrirVisita = { grupoDetalle = it },
+            onAgendar = { id -> fichaParaAgendar = id; editando = null; error = ""; formulario = true },
+            onAbrirFicha = onAbrirFicha,
+            onAbrirRuta = onAbrirRuta,
+            onUbicarFicha = onUbicarFicha,
+            modifier = Modifier.weight(1f)
+        )
+      } else
       Box(Modifier.weight(1f).fillMaxWidth()) {
         ListaDeColumnasAdaptable(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp),
             espacio = 15.dp
         ) {
-            item { PestanasAgenda(pestana, onSeleccionar = { pestana = it }) }
+            item { PestanasAgenda(pestana, onSeleccionar = { pestana = it; onPestanaCambiada(it) }) }
             if (pestana == 0) {
                 item {
                     ResumenSeguimientos(
@@ -489,17 +516,6 @@ fun AgendaScreen(
             }
             item { Spacer(Modifier.height(96.dp)) }
         }
-        Surface(
-            modifier = Modifier.align(Alignment.BottomEnd).padding(20.dp).size(62.dp),
-            onClick = { editando = null; error = ""; formulario = true },
-            shape = CircleShape,
-            color = agendaVerde,
-            shadowElevation = 1.dp
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text("+", color = Color.White, fontSize = 40.sp, fontWeight = FontWeight.Light)
-            }
-        }
       }
     }
 }
@@ -524,7 +540,7 @@ private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
             .background(Color(0xFFE8EFFA), RoundedCornerShape(16.dp)),
         horizontalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-        listOf("Seguimiento", "Agenda").forEachIndexed { indice, titulo ->
+        listOf("Seguimiento", "Agenda", "Mapa").forEachIndexed { indice, titulo ->
             Surface(
                 onClick = { onSeleccionar(indice) },
                 modifier = Modifier.weight(1f).heightIn(min = 49.dp),
@@ -534,7 +550,11 @@ private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
             ) {
                 Row(horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                     Image(
-                        painterResource(if (indice == 0) R.drawable.ruralitos_agenda_lista else R.drawable.ruralitos_agenda_calendario),
+                        painterResource(when (indice) {
+                            0 -> R.drawable.ruralitos_agenda_lista
+                            1 -> R.drawable.ruralitos_agenda_calendario
+                            else -> R.drawable.ruralitos_agenda_mapa
+                        }),
                         contentDescription = null,
                         modifier = Modifier.size(21.dp),
                         colorFilter = ColorFilter.tint(if (seleccionada == indice) Color.White else agendaSecundario)
@@ -823,6 +843,7 @@ private fun FormularioAgenda(
     usuarioId: Long,
     organizacionId: String,
     personas: List<PersonaAgenda>,
+    personaInicial: PersonaAgenda?,
     original: ActividadAgendaEntity?,
     fechaInicial: Long,
     error: String,
@@ -837,10 +858,10 @@ private fun FormularioAgenda(
     var tipo by remember(original?.id) { mutableStateOf(original?.tipo ?: agendaTipos.first()) }
     var nota by remember(original?.id) { mutableStateOf(original?.nota.orEmpty()) }
     var recordar by remember(original?.id) { mutableStateOf(original?.recordar ?: false) }
-    var persona by remember(original?.id) {
-        mutableStateOf(personas.firstOrNull { it.miembroId == original?.miembroId })
+    var persona by remember(original?.id, personaInicial?.miembroId) {
+        mutableStateOf(personas.firstOrNull { it.miembroId == original?.miembroId } ?: personaInicial.takeIf { original == null })
     }
-    var personaModificada by remember(original?.id) { mutableStateOf(false) }
+    var personaModificada by remember(original?.id, personaInicial?.miembroId) { mutableStateOf(original == null && personaInicial != null) }
     var buscarPersona by remember { mutableStateOf("") }
     var elegirPersona by remember { mutableStateOf(false) }
     var elegirTipo by remember { mutableStateOf(false) }

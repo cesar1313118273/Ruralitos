@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path as ComposePath
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -129,6 +130,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
     var modo by remember { mutableStateOf("auto") }
     val gps = ubicacionActual?.let { LatLng(it.latitude, it.longitude) }
     var avance by remember { mutableStateOf<AvanceRuta?>(null) }
+    var llegado by remember { mutableStateOf(false) }
 
     MapLibre.getInstance(context)
     val mapView = remember {
@@ -192,6 +194,19 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
     LaunchedEffect(permisoUbicacion) {
         if (permisoUbicacion && ubicacionActual == null) {
             GestorUbicacionActual.obtener(context)?.let { ubicacionActual = it }
+        }
+    }
+    // Aviso de llegada: una sola vez por destino, al acercarse a la vivienda
+    LaunchedEffect(destino) { llegado = false }
+    LaunchedEffect(gps, destino) {
+        val desde = gps ?: return@LaunchedEffect
+        val hasta = destino ?: return@LaunchedEffect
+        if (llegado) return@LaunchedEffect
+        val metros = com.ruralitos.app.domain.MapaViviendas.distanciaMetros(desde.latitude, desde.longitude, hasta.latitude, hasta.longitude)
+        val precision = ubicacionActual?.takeIf { it.hasAccuracy() }?.accuracy
+        if (com.ruralitos.app.domain.LlegadaVivienda.haLlegado(metros, precision)) {
+            llegado = true
+            com.ruralitos.app.data.location.vibrarAviso(context)
         }
     }
     LaunchedEffect(destino, modo) {
@@ -312,6 +327,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
     }
 
     val actual = ficha
+    val actualFicha = actual
     PantallaRuralitos(
         titulo = "Ruta de seguimiento",
         subtitulo = actual?.let { "${it.nombreApellidoJefeFamilia} · ${it.barrio}" }
@@ -369,6 +385,20 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                                     shadowElevation = 1.dp) {
                                     Text("GPS en vivo · Solo consulta", Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         color = AzulClinico, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                                }
+                                if (llegado) {
+                                    Surface(modifier = Modifier.align(Alignment.BottomCenter).padding(10.dp)
+                                        .padding(bottom = 18.dp).fillMaxWidth().testTag("aviso_llegada_ruta"),
+                                        shape = RoundedCornerShape(16.dp), color = Color(0xFFE6F6EC), shadowElevation = 4.dp) {
+                                        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text("Llegaste a la vivienda", color = Color(0xFF1B6B3A),
+                                                    fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                                                Text(actualFicha?.nombreApellidoJefeFamilia.orEmpty(), color = Color(0xFF0A2A5E), fontSize = 12.sp)
+                                            }
+                                            BotonSecundarioRuralitos(texto = "Abrir ficha", onClick = onAbrirFicha)
+                                        }
+                                    }
                                 }
                                 Column(Modifier.align(Alignment.CenterEnd).padding(10.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)) {
