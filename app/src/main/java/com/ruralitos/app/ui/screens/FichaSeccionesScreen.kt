@@ -110,7 +110,7 @@ fun FichaSeccionesScreen(
             "3. Evidencias y entorno",
             "Imágenes, ubicación exacta y condiciones ambientales de la familia.",
             listOf(
-                SeccionFicha("familiograma", "6", "Imagen del familiograma", "Sube o reemplaza la imagen que aparecerá en Excel y PDF.", CianRuralitos),
+                SeccionFicha("familiograma", "6", "Imagen del familiograma", "Dibújalo en la app con los integrantes de la ficha o sube una foto. Aparecerá en Excel y PDF.", CianRuralitos),
                 SeccionFicha("croquis", "7", "Croquis, GPS y mapa", "Obtén latitud, longitud y altitud; mueve el punto y guarda el croquis.", AzulClinico),
                 SeccionFicha("contaminacion", "8", "Contaminación ambiental", "Fecha, tipo, descripción y causante de la contaminación.", NaranjaClinico),
                 SeccionFicha("tratamiento", "9", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", CianRuralitos)

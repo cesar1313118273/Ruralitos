@@ -70,8 +70,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 
+/** Familiograma a partir de una foto: se quita el fondo blanco y se guarda un PNG transparente. */
 @Composable
-fun FamiliogramaScreen(
+fun FamiliogramaFotoScreen(
     fichaId: Long,
     onContinuar: () -> Unit,
     onSalir: () -> Unit,
