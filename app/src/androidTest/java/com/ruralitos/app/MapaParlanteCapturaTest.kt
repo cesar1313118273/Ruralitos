@@ -39,9 +39,14 @@ class MapaParlanteCapturaTest {
         }
         rule.setContent { RuralitosTheme { MapaParlanteScreen(onRegresar = {}) } }
         // La pantalla solo avanza cuando la prueba deja pasar fotogramas: se espera con waitUntil, no con sleep.
-        rule.waitUntil(30_000) { rule.onAllNodes(androidx.compose.ui.test.hasTestTag("barrio_todos")).fetchSemanticsNodes().isNotEmpty() }
-        rule.waitUntil(30_000) { rule.onAllNodes(androidx.compose.ui.test.hasTestTag("barrio_cerezal")).fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(30_000) { rule.onAllNodes(androidx.compose.ui.test.hasTestTag("selector_barrio")).fetchSemanticsNodes().isNotEmpty() }
+        if (args.getString("ventana") == "1") {
+            rule.onNodeWithTag("selector_barrio").performClick()
+            rule.waitUntil(30_000) { rule.onAllNodes(androidx.compose.ui.test.hasTestTag("barrio_cerezal")).fetchSemanticsNodes().isNotEmpty() }
+        }
         args.getString("barrio")?.let {
+            rule.onNodeWithTag("selector_barrio").performClick()
+            rule.waitUntil(30_000) { rule.onAllNodes(androidx.compose.ui.test.hasTestTag("barrio_$it")).fetchSemanticsNodes().isNotEmpty() }
             rule.onNodeWithTag("barrio_$it").performClick()
             if (args.getString("detalle") == "1") {
                 rule.onNodeWithTag("resumen_barrio").performClick()

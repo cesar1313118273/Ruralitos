@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.TextoAjustado
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -266,10 +267,10 @@ private fun TarjetasResumen(resumen: ResumenFichas) {
                 tarjetas.forEach { (titulo, valor, color) ->
                     Column(Modifier.weight(1f), horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
                         Text(valor.toString(), color = color, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
+                        TextoAjustado(
                             titulo,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 10.sp,
+                            tamano = 11.sp, tamanoMinimo = 7.sp
                         )
                     }
                 }

@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.screens
 
+import com.ruralitos.app.ui.components.TextoAjustado
 import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.ui.draw.clip
@@ -556,12 +557,14 @@ private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
                             else -> R.drawable.ruralitos_agenda_mapa
                         }),
                         contentDescription = null,
-                        modifier = Modifier.size(21.dp),
+                        modifier = Modifier.size(18.dp),
                         colorFilter = ColorFilter.tint(if (seleccionada == indice) Color.White else agendaSecundario)
                     )
-                    Spacer(Modifier.width(9.dp))
-                    Text(titulo, color = if (seleccionada == indice) Color.White else agendaSecundario,
-                        fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+                    Spacer(Modifier.width(5.dp))
+                    // Con tres pestañas el espacio es poco: la letra se achica en vez de cortarse.
+                    TextoAjustado(titulo, color = if (seleccionada == indice) Color.White else agendaSecundario,
+                        tamano = 14.sp, tamanoMinimo = 7.sp, fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f, fill = false))
                 }
             }
         }
@@ -584,18 +587,18 @@ private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
                 border = BorderStroke(1.dp, agendaBorde),
                 shadowElevation = 1.dp
             ) {
-                Row(Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Image(painterResource(when (indice) {
-                        0 -> R.drawable.ruralitos_agenda_calendario
-                        1 -> R.drawable.ruralitos_agenda_reloj
-                        else -> R.drawable.ruralitos_agenda_confirmado
-                    }), null, Modifier.size(25.dp))
-                    Column {
-                        Text(dato.first, color = agendaSecundario, fontSize = 10.sp)
-                        Text(dato.second.toString(), color = agendaAzul, fontSize = 20.sp,
+                // Icono y número arriba; el nombre debajo, con todo el ancho de la tarjeta, para que no se corte ninguna letra.
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Image(painterResource(when (indice) {
+                            0 -> R.drawable.ruralitos_agenda_calendario
+                            1 -> R.drawable.ruralitos_agenda_reloj
+                            else -> R.drawable.ruralitos_agenda_confirmado
+                        }), null, Modifier.size(25.dp))
+                        Text(dato.second.toString(), color = agendaAzul, fontSize = 22.sp,
                             fontWeight = FontWeight.SemiBold)
                     }
+                    TextoAjustado(dato.first, color = agendaSecundario, tamano = 12.sp, tamanoMinimo = 7.sp)
                 }
             }
         }

@@ -1,5 +1,10 @@
 package com.ruralitos.app.ui.screens
 
+import androidx.compose.ui.unit.isSpecified
+import com.ruralitos.app.ui.components.TextoAjustado
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.aspectRatio
 import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
@@ -908,12 +913,12 @@ private fun BarraSeccionesDispensarizacion(
                             seccion = opcion,
                             color = if (activa) Color.White else MoradoClinico
                         )
-                        Text(
-                            text = opcion.etiqueta,
+                        TextoAjustado(
+                            texto = opcion.etiqueta,
                             color = if (activa) Color.White else MoradoClinico,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(start = 7.dp)
+                            tamano = 13.sp, tamanoMinimo = 7.sp,
+                            modifier = Modifier.padding(start = 7.dp).weight(1f, fill = false)
                         )
                     }
                 }
@@ -1065,11 +1070,11 @@ private fun SelectorVistaPoblacion(
                         .padding(horizontal = 8.dp, vertical = 12.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = opcion.etiqueta,
+                    TextoAjustado(
+                        texto = opcion.etiqueta,
                         color = if (activa) Color.White else MoradoClinico,
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
+                        tamano = 13.sp, tamanoMinimo = 7.sp, textAlign = TextAlign.Center
                     )
                 }
             }
@@ -1305,11 +1310,13 @@ private fun AcordeonIndicador(
                         .weight(1f)
                         .padding(start = 12.dp)
                 ) {
-                    Text(
-                        text = titulo,
+                    TextoAjustado(
+                        texto = titulo,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.SemiBold,
                         style = MaterialTheme.typography.titleMedium,
+                        tamano = MaterialTheme.typography.titleMedium.fontSize.takeIf { it.isSpecified } ?: 16.sp,
+                        tamanoMinimo = 11.sp, maxLineas = 3
                     )
                     Text(
                         text = subtitulo,
@@ -1374,17 +1381,18 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
         border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.65f)),
         shadowElevation = 1.dp
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        // La dona ocupa todo el ancho disponible y los grupos van debajo: así ninguna etiqueta se aprieta ni se corta.
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Box(
-                modifier = Modifier.size(144.dp),
+                modifier = Modifier.fillMaxWidth().widthIn(max = 260.dp).aspectRatio(1f),
                 contentAlignment = Alignment.Center
             ) {
-                Canvas(Modifier.fillMaxSize()) {
-                    val ancho = 18.dp.toPx()
+                Canvas(Modifier.fillMaxSize().padding(10.dp)) {
+                    val ancho = 22.dp.toPx()
                     drawCircle(
                         color = BordeClinico.copy(alpha = 0.55f),
                         style = Stroke(width = ancho)
@@ -1410,7 +1418,7 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
                 }
 
                 Surface(
-                    modifier = Modifier.size(84.dp),
+                    modifier = Modifier.fillMaxSize(0.58f),
                     shape = CircleShape,
                     color = Color.White,
                     border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.55f)),
@@ -1421,22 +1429,20 @@ private fun GraficoDonaRegistro(titulo: String, datos: List<Pair<String, Int>>) 
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text(
-                            total.toString(),
-                            fontSize = 26.sp,
-                            fontWeight = FontWeight.SemiBold
+                        TextoAjustado(
+                            total.toString(), tamano = 34.sp, tamanoMinimo = 18.sp,
+                            fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center
                         )
-                        Text(
-                            "personas",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
+                        TextoAjustado(
+                            "personas", tamano = 13.sp, tamanoMinimo = 7.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center
                         )
                     }
                 }
             }
 
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
                 leyenda.forEach { (etiqueta, valor, grupo) ->
@@ -1591,30 +1597,38 @@ private fun TarjetaGrupo(
                         .weight(1f)
                         .padding(start = 12.dp)
                 ) {
-                    Text(
-                        text = "Grupo ${grupo.codigo} · ${grupo.titulo}",
+                    // El título usa todo el ancho que queda y baja de línea por palabras; si una palabra no cabe, la letra se achica.
+                    TextoAjustado(
+                        texto = "Grupo ${grupo.codigo} · ${grupo.titulo}",
                         color = color,
                         fontWeight = FontWeight.SemiBold,
+                        tamano = 16.sp, tamanoMinimo = 11.sp, maxLineas = 3
                     )
-                    Text(
-                        text = "$cantidad persona(s)",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 2.dp)
-                    )
-                }
-
-                Surface(
-                    shape = RoundedCornerShape(50),
-                    color = color.copy(alpha = 0.09f),
-                    border = BorderStroke(1.dp, color.copy(alpha = 0.10f))
-                ) {
-                    Text(
-                        text = "$porcentaje%",
-                        color = color,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
-                    )
+                    // La cantidad y el porcentaje van debajo, así no le quitan espacio al título.
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "$cantidad persona(s)",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp
+                        )
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = color.copy(alpha = 0.09f),
+                            border = BorderStroke(1.dp, color.copy(alpha = 0.10f))
+                        ) {
+                            Text(
+                                text = "$porcentaje%",
+                                color = color,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 12.sp,
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
                 }
 
                 Surface(

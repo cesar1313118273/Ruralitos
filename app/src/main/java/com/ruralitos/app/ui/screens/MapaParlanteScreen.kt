@@ -56,6 +56,7 @@ import com.ruralitos.app.ui.components.ClaseAncho
 import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.IconoMais
 import com.ruralitos.app.ui.components.LocalClaseAncho
+import com.ruralitos.app.ui.components.TextoAjustado
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
@@ -126,6 +127,7 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
 
     var claveElegida by remember { mutableStateOf<String?>(null) }
     var detalleAbierto by remember { mutableStateOf(false) }
+    var ventanaBarrios by remember { mutableStateOf(false) }
     var mapaLocal by remember { mutableStateOf<String?>(null) }
     var mapaDetalle by remember { mutableStateOf<String?>(null) }
     var mapa by remember { mutableStateOf<MapLibreMap?>(null) }
@@ -305,13 +307,24 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
             }
         )
         val selector: @Composable () -> Unit = {
-            Row(
-                Modifier.fillMaxWidth().background(Color.White).horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 8.dp).testTag("selector_barrio"),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ChipBarrio("Todos los barrios", elegido == null, Modifier.testTag("barrio_todos")) { claveElegida = null }
-                lista.forEach { b -> ChipBarrio("${b.nombre} · ${b.personas}", b.clave == claveElegida, Modifier.testTag("barrio_${b.clave}")) { claveElegida = b.clave } }
+            // Un solo selector: al tocarlo se abre una ventana con todos los barrios para elegir uno.
+            Box(Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp)) {
+                Surface(
+                    onClick = { ventanaBarrios = true }, modifier = Modifier.fillMaxWidth().testTag("selector_barrio"),
+                    shape = RoundedCornerShape(12.dp), color = if (elegido != null) Color(0xFFE3F4F7) else Color.White,
+                    border = BorderStroke(1.dp, if (elegido != null) CianRuralitos else Color(0xFFCFDDE5))
+                ) {
+                    Row(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("Barrio", color = GrisTexto, fontSize = 11.sp)
+                            TextoAjustado(
+                                elegido?.nombre ?: "Todos los barrios", tamano = 16.sp, tamanoMinimo = 11.sp,
+                                color = AzulTexto, fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        Text("▾", color = CianRuralitos, fontSize = 16.sp)
+                    }
+                }
             }
         }
         val mapaConControles: @Composable (Modifier) -> Unit = { modificador ->
@@ -373,22 +386,81 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
             mapaConControles(Modifier.weight(1f).fillMaxWidth())
         }
     }
-}
 
-private fun comillas(texto: String): String = org.json.JSONObject.quote(texto)
-
-@Composable
-private fun ChipBarrio(texto: String, activo: Boolean, modificador: Modifier = Modifier, onClick: () -> Unit) {
-    Surface(
-        onClick = onClick, modifier = modificador, shape = RoundedCornerShape(16.dp),
-        color = if (activo) CianRuralitos else Color(0xFFEAF1F5)
-    ) {
-        Text(
-            texto, Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
-            color = if (activo) Color.White else AzulTexto, fontSize = 13.sp, fontWeight = FontWeight.Medium
+    if (ventanaBarrios) {
+        VentanaBarrios(
+            barrios = lista, elegida = claveElegida,
+            onElegir = { claveElegida = it; ventanaBarrios = false },
+            onCerrar = { ventanaBarrios = false }
         )
     }
 }
+
+/** Ventana con todos los barrios; la opción elegida queda marcada. */
+@Composable
+private fun VentanaBarrios(
+    barrios: List<BarrioParlante>,
+    elegida: String?,
+    onElegir: (String?) -> Unit,
+    onCerrar: () -> Unit
+) {
+    var busqueda by remember { mutableStateOf("") }
+    val visibles = remember(barrios, busqueda) {
+        val q = java.text.Normalizer.normalize(busqueda, java.text.Normalizer.Form.NFD).replace("\\p{Mn}+".toRegex(), "").lowercase().trim()
+        if (q.isEmpty()) barrios
+        else barrios.filter {
+            java.text.Normalizer.normalize(it.nombre, java.text.Normalizer.Form.NFD).replace("\\p{Mn}+".toRegex(), "").lowercase().contains(q)
+        }
+    }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onCerrar,
+        title = { Text("Elegir barrio", color = AzulTexto) },
+        text = {
+            Column {
+                if (barrios.size > 8) {
+                    androidx.compose.material3.OutlinedTextField(
+                        value = busqueda, onValueChange = { busqueda = it }, singleLine = true,
+                        placeholder = { Text("Buscar barrio") }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).testTag("buscar_barrio")
+                    )
+                }
+                LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                    item(key = "todos") {
+                        FilaOpcionBarrio(
+                            "Todos los barrios", "${barrios.size} barrio${if (barrios.size == 1) "" else "s"} · ${barrios.sumOf { it.personas }} personas",
+                            elegida == null, Modifier.testTag("barrio_todos")
+                        ) { onElegir(null) }
+                    }
+                    items(visibles, key = { it.clave }) { b ->
+                        FilaOpcionBarrio(
+                            b.nombre, "${b.personas} persona${if (b.personas == 1) "" else "s"} · ${b.fichas} familia${if (b.fichas == 1) "" else "s"}" +
+                                if (b.centro == null) " · sin ubicación" else "",
+                            b.clave == elegida, Modifier.testTag("barrio_${b.clave}")
+                        ) { onElegir(b.clave) }
+                    }
+                    if (visibles.isEmpty()) item { Text("Ningún barrio coincide.", color = GrisTexto, modifier = Modifier.padding(12.dp)) }
+                }
+            }
+        },
+        confirmButton = { androidx.compose.material3.TextButton(onClick = onCerrar) { Text("Cerrar") } }
+    )
+}
+
+@Composable
+private fun FilaOpcionBarrio(titulo: String, detalle: String, marcada: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Row(
+        modifier.fillMaxWidth().clickable(onClick = onClick).background(if (marcada) Color(0xFFE3F4F7) else Color.Transparent)
+            .padding(horizontal = 10.dp, vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            TextoAjustado(titulo, tamano = 15.sp, tamanoMinimo = 11.sp, maxLineas = 2, color = AzulTexto, fontWeight = FontWeight.Medium)
+            Text(detalle, color = GrisTexto, fontSize = 12.sp)
+        }
+        if (marcada) Text("✓", color = CianRuralitos, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+private fun comillas(texto: String): String = org.json.JSONObject.quote(texto)
 
 @Composable
 private fun CabeceraBarrio(b: BarrioParlante) {

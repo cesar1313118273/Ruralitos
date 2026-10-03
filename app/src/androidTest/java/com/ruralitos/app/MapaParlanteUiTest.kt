@@ -54,13 +54,25 @@ class MapaParlanteUiTest {
         }
     }
 
+    private fun hayTag(tag: String) = rule.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().isNotEmpty()
+
+    /** Abre la ventana del selector y elige el barrio (o «todos» si la clave es nula). */
+    private fun elegirBarrio(clave: String?) {
+        rule.onNodeWithTag("selector_barrio").performClick()
+        val etiqueta = "barrio_${clave ?: "todos"}"
+        rule.waitUntil(10_000) { hayTag(etiqueta) }
+        rule.onNodeWithTag(etiqueta).performClick()
+        rule.waitUntil(5_000) { !hayTag(etiqueta) }
+    }
+
     @Test
     fun cadaBarrioMuestraSusTotalesYSoloLasFigurasQueTiene() {
         mostrar(ClaseAncho.EXPANDIDA)
-        rule.waitUntil(20_000) { rule.onAllNodes(hasText("Cerezal · 9")).fetchSemanticsNodes().isNotEmpty() }
+        rule.waitUntil(20_000) { hayTag("selector_barrio") && rule.onAllNodes(hasText("Cerezal")).fetchSemanticsNodes().isNotEmpty() }
         // sin barrio elegido: la lista muestra cada barrio con su total de personas
-        rule.onNodeWithText("Cerezal · 9").assertExists()
-        rule.onNodeWithText("El Carmen · 1").assertExists()
+        rule.onNodeWithText("Cerezal").assertExists()
+        rule.onNodeWithText("El Carmen").assertExists()
+        rule.onNodeWithText("Todos los barrios").assertExists()
 
         val esperado = runBlocking {
             MapaParlante.barrios(
@@ -79,7 +91,7 @@ class MapaParlanteUiTest {
         assertTrue("la figura de embarazo existe en Cerezal", cerezal.stickers.any { it.id.startsWith("embarazo") })
         assertTrue("El Carmen no tiene hipertensos", carmen.stickers.none { it.id == IconosMais.HIPERTENSION })
 
-        rule.onNodeWithTag("barrio_${cerezal.clave}").performClick()
+        elegirBarrio(cerezal.clave)
         rule.waitUntil(10_000) { rule.onAllNodes(hasTestTag("fila_figura")).fetchSemanticsNodes().isNotEmpty() }
         assertEquals(
             "una fila por cada figura que existe en el barrio",
@@ -87,7 +99,7 @@ class MapaParlanteUiTest {
         )
         rule.onNodeWithText("9 personas · 4 familias").assertExists()
 
-        rule.onNodeWithTag("barrio_${carmen.clave}").performClick()
+        elegirBarrio(carmen.clave)
         rule.waitUntil(10_000) {
             rule.onAllNodes(hasTestTag("fila_figura")).fetchSemanticsNodes().size == carmen.stickers.size
         }
@@ -97,8 +109,9 @@ class MapaParlanteUiTest {
     @Test
     fun enElTelefonoElResumenDelBarrioSeAbreYMuestraLasFiguras() {
         mostrar(ClaseAncho.COMPACTA)
-        rule.waitUntil(20_000) { rule.onAllNodes(hasText("Cerezal · 9")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithText("Cerezal · 9").performClick()
+        // en el teléfono no hay lista de barrios a la vista: se espera a que el encabezado diga cuántos hay
+        rule.waitUntil(20_000) { hayTag("selector_barrio") && rule.onAllNodes(hasText("elige uno para ver sus figuras", substring = true)).fetchSemanticsNodes().isNotEmpty() }
+        elegirBarrio("cerezal")
         rule.waitUntil(10_000) { rule.onAllNodes(hasTestTag("resumen_barrio")).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("Ver detalle ▴").performClick()
         rule.waitUntil(5_000) { rule.onAllNodes(hasTestTag("fila_figura")).fetchSemanticsNodes().isNotEmpty() }
@@ -112,8 +125,8 @@ class MapaParlanteUiTest {
             "DELETE FROM fichas_familiares WHERE numeroFichaFamiliar LIKE '${DatosMapaParlante.PREFIJO}%' AND barrio = 'Cerezal'"
         )
         mostrar(ClaseAncho.EXPANDIDA)
-        rule.waitUntil(20_000) { rule.onAllNodes(hasText("El Carmen · 1")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithText("El Carmen · 1").performClick()
+        rule.waitUntil(20_000) { hayTag("selector_barrio") && rule.onAllNodes(hasText("El Carmen")).fetchSemanticsNodes().isNotEmpty() }
+        elegirBarrio("el carmen")
         rule.waitUntil(10_000) { rule.onAllNodes(hasTestTag("fila_figura")).fetchSemanticsNodes().isNotEmpty() }
         Thread.sleep(3_000)
         rule.waitForIdle()

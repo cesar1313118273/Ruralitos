@@ -78,6 +78,7 @@ import com.ruralitos.app.domain.PuntoSeguimiento
 import com.ruralitos.app.domain.RecorridoVisitas
 import com.ruralitos.app.ui.components.ClaseAncho
 import com.ruralitos.app.ui.components.LocalClaseAncho
+import com.ruralitos.app.ui.components.TextoAjustado
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
 import com.ruralitos.app.ui.theme.CianRuralitos
@@ -876,7 +877,7 @@ private fun BotonControl(texto: String, activo: Boolean, modifier: Modifier = Mo
         border = BorderStroke(1.dp, if (activo) VerdeAgenda else Color(0xFFCFDDE5))
     ) {
         Row(Modifier.padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(texto, Modifier.weight(1f), color = AzulTexto, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            TextoAjustado(texto, Modifier.weight(1f), tamano = 13.sp, tamanoMinimo = 7.sp, color = AzulTexto, fontWeight = FontWeight.Medium)
             Text(" ▾", color = VerdeAgenda, fontSize = 14.sp)
         }
     }

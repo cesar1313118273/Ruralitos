@@ -1,5 +1,6 @@
 package com.ruralitos.app.ui.components
 
+import androidx.compose.ui.unit.isSpecified
 import com.ruralitos.app.ui.theme.VerdeSalud
 import com.ruralitos.app.ui.theme.VerdeSuaveRuralitos
 import com.ruralitos.app.ui.theme.CianSuave
@@ -731,9 +732,11 @@ fun BotonPrincipalRuralitos(
             .padding(horizontal = 18.dp, vertical = 11.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        TextoAjustado(
             limpiarTextoInterfaz(texto),
             style = MaterialTheme.typography.labelLarge,
+            tamano = MaterialTheme.typography.labelLarge.fontSize.takeIf { it.isSpecified } ?: 14.sp,
+            tamanoMinimo = 10.sp, maxLineas = 2,
             color = Color.White,
             textAlign = TextAlign.Center
         )
@@ -786,9 +789,11 @@ fun BotonSecundarioRuralitos(
             .padding(horizontal = 18.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(
+        TextoAjustado(
             limpiarTextoInterfaz(texto),
             style = MaterialTheme.typography.labelLarge,
+            tamano = MaterialTheme.typography.labelLarge.fontSize.takeIf { it.isSpecified } ?: 14.sp,
+            tamanoMinimo = 10.sp, maxLineas = 2,
             color = AzulClinicoOscuro,
             textAlign = TextAlign.Center
         )
