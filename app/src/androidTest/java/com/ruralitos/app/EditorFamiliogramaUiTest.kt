@@ -186,4 +186,17 @@ class EditorFamiliogramaUiTest {
         rule.waitForIdle()
         Thread.sleep(14_000)
     }
+
+    /** Deja el editor abierto (con el modo de pantalla completa real) para fotografiar la pantalla con adb. */
+    @Test
+    fun dejaElEditorAPantallaCompletaParaFotografiarlo() {
+        val estado = EstadoEditorFamiliograma(cinco())
+        rule.activityRule.scenario.onActivity { it.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE }
+        rule.waitUntil(10_000) {
+            rule.activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        }
+        rule.setContent { RuralitosTheme { EditorFamiliogramaContenido(estado, "Familia Pérez", { true }, {}) } }
+        rule.waitForIdle()
+        Thread.sleep(12_000)
+    }
 }

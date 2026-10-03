@@ -103,6 +103,12 @@ private fun VentanaEditor(
     contenido: @Composable () -> Unit
 ) {
     Dialog(onDismissRequest = onCerrar, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        // la ventana de diálogo también ocupa toda la pantalla y mantiene ocultas las barras del sistema
+        val ventana = (androidx.compose.ui.platform.LocalView.current.parent as? androidx.compose.ui.window.DialogWindowProvider)?.window
+        androidx.compose.runtime.DisposableEffect(ventana) {
+            ventana?.let { PantallaCompleta.activar(it) }
+            onDispose { }
+        }
         Surface(
             shape = RoundedCornerShape(20.dp),
             color = Color.White,
