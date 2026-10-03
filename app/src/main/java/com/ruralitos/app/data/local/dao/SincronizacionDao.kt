@@ -32,16 +32,62 @@ interface SincronizacionDao {
 
     @Query("""
         SELECT * FROM fichas_familiares
-        WHERE organizacionId = :organizacionId AND syncEstado != 'SINCRONIZADO'
+        WHERE organizacionId = :organizacionId AND syncEstado NOT IN ('SINCRONIZADO', 'CONFLICTO')
         ORDER BY CASE WHEN syncEstado = 'ERROR' THEN 1 ELSE 0 END, actualizadoEn ASC
     """)
     suspend fun fichasPendientes(organizacionId: String): List<FichaFamiliarEntity>
 
-    @Query("SELECT COUNT(*) FROM fichas_familiares WHERE syncEstado != 'SINCRONIZADO'")
+    @Query("SELECT COUNT(*) FROM fichas_familiares WHERE syncEstado NOT IN ('SINCRONIZADO', 'CONFLICTO')")
     fun observarPendientes(): Flow<Int>
 
-    @Query("SELECT COALESCE(MAX(actualizadoEn), 0) FROM fichas_familiares WHERE syncEstado != 'SINCRONIZADO'")
+    @Query("SELECT COUNT(*) FROM fichas_familiares WHERE syncEstado = 'CONFLICTO'")
+    fun observarConflictos(): Flow<Int>
+
+    @Query("SELECT COALESCE(MAX(actualizadoEn), 0) FROM fichas_familiares WHERE syncEstado NOT IN ('SINCRONIZADO', 'CONFLICTO')")
     fun observarUltimoCambioPendiente(): Flow<Long>
+
+    @Query("SELECT COUNT(*) FROM fichas_familiares WHERE organizacionId = :organizacionId")
+    suspend fun contarFichasDeOrganizacion(organizacionId: String): Int
+
+    @Query("SELECT * FROM fichas_familiares WHERE organizacionId = :organizacionId")
+    suspend fun fichasDeOrganizacion(organizacionId: String): List<FichaFamiliarEntity>
+
+    /** Guarda la versión del servidor sin tocar el estado: se llama justo después de subir la cabecera. */
+    @Query("UPDATE fichas_familiares SET syncVersion = :version WHERE id = :id")
+    suspend fun fijarVersion(id: Long, version: Long)
+
+    /** La subida vio que otra persona cambió la ficha antes: se conserva todo y se pide decidir. */
+    @Query("UPDATE fichas_familiares SET syncEstado = 'CONFLICTO', syncError = :mensaje WHERE id = :id")
+    suspend fun marcarConflicto(id: Long, mensaje: String)
+
+    /** «Conservar mis cambios»: se toma como base la versión actual del servidor y se vuelve a subir. */
+    @Query("""
+        UPDATE fichas_familiares SET syncEstado = 'PENDIENTE', syncError = '', syncVersion = :version
+        WHERE id = :id AND syncEstado = 'CONFLICTO'
+    """)
+    suspend fun conservarLocalTrasConflicto(id: Long, version: Long): Int
+
+    /** Cierre de una descarga atómica: sin condiciones, porque ocurre dentro de la misma transacción. */
+    @Query("""
+        UPDATE fichas_familiares SET syncEstado = 'SINCRONIZADO', syncVersion = :version, syncError = ''
+        WHERE id = :id
+    """)
+    suspend fun marcarSincronizadaDescarga(id: Long, version: Long): Int
+
+    @Query("""
+        SELECT f.syncId FROM calificaciones_riesgo c JOIN fichas_familiares f ON f.id = c.fichaId
+        WHERE c.syncId = :calificacionSyncId LIMIT 1
+    """)
+    suspend fun fichaSyncIdDeCalificacion(calificacionSyncId: String): String?
+
+    @Query("SELECT syncId FROM fichas_familiares WHERE id = :id")
+    suspend fun fichaSyncId(id: Long): String?
+
+    @Query("SELECT DISTINCT organizacionId FROM fichas_familiares WHERE organizacionId <> ''")
+    suspend fun organizacionesLocales(): List<String>
+
+    @Query("UPDATE adjuntos_ficha SET syncId = :nuevo WHERE syncId = :actual")
+    suspend fun cambiarSyncIdAdjunto(actual: String, nuevo: String)
 
     @Query("""
         UPDATE fichas_familiares SET
@@ -159,7 +205,7 @@ interface SincronizacionDao {
     @Query("SELECT * FROM fichas_familiares WHERE organizacionId = :organizacionId AND syncEstado = 'SINCRONIZADO'")
     suspend fun fichasLocalesSincronizadas(organizacionId: String): List<FichaFamiliarEntity>
 
-    @Query("DELETE FROM fichas_familiares WHERE syncId = :syncId AND syncEstado = 'SINCRONIZADO'")
+    @Query("DELETE FROM fichas_familiares WHERE syncId = :syncId AND syncEstado IN ('SINCRONIZADO', 'DESCARGANDO')")
     suspend fun eliminarFichaRemota(syncId: String)
 
     @Query("DELETE FROM miembros_familia WHERE syncId = :syncId")

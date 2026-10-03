@@ -699,6 +699,54 @@ class SupabaseApi(context: Context) {
         return resultado
     }
 
+    /**
+     * Lectura por cursor: orden fijo por [campo] y luego por id, y cada página empieza justo después de la
+     * última fila vista. A diferencia de limit/offset, un cambio hecho mientras se descarga no hace saltar filas.
+     * Con [desde] solo trae filas cuyo [campo] sea igual o posterior.
+     */
+    suspend fun seleccionarPorCursor(
+        rutaConConsulta: String,
+        campo: String = "updated_at",
+        desde: String? = null,
+        tamanoPagina: Int = 500
+    ): List<JSONObject> {
+        val resultado = mutableListOf<JSONObject>()
+        val separador = if (rutaConConsulta.contains('?')) "&" else "?"
+        var ultimoValor: String? = null
+        var ultimoId: String? = null
+        while (true) {
+            val filtro = when {
+                ultimoValor != null ->
+                    "&or=($campo.gt.${codificar(ultimoValor)},and($campo.eq.${codificar(ultimoValor)}," +
+                        "id.gt.${codificar(checkNotNull(ultimoId))}))"
+                desde != null -> "&$campo=gte.${codificar(desde)}"
+                else -> ""
+            }
+            val pagina = seleccionar(
+                "$rutaConConsulta${separador}order=$campo.asc,id.asc&limit=$tamanoPagina$filtro"
+            )
+            for (indice in 0 until pagina.length()) resultado += pagina.getJSONObject(indice)
+            if (pagina.length() < tamanoPagina) break
+            val ultima = pagina.getJSONObject(pagina.length() - 1)
+            ultimoValor = ultima.getString(campo)
+            ultimoId = ultima.getString("id")
+        }
+        return resultado
+    }
+
+    /** Borra un archivo del almacenamiento; si ya no existe no es un error. */
+    suspend fun eliminarArchivoAlmacenamiento(rutaStorage: String) {
+        val ruta = rutaStorage.split('/').joinToString("/") { codificar(it) }
+        try {
+            solicitar(
+                "DELETE", "/storage/v1/object/fichas-adjuntos/$ruta",
+                accessToken = tokenValido()
+            )
+        } catch (error: ErrorSupabase) {
+            if (error.codigoHttp != 404) throw error
+        }
+    }
+
     suspend fun upsert(tabla: String, objeto: JSONObject, conflicto: String = "id"): JSONObject? {
         val respuesta = solicitar(
             "POST",

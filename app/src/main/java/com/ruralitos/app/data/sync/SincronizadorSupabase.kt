@@ -9,7 +9,6 @@ import com.ruralitos.app.data.local.entity.ContaminacionAmbientalEntity
 import com.ruralitos.app.data.local.entity.EmbarazadaEntity
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.data.local.entity.GestionRiesgoEntity
-import com.ruralitos.app.data.local.entity.HistorialFichaEntity
 import com.ruralitos.app.data.local.entity.LugarTratamientoEntity
 import com.ruralitos.app.data.local.entity.MiembroFamiliaEntity
 import com.ruralitos.app.data.local.entity.MortalidadFamiliarEntity
@@ -33,7 +32,9 @@ data class ResultadoSincronizacion(
     val eliminaciones: Int,
     val errores: Int,
     val descargadas: Int = 0,
-    val erroresReintentables: Int = 0
+    val erroresReintentables: Int = 0,
+    /** Fichas que otra persona modificó mientras se editaban aquí: esperan una decisión del usuario. */
+    val conflictos: Int = 0
 )
 
 internal fun errorSincronizacionReintentable(error: Throwable): Boolean = when (error) {
@@ -44,15 +45,72 @@ internal fun errorSincronizacionReintentable(error: Throwable): Boolean = when (
     else -> false
 }
 
+/** Otra persona cambió la ficha en el servidor después de la última sincronización de este teléfono. */
+internal class ConflictoFichaException(mensaje: String) : Exception(mensaje)
+
+private data class ResultadoDescarga(val descargadas: Int, val errores: Int, val reintentables: Int)
+
+private class GrupoFicha {
+    var cabecera: JSONObject? = null
+    val miembros = mutableListOf<JSONObject>()
+    val embarazadas = mutableListOf<JSONObject>()
+    val mortalidad = mutableListOf<JSONObject>()
+    val calificaciones = mutableListOf<JSONObject>()
+    val valores = mutableListOf<JSONObject>()
+    val gestiones = mutableListOf<JSONObject>()
+    val contaminaciones = mutableListOf<JSONObject>()
+    val lugares = mutableListOf<JSONObject>()
+    val adjuntos = mutableListOf<JSONObject>()
+    val historial = mutableListOf<JSONObject>()
+}
+
 class SincronizadorSupabase(context: Context) {
     private val appContext = context.applicationContext
     private val database = RuralitosDatabase.obtenerBaseDatos(appContext)
     private val dao = database.sincronizacionDao()
     private val api = SupabaseApi(appContext)
     private val privados = SincronizadorPrivado(appContext, api)
+    private val marcas = MarcasDescarga(appContext)
+    private val aplicador = AplicadorDescarga(database, ::eliminarArchivoInternoSiCorresponde)
 
     suspend fun ejecutar(soloSubidas: Boolean = false): ResultadoSincronizacion =
         bloqueoProceso.withLock { ejecutarSerializado(soloSubidas) }
+
+    /**
+     * Decisión del usuario ante un conflicto: «usar la del servidor». Se descartan los cambios de este teléfono
+     * en esa ficha y se baja su versión actual completa.
+     */
+    suspend fun resolverConflictoUsandoServidor(fichaId: Long): Boolean = bloqueoProceso.withLock {
+        val ficha = dao.fichaPorSyncId(dao.fichaSyncId(fichaId) ?: return@withLock false)
+            ?: return@withLock false
+        if (ficha.syncEstado != "CONFLICTO") return@withLock false
+        val org = ficha.organizacionId
+        val cabecera = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=*").optJSONObject(0)
+        if (cabecera == null || cabecera.estaEliminada()) {
+            // La otra persona eliminó la ficha: se acepta la baja.
+            dao.marcarSincronizadaDescarga(ficha.id, ficha.syncVersion)
+            aplicador.eliminarFichas(org, setOf(ficha.syncId))
+            return@withLock true
+        }
+        val grupo = GrupoFicha().also { it.cabecera = cabecera }
+        traerHijosDeFicha(ficha.syncId, grupo)
+        val datos = construirDatos(org, ficha.syncId, grupo)
+        aplicador.aplicar(org, datos, completo = true, forzar = true)
+    }
+
+    /** Decisión del usuario ante un conflicto: «conservar mis cambios» (se vuelven a subir encima). */
+    suspend fun resolverConflictoConservandoLocal(fichaId: Long): Boolean = bloqueoProceso.withLock {
+        val ficha = dao.fichaPorSyncId(dao.fichaSyncId(fichaId) ?: return@withLock false)
+            ?: return@withLock false
+        if (ficha.syncEstado != "CONFLICTO") return@withLock false
+        val remota = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=version,deleted_at").optJSONObject(0)
+        if (remota == null || remota.estaEliminada()) {
+            // Ya no existe en el servidor: se vuelve a crear con los datos de este teléfono.
+            dao.conservarLocalTrasConflicto(ficha.id, 0L) > 0
+        } else {
+            dao.conservarLocalTrasConflicto(ficha.id, remota.optLong("version", ficha.syncVersion)) > 0
+        }
+    }
 
     private suspend fun ejecutarSerializado(soloSubidas: Boolean): ResultadoSincronizacion {
         api.tokenValido()
@@ -65,12 +123,14 @@ class SincronizadorSupabase(context: Context) {
             ?: salas.first().organizacionId
         api.guardarOrganizacionActiva(activa)
         dao.asignarOrganizacionPendiente(activa)
+        if (!soloSubidas) retirarSalasSinAcceso(salas.map { it.organizacionId }.toSet())
 
         var totalSubidas = 0
         var totalEliminaciones = 0
         var totalErrores = 0
         var totalDescargas = 0
         var totalReintentables = 0
+        var totalConflictos = 0
         salas.forEach { sala ->
             val parcial = sincronizarSala(sala.organizacionId, soloSubidas)
             totalSubidas += parcial.subidas
@@ -78,22 +138,38 @@ class SincronizadorSupabase(context: Context) {
             totalErrores += parcial.errores
             totalDescargas += parcial.descargadas
             totalReintentables += parcial.erroresReintentables
+            totalConflictos += parcial.conflictos
         }
         return ResultadoSincronizacion(
             subidas = totalSubidas,
             eliminaciones = totalEliminaciones,
             errores = totalErrores,
             descargadas = totalDescargas,
-            erroresReintentables = totalReintentables
+            erroresReintentables = totalReintentables,
+            conflictos = totalConflictos
         )
+    }
+
+    /**
+     * Si a esta cuenta le quitaron una Sala por completo, sus fichas ya sincronizadas se retiran del teléfono.
+     * Las que tengan cambios sin subir se conservan (son trabajo de esta persona que aún no llegó al servidor).
+     */
+    private suspend fun retirarSalasSinAcceso(salasConAcceso: Set<String>) {
+        dao.organizacionesLocales().filter { it !in salasConAcceso }.forEach { org ->
+            runCatching {
+                aplicador.eliminarFichas(org, dao.fichasLocalesSincronizadas(org).mapTo(mutableSetOf()) { it.syncId })
+                marcas.olvidar(org)
+            }
+        }
     }
 
     private suspend fun sincronizarSala(organizacionId: String, soloSubidas: Boolean): ResultadoSincronizacion {
         var eliminadas = 0
         var errores = 0
         var reintentables = 0
+        var conflictos = 0
         dao.eliminaciones(organizacionId).forEach { tumba ->
-            runCatching { api.marcarEliminado(tumba.tabla, tumba.registroSyncId) }
+            runCatching { marcarEliminadoYLimpiar(tumba.tabla, tumba.registroSyncId) }
                 .onSuccess {
                     dao.eliminarTumba(tumba.id)
                     eliminadas++
@@ -103,38 +179,32 @@ class SincronizadorSupabase(context: Context) {
 
         var subidas = 0
         dao.fichasPendientes(organizacionId).forEach { ficha ->
-            runCatching {
-                val fichaRemota = fichaJson(ficha, organizacionId)
-                    .put("firma_storage_path", JSONObject.NULL)
-                var respuesta = api.upsert("fichas_familiares", fichaRemota)
-                val firmaRuta = subirFirmaSiExiste(ficha, organizacionId)
-                if (firmaRuta != null) {
-                    respuesta = api.upsert(
-                        "fichas_familiares",
-                        fichaJson(ficha, organizacionId).put("firma_storage_path", firmaRuta)
-                    )
+            runCatching { subirFicha(ficha, organizacionId) }
+                .onSuccess { guardadaSinCambiosPosteriores ->
+                    if (guardadaSinCambiosPosteriores) subidas++
+                }.onFailure { error ->
+                    if (error is ConflictoFichaException) {
+                        conflictos++
+                        dao.marcarConflicto(ficha.id, error.message.orEmpty().take(300))
+                    } else {
+                        errores++
+                        if (errorSincronizacionReintentable(error)) reintentables++
+                        dao.marcarError(
+                            ficha.id,
+                            error.message.orEmpty().ifBlank { "No se pudo sincronizar." }.take(300)
+                        )
+                    }
                 }
-                subirContenido(ficha, organizacionId)
-                subirHistorial(ficha, organizacionId)
-                val version = respuesta?.optLong("version", ficha.syncVersion + 1)
-                    ?: (ficha.syncVersion + 1)
-                dao.marcarSincronizada(ficha.id, version, ficha.actualizadoEn) > 0
-            }.onSuccess { guardadaSinCambiosPosteriores ->
-                if (guardadaSinCambiosPosteriores) subidas++
-            }.onFailure { error ->
-                errores++
-                if (errorSincronizacionReintentable(error)) reintentables++
-                dao.marcarError(
-                    ficha.id,
-                    error.message.orEmpty().ifBlank { "No se pudo sincronizar." }.take(300)
-                )
-            }
         }
 
         var descargadas = 0
         if (!soloSubidas) {
             runCatching { descargarDesdeSupabase(organizacionId) }
-                .onSuccess { descargadas = it }
+                .onSuccess {
+                    descargadas = it.descargadas
+                    errores += it.errores
+                    reintentables += it.reintentables
+                }
                 .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
         }
         val resultadoPrivado = privados.ejecutar(organizacionId, soloSubidas)
@@ -143,9 +213,79 @@ class SincronizadorSupabase(context: Context) {
             eliminadas,
             errores + resultadoPrivado.errores,
             descargadas,
-            reintentables + resultadoPrivado.reintentables
+            reintentables + resultadoPrivado.reintentables,
+            conflictos
         )
     }
+
+    // ---- subida ----------------------------------------------------------------------------
+
+    /**
+     * Sube la cabecera comprobando la versión: si otra persona la cambió desde la última sincronización de este
+     * teléfono, NO se pisa su trabajo (se marca CONFLICTO). Devuelve falso si el usuario siguió editando mientras tanto.
+     */
+    private suspend fun subirFicha(ficha: FichaFamiliarEntity, organizacionId: String): Boolean {
+        var version = ficha.syncVersion
+        val primera = fichaJson(ficha, organizacionId)
+        // Sin firma local, la ficha del servidor también queda sin firma; con firma, esta no cambia hasta subirla.
+        if (ficha.firmaUri == null) primera.put("firma_storage_path", JSONObject.NULL)
+        var respuesta = guardarCabecera(ficha, primera, version)
+        version = respuesta.optLong("version", version + 1)
+        dao.fijarVersion(ficha.id, version)
+
+        val firmaRuta = subirFirmaSiExiste(ficha, organizacionId)
+        if (firmaRuta != null && respuesta.texto("firma_storage_path") != firmaRuta) {
+            respuesta = guardarCabecera(
+                ficha, fichaJson(ficha, organizacionId).put("firma_storage_path", firmaRuta), version
+            )
+            version = respuesta.optLong("version", version + 1)
+            dao.fijarVersion(ficha.id, version)
+        }
+        subirContenido(ficha, organizacionId)
+        subirHistorial(ficha, organizacionId)
+        return dao.marcarSincronizada(ficha.id, version, ficha.actualizadoEn) > 0
+    }
+
+    private suspend fun guardarCabecera(
+        ficha: FichaFamiliarEntity,
+        json: JSONObject,
+        versionBase: Long
+    ): JSONObject {
+        var version = versionBase
+        if (version == 0L) {
+            api.insertarPrivadoNuevo("fichas_familiares", json)?.let { return it }
+            // Ya existía con este identificador: es un intento anterior de este mismo teléfono que no llegó a
+            // registrarse. Se toma su versión como base y se actualiza.
+            version = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=version")
+                .optJSONObject(0)?.optLong("version", 0L) ?: 0L
+            if (version == 0L) throw ConflictoFichaException("El servidor no aceptó crear la ficha.")
+        }
+        return api.actualizarPrivadoSiVersion("fichas_familiares", ficha.syncId, version, json)
+            ?: throw ConflictoFichaException(
+                "Otra persona modificó esta ficha mientras la editabas. Elige qué versión conservar."
+            )
+    }
+
+    private suspend fun marcarEliminadoYLimpiar(tabla: String, id: String) {
+        val rutas = runCatching { rutasDeAlmacenamiento(tabla, id) }.getOrDefault(emptyList())
+        api.marcarEliminado(tabla, id)
+        // Los archivos de una ficha o adjunto eliminado no deben quedarse en el servidor con datos de pacientes.
+        rutas.forEach { ruta -> runCatching { api.eliminarArchivoAlmacenamiento(ruta) } }
+    }
+
+    private suspend fun rutasDeAlmacenamiento(tabla: String, id: String): List<String> = when (tabla) {
+        "adjuntos_ficha" -> api.seleccionar("adjuntos_ficha?id=eq.$id&select=storage_path").rutas()
+        "fichas_familiares" ->
+            api.seleccionar("adjuntos_ficha?ficha_id=eq.$id&select=storage_path").rutas() +
+                api.seleccionar("fichas_familiares?id=eq.$id&select=firma_storage_path")
+                    .let { filas -> (0 until filas.length()).map { filas.getJSONObject(it).texto("firma_storage_path") } }
+                    .filter { it.isNotBlank() }
+        else -> emptyList()
+    }
+
+    private fun org.json.JSONArray.rutas(): List<String> =
+        (0 until length()).map { getJSONObject(it).texto("storage_path") }.filter { it.isNotBlank() }
+
     private suspend fun subirContenido(ficha: FichaFamiliarEntity, organizacionId: String) {
         api.upsertVarios("miembros_familia", dao.miembros(ficha.id).map {
             miembroJson(it, ficha.syncId, organizacionId)
@@ -195,6 +335,11 @@ class SincronizadorSupabase(context: Context) {
         api.insertarIgnorandoVarios("historial_fichas", eventos)
     }
 
+    /**
+     * El servidor guarda un solo adjunto por ficha y tipo (aunque esté borrado). Si ya existe uno de ese tipo con
+     * otro identificador —porque se reemplazó la foto o se quitó y se volvió a dibujar— se reutiliza SU identificador
+     * y se reactiva, en vez de chocar con la restricción y dejar la ficha en error.
+     */
     private suspend fun subirAdjunto(item: AdjuntoFichaEntity, fichaSyncId: String, organizacionId: String) {
         val uri = Uri.parse(item.uri)
         if (uri.scheme.isNullOrBlank()) return
@@ -211,19 +356,30 @@ class SincronizadorSupabase(context: Context) {
             "application/pdf" -> "pdf"
             else -> "jpg"
         }
-        val ruta = "$organizacionId/$fichaSyncId/${item.syncId}-${item.tipo.lowercase()}.$extension"
+        val tipoCodificado = java.net.URLEncoder.encode(item.tipo, "UTF-8")
+        val existente = api.seleccionar(
+            "adjuntos_ficha?ficha_id=eq.$fichaSyncId&tipo=eq.$tipoCodificado&select=id,storage_path&limit=1"
+        ).optJSONObject(0)
+        val syncId = existente?.texto("id")?.takeIf { it.isNotBlank() } ?: item.syncId
+        if (syncId != item.syncId) dao.cambiarSyncIdAdjunto(item.syncId, syncId)
+        val ruta = "$organizacionId/$fichaSyncId/$syncId-${item.tipo.lowercase()}.$extension"
         val tamano = api.subirAdjunto(uri, ruta, mime)
         api.upsert(
             "adjuntos_ficha",
             JSONObject()
-                .put("id", item.syncId)
+                .put("id", syncId)
                 .put("organizacion_id", organizacionId)
                 .put("ficha_id", fichaSyncId)
                 .put("tipo", item.tipo)
                 .put("storage_path", ruta)
                 .put("mime_type", mime)
                 .put("tamano_bytes", tamano)
+                .put("deleted_at", JSONObject.NULL)
         )
+        // Si el archivo anterior tenía otra extensión, ya no hace falta.
+        existente?.texto("storage_path")?.takeIf { it.isNotBlank() && it != ruta }?.let {
+            runCatching { api.eliminarArchivoAlmacenamiento(it) }
+        }
     }
 
     private suspend fun subirFirmaSiExiste(ficha: FichaFamiliarEntity, organizacionId: String): String? {
@@ -242,489 +398,174 @@ class SincronizadorSupabase(context: Context) {
         return ruta
     }
 
-    private suspend fun descargarDesdeSupabase(organizacionId: String): Int {
-        val filasFicha = api.seleccionarPaginado(
-            "fichas_familiares?organizacion_id=eq.$organizacionId&deleted_at=is.null&select=*"
-        )
-        val fichasLocales = mutableMapOf<String, FichaFamiliarEntity>()
-        filasFicha.forEach { remoto ->
-            val syncId = remoto.getString("id")
-            val existente = dao.fichaPorSyncId(syncId)
-            if (existente?.syncEstado == "PENDIENTE" || existente?.syncEstado == "ERROR") return@forEach
-            val actualizadoRemoto = timestampMillis(remoto.texto("updated_at"), System.currentTimeMillis())
-            val firmaRuta = remoto.texto("firma_storage_path")
-            val firmaUri = if (firmaRuta.isBlank()) {
-                existente?.firmaUri?.let(::eliminarArchivoInternoSiCorresponde)
-                null
-            } else {
-                val destino = File(
-                    appContext.filesDir,
-                    "adjuntos_sincronizados/$organizacionId/$syncId/firma.${firmaRuta.substringAfterLast('.', "png")}"
-                )
-                descargarArchivoSiNecesario(firmaRuta, destino, actualizadoRemoto)
-            }
-            val entidad = FichaFamiliarEntity(
-                id = existente?.id ?: 0,
-                cedulaJefeHogar = remoto.texto("cedula_jefe_hogar"),
-                institucionSistema = remoto.texto("institucion_sistema"),
-                unidadOperativa = remoto.texto("unidad_operativa"),
-                codigoUo = remoto.texto("codigo_uo"),
-                areaNumero = remoto.texto("area_numero"),
-                codigoLocalizacion = remoto.texto("codigo_localizacion"),
-                parroquiaCodigoLocalizacion = remoto.texto("parroquia_codigo_localizacion"),
-                cantonCodigoLocalizacion = remoto.texto("canton_codigo_localizacion"),
-                provinciaCodigoLocalizacion = remoto.texto("provincia_codigo_localizacion"),
-                numeroFichaFamiliar = remoto.texto("numero_ficha_familiar"),
-                provincia = remoto.texto("provincia"),
-                canton = remoto.texto("canton"),
-                parroquia = remoto.texto("parroquia"),
-                sector = remoto.texto("sector"),
-                manzana = remoto.texto("manzana"),
-                numeroFamilia = remoto.texto("numero_familia"),
-                direccionHabitualFamilia = remoto.texto("direccion_habitual_familia"),
-                barrio = remoto.texto("barrio"),
-                numeroCasa = remoto.texto("numero_casa"),
-                comunidad = remoto.texto("comunidad"),
-                grupoCultural = remoto.texto("grupo_cultural"),
-                nombreApellidoJefeFamilia = remoto.texto("nombre_apellido_jefe_familia"),
-                numeroTelefono = remoto.texto("numero_telefono"),
-                fechaLlenado = fechaLocal(remoto.texto("fecha_llenado")),
-                numeroCarpeta = remoto.texto("numero_carpeta"),
-                latitud = remoto.doubleNullable("latitud"),
-                longitud = remoto.doubleNullable("longitud"),
-                altitud = remoto.doubleNullable("altitud"),
-                responsableNombre = remoto.texto("responsable_nombre"),
-                responsableCodigo = remoto.texto("responsable_codigo"),
-                firmaUri = firmaUri,
-                estado = remoto.texto("estado").ifBlank { "BORRADOR" },
-                creadoEn = timestampMillis(remoto.texto("creado_en"), existente?.creadoEn ?: 0L),
-                actualizadoEn = actualizadoRemoto,
-                creadoPorUsuarioId = existente?.creadoPorUsuarioId,
-                actualizadoPorUsuarioId = existente?.actualizadoPorUsuarioId,
-                completadoPorUsuarioId = existente?.completadoPorUsuarioId,
-                syncId = syncId,
-                syncEstado = "DESCARGANDO",
-                syncVersion = remoto.optLong("version", 1L),
-                syncError = "",
-                organizacionId = organizacionId,
-                establecimientoRemotoId = if (remoto.isNull("establecimiento_id")) {
-                    null
-                } else {
-                    remoto.optLong("establecimiento_id")
-                },
-                eaisId = remoto.texto("eais_id"),
-                territorioId = remoto.texto("territorio_id")
+    // ---- descarga --------------------------------------------------------------------------
+
+    /**
+     * Trae primero TODO lo que hay que saber del servidor (sin tocar la base) y luego aplica cada ficha en una
+     * transacción propia (ver [AplicadorDescarga]). Después de la primera descarga completa solo pide lo que cambió
+     * desde la última marca, con una repetición de 2 minutos por si una escritura tardó en confirmarse.
+     */
+    private suspend fun descargarDesdeSupabase(org: String): ResultadoDescarga {
+        val ahora = System.currentTimeMillis()
+        val completa = marcas.necesitaDescargaCompleta(org, ahora, dao.contarFichasDeOrganizacion(org) == 0)
+        val nuevasMarcas = mutableMapOf<String, String>()
+
+        suspend fun traer(tabla: String, campo: String = "updated_at", conBajas: Boolean = true): List<JSONObject> {
+            val filtroBajas = if (completa && conBajas) "&deleted_at=is.null" else ""
+            val desde = if (completa) null else marcas.marca(org, tabla)?.let { ConversionesSync.retroceder(it, 120) }
+            val filas = api.seleccionarPorCursor(
+                "$tabla?organizacion_id=eq.$org$filtroBajas&select=*", campo, desde
             )
-            val idLocal = if (entidad.id == 0L) {
-                dao.guardarFichaRemota(entidad)
-            } else {
-                dao.actualizarFichaRemota(entidad)
-                entidad.id
-            }
-            fichasLocales[syncId] = entidad.copy(id = if (entidad.id == 0L) idLocal else entidad.id)
+            filas.lastOrNull()?.texto(campo)?.takeIf { it.isNotBlank() }?.let { nuevasMarcas[tabla] = it }
+            return filas
         }
 
-        descargarMiembros(organizacionId, fichasLocales)
-        descargarEmbarazadas(organizacionId, fichasLocales)
-        descargarMortalidad(organizacionId, fichasLocales)
-        descargarRiesgos(organizacionId, fichasLocales)
-        descargarGestiones(organizacionId, fichasLocales)
-        descargarContaminacion(organizacionId, fichasLocales)
-        descargarLugares(organizacionId, fichasLocales)
-        descargarAdjuntos(organizacionId, fichasLocales)
-        descargarHistorial(organizacionId, fichasLocales)
-        val bajasConfirmadas = api.seleccionarPaginado(
-            "fichas_familiares?organizacion_id=eq.$organizacionId&deleted_at=not.is.null&select=id"
-        ).mapTo(mutableSetOf()) { it.getString("id") }
-        eliminarFichasConfirmadas(organizacionId, bajasConfirmadas)
+        val filasFicha = traer("fichas_familiares")
+        val miembros = traer("miembros_familia")
+        val embarazadas = traer("embarazadas")
+        val mortalidad = traer("mortalidad_familiar")
+        val calificaciones = traer("calificaciones_riesgo")
+        val valores = traer("valores_riesgo")
+        val gestiones = traer("gestion_riesgo")
+        val contaminaciones = traer("contaminacion_ambiental")
+        val lugares = traer("lugares_tratamiento")
+        val adjuntos = traer("adjuntos_ficha")
+        val historial = traer("historial_fichas", campo = "registrado_en", conBajas = false)
 
-        filasFicha.forEach { remoto ->
-            val syncId = remoto.getString("id")
-            fichasLocales[syncId]?.let {
-                dao.marcarSincronizada(
-                    it.id,
-                    remoto.optLong("version", 1L),
-                    it.actualizadoEn
-                )
+        val bajas = filasFicha.filter { it.estaEliminada() }.mapTo(mutableSetOf()) { it.getString("id") }
+        if (completa) {
+            bajas += api.seleccionarPorCursor(
+                "fichas_familiares?organizacion_id=eq.$org&deleted_at=not.is.null&select=id,updated_at"
+            ).map { it.getString("id") }
+        }
+
+        val grupos = linkedMapOf<String, GrupoFicha>()
+        fun grupo(fichaId: String) = grupos.getOrPut(fichaId) { GrupoFicha() }
+        filasFicha.filterNot { it.estaEliminada() }.forEach { grupo(it.getString("id")).cabecera = it }
+        miembros.forEach { grupo(it.texto("ficha_id")).miembros += it }
+        embarazadas.forEach { grupo(it.texto("ficha_id")).embarazadas += it }
+        mortalidad.forEach { grupo(it.texto("ficha_id")).mortalidad += it }
+        calificaciones.forEach { grupo(it.texto("ficha_id")).calificaciones += it }
+        gestiones.forEach { grupo(it.texto("ficha_id")).gestiones += it }
+        contaminaciones.forEach { grupo(it.texto("ficha_id")).contaminaciones += it }
+        lugares.forEach { grupo(it.texto("ficha_id")).lugares += it }
+        adjuntos.forEach { grupo(it.texto("ficha_id")).adjuntos += it }
+        historial.forEach { grupo(it.texto("ficha_id")).historial += it }
+        val fichaDeCalificacion = calificaciones.associate { it.getString("id") to it.texto("ficha_id") }
+        valores.forEach { valor ->
+            val calificacionId = valor.texto("calificacion_id")
+            val fichaId = fichaDeCalificacion[calificacionId] ?: dao.fichaSyncIdDeCalificacion(calificacionId)
+            if (fichaId != null) grupo(fichaId).valores += valor
+        }
+        grupos.keys.removeAll(bajas)
+
+        // En el modo incremental puede cambiar un dato hijo sin que cambie la cabecera: si la ficha no está en el
+        // teléfono hay que pedir también su cabecera.
+        val sinCabecera = grupos.filter { (id, g) -> g.cabecera == null && dao.fichaPorSyncId(id) == null }.keys
+        sinCabecera.chunked(50).forEach { lote ->
+            api.seleccionar(
+                "fichas_familiares?organizacion_id=eq.$org&deleted_at=is.null&id=in.(${lote.joinToString(",")})&select=*"
+            ).let { filas -> (0 until filas.length()).forEach { grupos[filas.getJSONObject(it).getString("id")]?.cabecera = filas.getJSONObject(it) } }
+        }
+
+        var aplicadas = 0
+        var errores = 0
+        var reintentables = 0
+        grupos.forEach { (syncId, grupo) ->
+            val local = dao.fichaPorSyncId(syncId)
+            if (local != null && local.syncEstado in setOf("PENDIENTE", "ERROR", "CONFLICTO")) return@forEach
+            if (grupo.cabecera == null && local == null) return@forEach
+            runCatching {
+                val datos = construirDatos(org, syncId, grupo)
+                if (aplicador.aplicar(org, datos, completa)) aplicadas++
+            }.onFailure { error ->
+                errores++
+                if (errorSincronizacionReintentable(error)) reintentables++
             }
         }
-        return fichasLocales.size
+        // En una descarga completa, lo que el teléfono tiene sincronizado y el servidor ya no muestra (borrado de
+        // verdad o permiso retirado) también se retira. Si el servidor no devolvió ninguna ficha no se toca nada.
+        val fichasVisibles = filasFicha.filterNot { it.estaEliminada() }.mapTo(mutableSetOf()) { it.getString("id") }
+        val ausentes = if (completa && fichasVisibles.isNotEmpty()) {
+            dao.fichasLocalesSincronizadas(org).map { it.syncId }.filter { it !in fichasVisibles && it !in bajas }
+        } else emptyList()
+        runCatching { aplicador.eliminarFichas(org, bajas + ausentes) }
+            .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
+
+        // Si algo falló, las marcas no avanzan: la próxima vez se repite lo mismo (aplicarlo dos veces es inocuo).
+        if (errores == 0) {
+            marcas.guardarMarcas(org, nuevasMarcas)
+            if (completa) marcas.registrarCompleta(org, ahora)
+        }
+        return ResultadoDescarga(aplicadas, errores, reintentables)
     }
 
-    private suspend fun eliminarFichasConfirmadas(org: String, idsEliminados: Set<String>) {
-        dao.fichasLocalesSincronizadas(org)
-            .filter { it.syncId in idsEliminados }
-            .forEach { ficha ->
-                val idsHijos = buildList {
-                    addAll(dao.miembros(ficha.id).map { it.syncId })
-                    addAll(dao.embarazadas(ficha.id).map { it.syncId })
-                    addAll(dao.mortalidad(ficha.id).map { it.syncId })
-                    dao.calificaciones(ficha.id).forEach { calificacion ->
-                        add(calificacion.syncId)
-                        addAll(dao.valores(calificacion.id).map { it.syncId })
-                    }
-                    addAll(dao.gestiones(ficha.id).map { it.syncId })
-                    addAll(dao.contaminaciones(ficha.id).map { it.syncId })
-                    addAll(dao.lugares(ficha.id).map { it.syncId })
-                    dao.adjuntos(ficha.id).forEach { adjunto ->
-                        eliminarArchivoInternoSiCorresponde(adjunto.uri)
-                        add(adjunto.syncId)
-                    }
-                }
-                ficha.firmaUri?.let(::eliminarArchivoInternoSiCorresponde)
-                dao.marcarDescargando(ficha.id)
-                dao.eliminarFichaRemota(ficha.syncId)
-                (idsHijos + ficha.syncId).forEach { dao.descartarTumbaRemota(it) }
-            }
-    }
-
-    private suspend fun descargarMiembros(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "miembros_familia?organizacion_id=eq.$org&deleted_at=is.null&select=*"
+    /** Trae de golpe los datos hijos de una sola ficha (para resolver un conflicto). */
+    private suspend fun traerHijosDeFicha(fichaSyncId: String, grupo: GrupoFicha) {
+        fun consulta(tabla: String) = "$tabla?ficha_id=eq.$fichaSyncId&deleted_at=is.null&select=*"
+        grupo.miembros += api.seleccionarPorCursor(consulta("miembros_familia"))
+        grupo.embarazadas += api.seleccionarPorCursor(consulta("embarazadas"))
+        grupo.mortalidad += api.seleccionarPorCursor(consulta("mortalidad_familiar"))
+        grupo.calificaciones += api.seleccionarPorCursor(consulta("calificaciones_riesgo"))
+        grupo.gestiones += api.seleccionarPorCursor(consulta("gestion_riesgo"))
+        grupo.contaminaciones += api.seleccionarPorCursor(consulta("contaminacion_ambiental"))
+        grupo.lugares += api.seleccionarPorCursor(consulta("lugares_tratamiento"))
+        grupo.adjuntos += api.seleccionarPorCursor(consulta("adjuntos_ficha"))
+        grupo.historial += api.seleccionarPorCursor(
+            "historial_fichas?ficha_id=eq.$fichaSyncId&select=*", "registrado_en"
         )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        remotos.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idMiembro(syncId) ?: 0
-                val entidad = MiembroFamiliaEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        grupoEdad = remoto.texto("grupo_edad"),
-                        apellidosNombres = remoto.texto("apellidos_nombres"),
-                        parentesco = remoto.texto("parentesco"),
-                        fechaNacimiento = fechaLocal(remoto.texto("fecha_nacimiento")),
-                        ocupacion = remoto.texto("ocupacion"),
-                        sexo = remoto.texto("sexo"),
-                        escolaridad = remoto.texto("escolaridad"),
-                        vacunasCompletas = remoto.booleanNullable("vacunas_completas"),
-                        saludBucalAdecuada = remoto.booleanNullable("salud_bucal_adecuada"),
-                        riesgoEnfermedadDiscapacidad = remoto.texto("riesgo_enfermedad_discapacidad"),
-                        estadoNutricional = remoto.texto("estado_nutricional"),
-                        hipertensionArterial = remoto.booleanNullable("hipertension_arterial"),
-                        diabetesMellitus = remoto.booleanNullable("diabetes_mellitus"),
-                        tuberculosis = remoto.booleanNullable("tuberculosis"),
-                        problemaSaludMental = remoto.booleanNullable("problema_salud_mental"),
-                        consumoAlcoholDrogas = remoto.booleanNullable("consumo_alcohol_drogas"),
-                        enfermedadCronica = remoto.booleanNullable("enfermedad_cronica"),
-                        discapacidadVisual = remoto.booleanNullable("discapacidad_visual"),
-                        discapacidadAuditiva = remoto.booleanNullable("discapacidad_auditiva"),
-                        discapacidadLenguaje = remoto.booleanNullable("discapacidad_lenguaje"),
-                        discapacidadFisica = remoto.booleanNullable("discapacidad_fisica"),
-                        discapacidadIntelectual = remoto.booleanNullable("discapacidad_intelectual"),
-                        discapacidadPsicosocial = remoto.booleanNullable("discapacidad_psicosocial"),
-                        cuidadosPaliativos = remoto.booleanNullable("cuidados_paliativos"),
-                        vih = remoto.booleanNullable("vih"),
-                        eventoSalud = remoto.booleanNullable("evento_salud"),
-                        casoConfirmado = remoto.booleanNullable("caso_confirmado"),
-                        casoSospechosoUno = remoto.booleanNullable("caso_sospechoso_uno"),
-                        casoSospechosoDos = remoto.booleanNullable("caso_sospechoso_dos"),
-                        prestadorComunitario = remoto.booleanNullable("prestador_comunitario"),
-                        parteroAncestral = remoto.booleanNullable("partero_ancestral"),
-                        sabiduriaAncestral = remoto.booleanNullable("sabiduria_ancestral"),
-                        comorbilidadesCie10Json = remoto.texto("comorbilidades_cie10_json").ifBlank { "[]" },
-                        porcentajeDiscapacidad = remoto.intNullable("porcentaje_discapacidad"),
-                        necesitaAyudaTecnica = remoto.booleanNullable("necesita_ayuda_tecnica"),
-                        enfermedadCronicaDescompensada = remoto.booleanNullable("enfermedad_cronica_descompensada"),
-                        riesgoGenetico = remoto.booleanNullable("riesgo_genetico"),
-                        victimaViolencia = remoto.booleanNullable("victima_violencia"),
-                        privadoLibertad = remoto.booleanNullable("privado_libertad"),
-                        numeroHistoriaClinica = remoto.texto("numero_historia_clinica"),
-                        cedula = remoto.texto("cedula"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarMiembroRemoto(entidad)
-                else dao.actualizarMiembroRemoto(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.miembros(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                dao.eliminarMiembroRemoto(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
+        grupo.calificaciones.map { it.getString("id") }.chunked(50).forEach { lote ->
+            val filas = api.seleccionar(
+                "valores_riesgo?calificacion_id=in.(${lote.joinToString(",")})&deleted_at=is.null&select=*"
+            )
+            for (i in 0 until filas.length()) grupo.valores += filas.getJSONObject(i)
         }
     }
 
-    private suspend fun descargarEmbarazadas(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "embarazadas?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        remotos.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idEmbarazada(syncId) ?: 0
-                val entidad = EmbarazadaEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        apellidosNombres = remoto.texto("apellidos_nombres"),
-                        fechaUltimaMenstruacion = fechaLocal(remoto.texto("fecha_ultima_menstruacion")),
-                        fechaProbableParto = fechaLocal(remoto.texto("fecha_probable_parto")),
-                        semanasGestacion = remoto.intNullable("semanas_gestacion"),
-                        dosisDtPrimera = remoto.optBoolean("dosis_dt_primera"),
-                        dosisDtSegunda = remoto.optBoolean("dosis_dt_segunda"),
-                        dosisDtRefuerzo = remoto.optBoolean("dosis_dt_refuerzo"),
-                        gestas = remoto.intNullable("gestas"),
-                        partos = remoto.intNullable("partos"),
-                        abortos = remoto.intNullable("abortos"),
-                        cesareas = remoto.intNullable("cesareas"),
-                        antecedentesPatologicosObstetricos = remoto.texto("antecedentes_patologicos_obstetricos"),
-                        riesgoObstetrico = remoto.texto("riesgo_obstetrico"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarEmbarazadaRemota(entidad)
-                else dao.actualizarEmbarazadaRemota(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.embarazadas(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                dao.eliminarEmbarazadaRemota(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-    }
-
-    private suspend fun descargarMortalidad(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "mortalidad_familiar?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        remotos.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idMortalidad(syncId) ?: 0
-                val entidad = MortalidadFamiliarEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        nombre = remoto.texto("nombre"),
-                        parentesco = remoto.texto("parentesco"),
-                        edadAlFallecer = remoto.intNullable("edad_al_fallecer"),
-                        causa = remoto.texto("causa"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarMortalidadRemota(entidad)
-                else dao.actualizarMortalidadRemota(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.mortalidad(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                dao.eliminarMortalidadRemota(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-    }
-
-    private suspend fun descargarRiesgos(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val calificacionesLocales = mutableMapOf<String, Long>()
-        val calificacionesRemotas = api.seleccionarPaginado(
-            "calificaciones_riesgo?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsCalificacionesActivas = calificacionesRemotas.mapTo(mutableSetOf()) { it.getString("id") }
-        calificacionesRemotas.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idCalificacion(syncId) ?: 0
-                val entidad = CalificacionRiesgoEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        fechaCalificacion = fechaLocal(remoto.texto("fecha_calificacion")),
-                        responsable = remoto.texto("responsable"),
-                        total = remoto.optInt("total"),
-                        nivel = remoto.texto("nivel").ifBlank { "SIN_RIESGO" },
-                        syncId = syncId
-                    )
-                val idGuardado = if (idExistente == 0L) {
-                    dao.guardarCalificacionRemota(entidad)
-                } else {
-                    dao.actualizarCalificacionRemota(entidad)
-                    idExistente
-                }
-                calificacionesLocales[syncId] = if (idExistente == 0L) idGuardado else idExistente
-            }
-        val valoresRemotos = api.seleccionarPaginado(
-            "valores_riesgo?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsValoresActivos = valoresRemotos.mapTo(mutableSetOf()) { it.getString("id") }
-        calificacionesLocales.values.forEach { calificacionId ->
-            dao.valores(calificacionId).filter { it.syncId !in idsValoresActivos }.forEach {
-                dao.eliminarValorRiesgoRemoto(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-        valoresRemotos.forEach { remoto ->
-                val calificacionId = calificacionesLocales[remoto.texto("calificacion_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idValorRiesgo(syncId) ?: 0
-                val entidad = ValorRiesgoEntity(
-                        id = idExistente,
-                        calificacionId = calificacionId,
-                        componente = remoto.optInt("componente"),
-                        valor = remoto.optInt("valor"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarValorRiesgoRemoto(entidad)
-                else dao.actualizarValorRiesgoRemoto(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.calificaciones(ficha.id)
-                .filter { it.syncId !in idsCalificacionesActivas }
-                .forEach { calificacion ->
-                    val idsValores = dao.valores(calificacion.id).map { it.syncId }
-                    dao.eliminarCalificacionRemota(calificacion.syncId)
-                    (idsValores + calificacion.syncId).forEach { dao.descartarTumbaRemota(it) }
-                }
-        }
-    }
-
-    private suspend fun descargarGestiones(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "gestion_riesgo?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        remotos.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idGestion(syncId) ?: 0
-                val entidad = GestionRiesgoEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        fechaAnalisis = fechaLocal(remoto.texto("fecha_analisis")),
-                        numero = remoto.intNullable("numero"),
-                        compromisoFamilia = remoto.texto("compromiso_familia"),
-                        compromisoEquipoSalud = remoto.texto("compromiso_equipo_salud"),
-                        fechaEvaluacion = fechaLocal(remoto.texto("fecha_evaluacion")),
-                        cumplimiento = remoto.texto("cumplimiento").ifBlank { "PENDIENTE" },
-                        causasIncumplimientoObservaciones = remoto.texto("causas_incumplimiento_observaciones"),
-                        responsable = remoto.texto("responsable"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarGestionRemota(entidad)
-                else dao.actualizarGestionRemota(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.gestiones(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                dao.eliminarGestionRemota(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-    }
-
-    private suspend fun descargarContaminacion(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "contaminacion_ambiental?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        remotos.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idContaminacion(syncId) ?: 0
-                val entidad = ContaminacionAmbientalEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        fechaInforme = fechaLocal(remoto.texto("fecha_informe")),
-                        tipoContaminanteDescripcion = remoto.texto("tipo_contaminante_descripcion"),
-                        causanteContaminacion = remoto.texto("causante_contaminacion"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarContaminacionRemota(entidad)
-                else dao.actualizarContaminacionRemota(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.contaminaciones(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                dao.eliminarContaminacionRemota(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-    }
-
-    private suspend fun descargarLugares(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "lugares_tratamiento?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        remotos.forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idLugar(syncId) ?: 0
-                val entidad = LugarTratamientoEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        descripcion = remoto.texto("descripcion"),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarLugarRemoto(entidad)
-                else dao.actualizarLugarRemoto(entidad)
-            }
-        fichas.values.forEach { ficha ->
-            dao.lugares(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                dao.eliminarLugarRemoto(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-    }
-
-    private suspend fun descargarAdjuntos(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        val remotos = api.seleccionarPaginado(
-            "adjuntos_ficha?organizacion_id=eq.$org&deleted_at=is.null&select=*"
-        )
-        val idsActivos = remotos.mapTo(mutableSetOf()) { it.getString("id") }
-        fichas.values.forEach { ficha ->
-            dao.adjuntos(ficha.id).filter { it.syncId !in idsActivos }.forEach {
-                eliminarArchivoInternoSiCorresponde(it.uri)
-                dao.eliminarAdjuntoRemoto(it.syncId)
-                dao.descartarTumbaRemota(it.syncId)
-            }
-        }
-        remotos.forEach { remoto ->
-            val fichaSyncId = remoto.texto("ficha_id")
-            val ficha = fichas[fichaSyncId] ?: return@forEach
-            val syncId = remoto.getString("id")
-            val ruta = remoto.texto("storage_path")
-            if (ruta.isBlank()) return@forEach
-            val mime = remoto.texto("mime_type").ifBlank { "application/octet-stream" }
-            val extension = ruta.substringAfterLast('.', extensionPara(mime, "bin"))
-            val actualizado = timestampMillis(remoto.texto("updated_at"), System.currentTimeMillis())
+    /** Descarga los archivos de la ficha (firma y adjuntos) y los junta con sus filas. */
+    private suspend fun construirDatos(org: String, syncId: String, grupo: GrupoFicha): DatosFichaRemota {
+        val cabecera = grupo.cabecera
+        val firmaUri = cabecera?.texto("firma_storage_path")?.takeIf { it.isNotBlank() }?.let { ruta ->
             val destino = File(
                 appContext.filesDir,
-                "adjuntos_sincronizados/$org/$fichaSyncId/$syncId.$extension"
+                "adjuntos_sincronizados/$org/$syncId/firma.${ruta.substringAfterLast('.', "png")}"
             )
-            val uri = descargarArchivoSiNecesario(
+            descargarArchivoSiNecesario(
+                ruta, destino,
+                ConversionesSync.timestampMillis(cabecera.texto("updated_at"), System.currentTimeMillis())
+            )
+        }
+        val archivos = mutableMapOf<String, String>()
+        grupo.adjuntos.filterNot { it.estaEliminada() }.forEach { remoto ->
+            val ruta = remoto.texto("storage_path")
+            if (ruta.isBlank()) return@forEach
+            val adjuntoId = remoto.getString("id")
+            val mime = remoto.texto("mime_type").ifBlank { "application/octet-stream" }
+            val extension = ruta.substringAfterLast('.', extensionPara(mime, "bin"))
+            val destino = File(appContext.filesDir, "adjuntos_sincronizados/$org/$syncId/$adjuntoId.$extension")
+            archivos[adjuntoId] = descargarArchivoSiNecesario(
                 rutaStorage = ruta,
                 destino = destino,
-                actualizadoRemoto = actualizado,
+                actualizadoRemoto = ConversionesSync.timestampMillis(remoto.texto("updated_at"), System.currentTimeMillis()),
                 tamanoEsperado = remoto.optLong("tamano_bytes", -1L)
             )
-            val idExistente = dao.idAdjunto(syncId) ?: 0
-            val entidad = AdjuntoFichaEntity(
-                    id = idExistente,
-                    fichaId = ficha.id,
-                    tipo = remoto.texto("tipo"),
-                    uri = uri,
-                    actualizadoEn = actualizado,
-                    syncId = syncId
-                )
-            if (idExistente == 0L) dao.guardarAdjuntoRemoto(entidad)
-            else dao.actualizarAdjuntoRemoto(entidad)
         }
-    }
-
-    private suspend fun descargarHistorial(org: String, fichas: Map<String, FichaFamiliarEntity>) {
-        api.seleccionarPaginado("historial_fichas?organizacion_id=eq.$org&select=*")
-            .forEach { remoto ->
-                val ficha = fichas[remoto.texto("ficha_id")] ?: return@forEach
-                val syncId = remoto.getString("id")
-                val idExistente = dao.idHistorial(syncId) ?: 0
-                val entidad = HistorialFichaEntity(
-                        id = idExistente,
-                        fichaId = ficha.id,
-                        numeroFicha = remoto.texto("numero_ficha"),
-                        usuarioId = null,
-                        usuarioNombre = remoto.texto("usuario_nombre"),
-                        accion = remoto.texto("accion"),
-                        detalle = remoto.texto("detalle"),
-                        creadoEn = timestampMillis(remoto.texto("ocurrido_en"), System.currentTimeMillis()),
-                        syncId = syncId
-                    )
-                if (idExistente == 0L) dao.guardarHistorialRemoto(entidad)
-                else dao.actualizarHistorialRemoto(entidad)
-            }
+        return DatosFichaRemota(
+            syncId = syncId,
+            cabecera = cabecera,
+            miembros = grupo.miembros,
+            embarazadas = grupo.embarazadas,
+            mortalidad = grupo.mortalidad,
+            calificaciones = grupo.calificaciones,
+            valores = grupo.valores,
+            gestiones = grupo.gestiones,
+            contaminaciones = grupo.contaminaciones,
+            lugares = grupo.lugares,
+            adjuntos = grupo.adjuntos,
+            historial = grupo.historial,
+            archivosAdjuntos = archivos,
+            firmaUri = firmaUri
+        )
     }
 
     private suspend fun descargarArchivoSiNecesario(
@@ -883,36 +724,6 @@ class SincronizadorSupabase(context: Context) {
         .put("id", item.syncId).put("organizacion_id", org).put("ficha_id", fichaId)
         .put("descripcion", item.descripcion)
 
-    private fun JSONObject.texto(clave: String): String =
-        if (!has(clave) || isNull(clave)) "" else optString(clave, "")
-
-    private fun JSONObject.intNullable(clave: String): Int? =
-        if (!has(clave) || isNull(clave)) null else optInt(clave)
-
-    private fun JSONObject.doubleNullable(clave: String): Double? =
-        if (!has(clave) || isNull(clave)) null else optDouble(clave)
-
-    private fun JSONObject.booleanNullable(clave: String): Boolean? =
-        if (!has(clave) || isNull(clave)) null else optBoolean(clave)
-
-    private fun fechaLocal(valor: String): String {
-        if (valor.isBlank()) return ""
-        if (valor.matches(Regex("\\d{2}/\\d{2}/\\d{4}"))) return valor
-        return runCatching {
-            val fecha = FORMATO_ISO.parse(valor) ?: return@runCatching ""
-            FORMATO_LOCAL.format(fecha)
-        }.getOrDefault("")
-    }
-
-    private fun timestampMillis(valor: String, fallback: Long): Long {
-        if (valor.isBlank()) return fallback
-        val normalizado = valor.replace(Regex("(\\.\\d{3})\\d+"), "\$1")
-        FORMATOS_HORA_ENTRADA.forEach { formato ->
-            runCatching { formato.parse(normalizado)?.time }.getOrNull()?.let { return it }
-        }
-        return fallback
-    }
-
     private fun fechaIso(valor: String): Any = convertirFecha(valor) ?: JSONObject.NULL
 
     private fun fechaIsoObligatoria(valor: String): String =
@@ -940,17 +751,8 @@ class SincronizadorSupabase(context: Context) {
             SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
         )
         val FORMATO_ISO = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }
-        val FORMATO_LOCAL = SimpleDateFormat("dd/MM/yyyy", Locale.US).apply { isLenient = false }
         val FORMATO_HORA_ISO = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }
-        val FORMATOS_HORA_ENTRADA = listOf(
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX", Locale.US).apply { isLenient = false },
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US).apply { isLenient = false },
-            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
-                isLenient = false
-                timeZone = TimeZone.getTimeZone("UTC")
-            }
-        )
     }
 }
