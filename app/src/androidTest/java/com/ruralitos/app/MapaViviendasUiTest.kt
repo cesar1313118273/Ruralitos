@@ -3,6 +3,7 @@ package com.ruralitos.app
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -41,12 +42,12 @@ class MapaViviendasUiTest {
         }
     }
 
-    private fun ficha(nombre: String, lat: Double?, lon: Double?, estado: String, sync: String) = FichaFamiliarEntity(
+    private fun ficha(nombre: String, lat: Double?, lon: Double?, estado: String, sync: String, barrio: String = "San José") = FichaFamiliarEntity(
         cedulaJefeHogar = "09${UUID.randomUUID().toString().filter { it.isDigit() }.take(8).padEnd(8, '0')}",
         institucionSistema = "", unidadOperativa = "QA", codigoUo = "1", areaNumero = "1", codigoLocalizacion = "1",
         parroquiaCodigoLocalizacion = "1", cantonCodigoLocalizacion = "1", provinciaCodigoLocalizacion = "1",
         numeroFichaFamiliar = "QA-MAPA-${UUID.randomUUID()}", provincia = "P", canton = "C", parroquia = "R",
-        sector = "S", manzana = "1", numeroFamilia = "1", direccionHabitualFamilia = "D", barrio = "San José",
+        sector = "S", manzana = "1", numeroFamilia = "1", direccionHabitualFamilia = "D", barrio = barrio,
         numeroCasa = "12", comunidad = "C", grupoCultural = "MESTIZO", nombreApellidoJefeFamilia = nombre,
         numeroTelefono = "0", fechaLlenado = "01/10/2026", numeroCarpeta = "1", responsableNombre = "QA",
         responsableCodigo = "1", latitud = lat, longitud = lon, estado = estado, syncEstado = sync
@@ -56,10 +57,10 @@ class MapaViviendasUiTest {
     fun sembrar() { runBlocking {
         val sync = database.sincronizacionDao()
         suspend fun nueva(clave: String, f: FichaFamiliarEntity) { ids[clave] = sync.guardarFichaRemota(f) }
-        nueva("aldia", ficha("PÉREZ LUIS", -4.00, -79.20, "COMPLETA", "SINCRONIZADO"))
-        nueva("riesgo", ficha("GÓMEZ ANA", -4.01, -79.21, "COMPLETA", "SINCRONIZADO"))
-        nueva("borrador", ficha("TORRES JUAN", -4.02, -79.19, "BORRADOR", "SINCRONIZADO"))
-        nueva("sinsync", ficha("RUIZ MARÍA", -4.03, -79.22, "COMPLETA", "PENDIENTE"))
+        nueva("aldia", ficha("PÉREZ LUIS", -0.2201, -78.5123, "COMPLETA", "SINCRONIZADO"))
+        nueva("riesgo", ficha("GÓMEZ ANA", -0.2033, -78.4907, "COMPLETA", "SINCRONIZADO"))
+        nueva("borrador", ficha("TORRES JUAN", -0.2120, -78.5000, "BORRADOR", "SINCRONIZADO", barrio = "El Carmen"))
+        nueva("sinsync", ficha("RUIZ MARÍA", -0.1900, -78.4800, "COMPLETA", "PENDIENTE"))
         nueva("sinubicacion", ficha("SIN PUNTO LUCÍA", null, null, "BORRADOR", "SINCRONIZADO"))
         database.fichaContenidoDao().guardarCalificacion(
             CalificacionRiesgoEntity(fichaId = ids.getValue("riesgo"), fechaCalificacion = "01/10/2026", responsable = "QA", total = 40, nivel = "ALTO")
@@ -99,10 +100,10 @@ class MapaViviendasUiTest {
         rule.onNodeWithText("Sin sincronizar · 1").assertExists()
 
         // el filtro deja solo las de riesgo alto
-        rule.onNodeWithText("Riesgo alto · 1").performClick()
+        rule.onNodeWithText("Riesgo alto · 1").performScrollTo().performClick()
         rule.waitUntil(5_000) { rule.onAllNodes(hasText("1 de 4 viviendas")).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithText("GÓMEZ ANA").assertExists()
-        rule.onNodeWithText("Todas · 4").performClick()
+        rule.onNodeWithText("Todas · 4").performScrollTo().performClick()
         rule.waitUntil(5_000) { rule.onAllNodes(hasText("4 viviendas con ubicación")).fetchSemanticsNodes().isNotEmpty() }
 
         // búsqueda sin tildes ni mayúsculas
@@ -168,5 +169,65 @@ class MapaViviendasUiTest {
         }
         org.junit.Assert.assertTrue("al tocar la vivienda debe abrirse su tarjeta", tarjeta)
         rule.onNodeWithText("PÉREZ LUIS").assertExists()
+    }
+
+    private fun mostrar(onFicha: (Long) -> Unit = {}, onUbicar: (Long) -> Unit = {}) {
+        rule.activityRule.scenario.onActivity {
+            it.requestedOrientation = android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+        }
+        rule.waitUntil(10_000) {
+            rule.activity.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        }
+        rule.setContent {
+            RuralitosTheme {
+                CompositionLocalProvider(LocalClaseAncho provides ClaseAncho.EXPANDIDA) {
+                    MapaViviendasScreen(usuarioId = 1, onRegresar = {}, onAbrirFicha = onFicha, onAbrirRuta = {}, onUbicarFicha = onUbicar)
+                }
+            }
+        }
+        rule.waitUntil(15_000) { rule.onAllNodes(hasText("4 viviendas con ubicación")).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test
+    fun filtraPorBarrioYMuestraGruposDeRiesgo() {
+        mostrar()
+        rule.onNodeWithTag("chip_barrio").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("El Carmen (1)")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("El Carmen (1)").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("1 de 4 viviendas")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("TORRES JUAN").assertExists()
+        rule.onNodeWithText("Gestantes · 0").performScrollTo().assertExists()
+        rule.onNodeWithText("Menores de 5 · 0").assertExists()
+        rule.onNodeWithText("Mayores de 65 · 0").assertExists()
+    }
+
+    @Test
+    fun elRecorridoDelDiaOrdenaLasViviendasElegidas() {
+        mostrar()
+        rule.onNodeWithTag("chip_recorrido").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("Toca las viviendas que vas a visitar")).fetchSemanticsNodes().isNotEmpty() }
+        // con menos de dos elegidas no se puede ordenar
+        rule.onNodeWithText("PÉREZ LUIS").performClick()
+        rule.onNodeWithText("GÓMEZ ANA").performClick()
+        rule.onNodeWithText("TORRES JUAN").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("3 elegidas")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithTag("recorrido_ordenar").performClick()
+        // la primera vez el motor copia la red vial del país, por eso la espera es larga
+        rule.waitUntil(240_000) { rule.onAllNodes(hasText("Recorrido de 3 viviendas")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithTag("resumen_recorrido").assertExists()
+        rule.onNodeWithTag("ir_primera_parada").assertExists()
+        // salir del modo deja el mapa como estaba
+        rule.onNodeWithTag("salir_recorrido").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("Toca las viviendas que vas a visitar")).fetchSemanticsNodes().isEmpty() }
+    }
+
+    @Test
+    fun ubicarAhoraLlevaAlCroquisDeLaFicha() {
+        var ubicada: Long? = null
+        mostrar(onUbicar = { ubicada = it })
+        rule.onNodeWithText("1 sin ubicación · ver").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasText("SIN PUNTO LUCÍA")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithTag("ubicar_ahora").performClick()
+        assertEquals(ids["sinubicacion"], ubicada)
     }
 }

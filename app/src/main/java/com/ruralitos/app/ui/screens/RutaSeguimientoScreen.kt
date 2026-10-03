@@ -442,7 +442,7 @@ fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Uni
                     descripcion = "Cambia el modo de viaje solo para consultar el recorrido."
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                        listOf("auto" to "Auto", "pedestrian" to "A pie", "bicycle" to "Bici")
+                        listOf("auto" to "Auto", "motor_scooter" to "Moto", "pedestrian" to "A pie", "bicycle" to "Bici")
                             .forEach { (valor, etiqueta) ->
                                 Surface(onClick = { modo = valor },
                                     shape = RoundedCornerShape(16.dp),

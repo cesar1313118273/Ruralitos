@@ -1252,6 +1252,20 @@ fun RuralitosApp() {
                             fichaIdRuta = id
                             rutaDesdeMapa = true
                             pantallaActual = "rutaSeguimiento"
+                        },
+                        onUbicarFicha = { id ->
+                            scope.launch {
+                                fichaSeleccionada = withContext(Dispatchers.IO) {
+                                    database.fichaFamiliarDao().buscarPorId(id)
+                                }
+                                if (fichaSeleccionada != null) {
+                                    fichaIdActual = id
+                                    modoEdicion = true
+                                    fichaAbiertaDesdeAgenda = false
+                                    fichaAbiertaDesdeMapa = true
+                                    pantallaActual = "croquisMapa"
+                                }
+                            }
                         }
                     )
                 }

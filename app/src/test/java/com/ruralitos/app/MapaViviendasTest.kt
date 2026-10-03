@@ -13,8 +13,9 @@ class MapaViviendasTest {
     private fun fila(
         id: Long = 1, jefe: String = "PÉREZ LUIS", cedula: String = "0102030405", numero: String = "0142",
         barrio: String = "San José", casa: String = "12", estado: String = "COMPLETA", sync: String = "SINCRONIZADO",
-        riesgo: String = "", atrasadas: Int = 0, lat: Double = -4.0, lon: Double = -79.2
-    ) = ViviendaMapaFila(id, jefe, cedula, numero, barrio, casa, lat, lon, estado, sync, riesgo, 4, atrasadas)
+        riesgo: String = "", atrasadas: Int = 0, lat: Double = -4.0, lon: Double = -79.2,
+        gestantes: Int = 0, menores: Int = 0, mayores: Int = 0
+    ) = ViviendaMapaFila(id, jefe, cedula, numero, barrio, casa, lat, lon, estado, sync, riesgo, 4, atrasadas, gestantes, menores, mayores)
 
     @Test
     fun elColorMuestraLoMasUrgenteDeLaFamilia() {
@@ -77,5 +78,32 @@ class MapaViviendasTest {
         assertEquals(2, c[EstadoVivienda.RIESGO_ALTO])
         assertEquals(1, c[EstadoVivienda.PENDIENTE])
         assertEquals(0, c[EstadoVivienda.SIN_SINCRONIZAR])
+    }
+
+    @Test
+    fun losFiltrosPorGrupoDeRiesgoUsanLosIntegrantes() {
+        val todas = listOf(fila(1), fila(2, gestantes = 1), fila(3, menores = 2), fila(4, mayores = 1), fila(5, gestantes = 1, mayores = 2))
+        assertEquals(listOf(2L, 5L), MapaViviendas.filtrar(todas, FiltroVivienda.GESTANTES, "").map { it.fichaId })
+        assertEquals(listOf(3L), MapaViviendas.filtrar(todas, FiltroVivienda.MENORES_5, "").map { it.fichaId })
+        assertEquals(listOf(4L, 5L), MapaViviendas.filtrar(todas, FiltroVivienda.ADULTOS_MAYORES, "").map { it.fichaId })
+    }
+
+    @Test
+    fun elBarrioSeFiltraSinImportarTildesNiMayusculasYSeListaSinRepetir() {
+        val todas = listOf(
+            fila(1, barrio = "San José"), fila(2, barrio = "SAN JOSE"), fila(3, barrio = "El Carmen"), fila(4, barrio = "")
+        )
+        val barrios = MapaViviendas.barrios(todas)
+        assertEquals(listOf("El Carmen" to 1, "San José" to 2), barrios)
+        assertEquals(listOf(1L, 2L), MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "", "san jose").map { it.fichaId })
+        assertEquals(4, MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "", "").size)
+        assertEquals(listOf(3L), MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "carmen", "El Carmen").map { it.fichaId })
+    }
+
+    @Test
+    fun cadaEstadoTieneUnaLetraDistintaParaQuienNoDistingueColores() {
+        assertEquals(EstadoVivienda.entries.size, EstadoVivienda.entries.map { it.letra }.toSet().size)
+        val json = JSONObject(MapaViviendas.geoJson(listOf(fila(1, riesgo = "ALTO"))))
+        assertEquals("R", json.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("letra"))
     }
 }
