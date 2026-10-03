@@ -155,6 +155,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Los datos de pacientes no deben verse en la vista previa de «aplicaciones recientes» (Android 13 o superior).
+        if (android.os.Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
+
         runCatching { SupabaseApi(this).procesarCallback(intent?.data) }
 
         setContent {

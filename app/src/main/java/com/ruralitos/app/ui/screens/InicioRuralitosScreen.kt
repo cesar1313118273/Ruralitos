@@ -1198,7 +1198,12 @@ private fun ItemBarra(
             text = texto,
             modifier = Modifier.padding(top = 3.dp),
             color = color,
-            fontSize = 11.sp,
+            // La barra tiene poco ancho: con la letra del sistema muy grande no debe partirse en dos líneas.
+            maxLines = 1,
+            softWrap = false,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Clip,
+            fontSize = (11f / androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f) *
+                androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceIn(1f, 1.3f)).sp,
             fontWeight = if (activo) {
                 FontWeight.SemiBold
             } else {

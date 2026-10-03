@@ -8,10 +8,12 @@ import java.io.File
 
 class MapaCampoAssetTest {
     private val assets = File("src/main/assets")
+    // Los tres mapas grandes viven en el paquete de recursos `:mapas`.
+    private val mapas = File("../mapas/src/main/assets")
 
     @Test
     fun mapaBaseDeEcuadorEstaIncluidoYEsMbtilesValido() {
-        val archivo = File(assets, "ecuador_base.mbtiles")
+        val archivo = File(mapas, "ecuador_base.mbtiles")
         assertTrue("Falta el mapa de campo", archivo.isFile)
         assertTrue("El mapa local parece incompleto", archivo.length() > 100_000_000L)
         assertEquals("SQLite format 3\u0000", archivo.inputStream().use { entrada ->
@@ -21,7 +23,7 @@ class MapaCampoAssetTest {
 
     @Test
     fun detalleZoom15EstaIncluidoYEsPmtilesValido() {
-        val archivo = File(assets, "ecuador_zoom15.pmtiles")
+        val archivo = File(mapas, "ecuador_zoom15.pmtiles")
         assertTrue("Falta el mapa detallado integrado", archivo.isFile)
         assertEquals("El mapa detallado parece incompleto", 140_147_517L, archivo.length())
         assertEquals("PMTiles", archivo.inputStream().use { entrada ->

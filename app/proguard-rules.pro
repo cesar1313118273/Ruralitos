@@ -79,3 +79,10 @@
 -keep class javax.xml.** { *; }
 -keep class org.w3c.dom.** { *; }
 -keep class javax.xml.namespace.QName { *; }
+
+# En la versión publicada no quedan mensajes de depuración ni informativos en el registro del teléfono.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+}
