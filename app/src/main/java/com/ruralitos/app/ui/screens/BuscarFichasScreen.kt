@@ -62,6 +62,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
+import com.ruralitos.app.ui.components.ListaDeColumnasAdaptable
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -238,10 +239,10 @@ Column(
             descripcion = "Encuentra una familia por cualquiera de sus integrantes."
         )
 
-        LazyColumn(
+        ListaDeColumnasAdaptable(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            espacio = 16.dp
         ) {
             item(key = "busqueda") {
                 TarjetaBusquedaFichas(

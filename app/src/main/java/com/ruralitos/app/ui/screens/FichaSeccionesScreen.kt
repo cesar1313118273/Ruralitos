@@ -190,15 +190,20 @@ fun FichaSeccionesScreen(
                         .padding(18.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    grupos.forEachIndexed { index, grupo ->
-                        GrupoFichaDesplegable(
-                            grupo = grupo,
-                            abierto = expandido[index],
-                            onAlternar = {
-                                expandido[index] = !expandido[index]
-                            },
-                            onAbrirSeccion = onAbrirSeccion
-                        )
+                    // En tabletas los cuatro grupos se reparten en dos columnas.
+                    com.ruralitos.app.ui.components.CuadriculaAdaptable(
+                        items = grupos.indices.toList(),
+                        columnas = com.ruralitos.app.ui.components.columnasAdaptables(1, 2, 2),
+                        espacio = 14.dp
+                    ) { index, modificador ->
+                        Box(modificador) {
+                            GrupoFichaDesplegable(
+                                grupo = grupos[index],
+                                abierto = expandido[index],
+                                onAlternar = { expandido[index] = !expandido[index] },
+                                onAbrirSeccion = onAbrirSeccion
+                            )
+                        }
                     }
                 }
             }

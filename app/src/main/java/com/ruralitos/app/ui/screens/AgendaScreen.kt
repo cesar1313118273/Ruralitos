@@ -77,6 +77,7 @@ import androidx.compose.ui.unit.sp
 import androidx.room.withTransaction
 import androidx.core.content.ContextCompat
 import com.ruralitos.app.R
+import com.ruralitos.app.ui.components.ListaDeColumnasAdaptable
 import com.ruralitos.app.data.agenda.RecordatorioAgenda
 import com.ruralitos.app.data.agenda.PlanificadorSeguimiento
 import com.ruralitos.app.data.local.database.RuralitosDatabase
@@ -415,10 +416,10 @@ fun AgendaScreen(
               else "Organiza y consulta tus actividades de salud"
       )
       Box(Modifier.weight(1f).fillMaxWidth()) {
-        LazyColumn(
+        ListaDeColumnasAdaptable(
             modifier = Modifier.fillMaxSize(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(15.dp)
+            espacio = 15.dp
         ) {
             item { PestanasAgenda(pestana, onSeleccionar = { pestana = it }) }
             if (pestana == 0) {

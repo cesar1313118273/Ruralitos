@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -111,14 +112,19 @@ fun ContenidoAdaptable(
             else -> 18.dp
         }
         val ancho = (maxWidth - margen * 2).coerceAtMost(anchoMaximo)
-        Box(
-            modifier = Modifier
-                .width(ancho)
-                .fillMaxHeight()
-                .align(Alignment.TopCenter)
-                .padding(horizontal = margen),
-            content = content
-        )
+        // El ancho de la ventana (no el del teléfono) decide cuántas columnas usan las pantallas.
+        androidx.compose.runtime.CompositionLocalProvider(LocalClaseAncho provides ClaseAncho.de(ancho)) {
+            Box(
+                modifier = Modifier
+                    .width(ancho)
+                    .fillMaxHeight()
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = margen)
+                    // Sin esto, el menú lateral cerrado asoma por los márgenes en pantallas anchas.
+                    .clipToBounds(),
+                content = content
+            )
+        }
     }
 }
 
@@ -357,6 +363,8 @@ fun PantallaRuralitos(
     onVolver: (() -> Unit)? = null,
     scrollHabilitado: Boolean = true,
     barraAccion: (@Composable ColumnScope.() -> Unit)? = null,
+    /** En pantallas anchas el formulario no se estira: se centra con este ancho máximo. */
+    anchoMaximo: Dp = 880.dp,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
     Column(
@@ -366,15 +374,18 @@ fun PantallaRuralitos(
             .formularioSeguro()
     ) {
         EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver, descripcion)
-        Column(
-            Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState(), enabled = scrollHabilitado)
-                .padding(RuralitosSpacing.base),
-            verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
-        ) {
-            contenido()
+        Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+            Column(
+                Modifier
+                    .widthIn(max = anchoMaximo)
+                    .fillMaxWidth()
+                    .fillMaxHeight()
+                    .verticalScroll(rememberScrollState(), enabled = scrollHabilitado)
+                    .padding(RuralitosSpacing.base),
+                verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
+            ) {
+                contenido()
+            }
         }
         if (barraAccion != null) BarraAccionPantallaRuralitos(barraAccion)
     }
@@ -401,13 +412,12 @@ fun PantallaListaRuralitos(
             .formularioSeguro()
     ) {
         EncabezadoPantallaRuralitos(titulo, subtitulo, paso, totalPasos, etiquetaPaso, onVolver, descripcion)
-        LazyColumn(
+        ListaDeColumnasAdaptable(
             Modifier.weight(1f).fillMaxWidth(),
             contentPadding = PaddingValues(RuralitosSpacing.base),
-            verticalArrangement = Arrangement.spacedBy(RuralitosSpacing.md)
-        ) {
-            contenido()
-        }
+            espacio = RuralitosSpacing.md,
+            contenido = contenido
+        )
         if (barraAccion != null) BarraAccionPantallaRuralitos(barraAccion)
     }
 }

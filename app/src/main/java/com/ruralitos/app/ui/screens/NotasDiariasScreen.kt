@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
+import com.ruralitos.app.ui.components.ListaDeColumnasAdaptable
 import com.ruralitos.app.data.agenda.RecordatorioNota
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.NotaDiariaConPersona
@@ -232,10 +233,10 @@ fun NotasDiariasScreen(
             onVolver = onRegresar,
             descripcion = "Notas importantes de las personas registradas"
         )
-        LazyColumn(
+        ListaDeColumnasAdaptable(
             modifier = Modifier.weight(1f).fillMaxWidth(),
             contentPadding = androidx.compose.foundation.layout.PaddingValues(top = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            espacio = 14.dp
         ) {
 
         item {

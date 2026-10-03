@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -91,6 +92,7 @@ fun AccesoSupabaseScreen(
 
             Surface(
                 modifier = Modifier
+                    .widthIn(max = 560.dp)
                     .fillMaxWidth()
                     .padding(top = 18.dp),
                 shape = RoundedCornerShape(34.dp),
@@ -1308,6 +1310,7 @@ private fun FormularioConDisenoLogin(
             CabeceraLoginRuralitos()
             Surface(
                 modifier = Modifier
+                    .widthIn(max = 560.dp)
                     .fillMaxWidth()
                     .padding(top = 18.dp),
                 shape = RoundedCornerShape(34.dp),

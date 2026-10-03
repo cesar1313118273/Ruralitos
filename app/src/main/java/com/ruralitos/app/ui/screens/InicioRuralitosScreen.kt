@@ -67,6 +67,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
+import com.ruralitos.app.ui.components.CuadriculaAdaptable
+import com.ruralitos.app.ui.components.columnasAdaptables
 import com.ruralitos.app.domain.SaludoProfesional
 import com.ruralitos.app.ui.components.LogoRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
@@ -429,7 +431,7 @@ fun InicioRuralitosScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .widthIn(max = 700.dp)
+                        .widthIn(max = 1100.dp)
                         .padding(horizontal = 16.dp)
                         .offset(y = (-14).dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -446,17 +448,15 @@ fun InicioRuralitosScreen(
                         fontWeight = FontWeight.SemiBold
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        AccesoInicio("Registro general", R.drawable.ruralitos_icono_reportes,
-                            onDispensarizacion, Modifier.weight(1f))
-                        AccesoInicio("Territorios", R.drawable.ruralitos_icono_red,
-                            onSala, Modifier.weight(1f))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        AccesoInicio("Notas Diarias", R.drawable.ruralitos_icono_fichas,
-                            onNotasDiarias, Modifier.weight(1f))
-                        AccesoInicio("Agenda", R.drawable.ruralitos_icono_agenda,
-                            onAgenda, Modifier.weight(1f))
+                    val accesos = listOf(
+                        Triple("Registro general", R.drawable.ruralitos_icono_reportes, onDispensarizacion),
+                        Triple("Territorios", R.drawable.ruralitos_icono_red, onSala),
+                        Triple("Notas Diarias", R.drawable.ruralitos_icono_fichas, onNotasDiarias),
+                        Triple("Agenda", R.drawable.ruralitos_icono_agenda, onAgenda)
+                    )
+                    // 2 columnas en teléfonos, 4 en tabletas anchas.
+                    CuadriculaAdaptable(accesos, columnasAdaptables(compacta = 2, media = 2, expandida = 4)) { (titulo, icono, accion), modificador ->
+                        AccesoInicio(titulo, icono, accion, modificador)
                     }
                     Spacer(Modifier.height(8.dp))
                 }
