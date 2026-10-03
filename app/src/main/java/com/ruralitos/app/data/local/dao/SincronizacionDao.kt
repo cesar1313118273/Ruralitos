@@ -97,6 +97,10 @@ interface SincronizacionDao {
     @Query("SELECT DISTINCT organizacionId FROM fichas_familiares WHERE organizacionId <> ''")
     suspend fun organizacionesLocales(): List<String>
 
+    /** Devuelve a la ficha el estado y la fecha que tenía (tras un cambio interno que no es una edición del usuario). */
+    @Query("UPDATE fichas_familiares SET syncEstado = :estado, actualizadoEn = :actualizadoEn WHERE id = :id")
+    suspend fun restablecerEstado(id: Long, estado: String, actualizadoEn: Long)
+
     @Query("UPDATE adjuntos_ficha SET syncId = :nuevo WHERE syncId = :actual")
     suspend fun cambiarSyncIdAdjunto(actual: String, nuevo: String)
 

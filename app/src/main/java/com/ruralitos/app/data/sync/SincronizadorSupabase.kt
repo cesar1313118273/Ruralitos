@@ -24,6 +24,7 @@ import java.io.IOException
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import androidx.room.withTransaction
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -361,7 +362,16 @@ class SincronizadorSupabase(context: Context) {
             "adjuntos_ficha?ficha_id=eq.$fichaSyncId&tipo=eq.$tipoCodificado&select=id,storage_path&limit=1"
         ).optJSONObject(0)
         val syncId = existente?.texto("id")?.takeIf { it.isNotBlank() } ?: item.syncId
-        if (syncId != item.syncId) dao.cambiarSyncIdAdjunto(item.syncId, syncId)
+        if (syncId != item.syncId) {
+            // El cambio de identificador no es una edición del usuario: se hace en una sola transacción y la ficha
+            // conserva su estado y su fecha, para que no quede «pendiente» por un cambio que ya está en el servidor.
+            database.withTransaction {
+                val ficha = dao.fichaPorSyncId(fichaSyncId)
+                if (ficha != null) dao.marcarDescargando(ficha.id)
+                dao.cambiarSyncIdAdjunto(item.syncId, syncId)
+                if (ficha != null) dao.restablecerEstado(ficha.id, ficha.syncEstado, ficha.actualizadoEn)
+            }
+        }
         val ruta = "$organizacionId/$fichaSyncId/$syncId-${item.tipo.lowercase()}.$extension"
         val tamano = api.subirAdjunto(uri, ruta, mime)
         api.upsert(

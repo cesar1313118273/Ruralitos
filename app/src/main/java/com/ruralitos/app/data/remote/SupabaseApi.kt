@@ -112,11 +112,13 @@ class SupabaseApi(context: Context) {
     private val appContext = context.applicationContext
     private val sesionSegura = SesionSupabaseCifrada(appContext)
     private val mutexRefresh = Mutex()
-    private val baseUrl = BuildConfig.SUPABASE_URL.trimEnd('/')
+    private val baseUrl = (urlParaPruebas ?: BuildConfig.SUPABASE_URL).trimEnd('/')
     private val clavePublicable = BuildConfig.SUPABASE_PUBLISHABLE_KEY
 
     init {
-        require(baseUrl.startsWith("https://")) { "Falta configurar supabase.url" }
+        require(baseUrl.startsWith("https://") || baseUrl.startsWith("http://localhost")) {
+            "Falta configurar supabase.url"
+        }
         require(clavePublicable.isNotBlank()) { "Falta configurar supabase.publishableKey" }
     }
 
@@ -1083,6 +1085,10 @@ class SupabaseApi(context: Context) {
     ).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
 
     companion object {
+        /** Solo para pruebas del emulador: apunta la app a un servidor de mentira en este mismo teléfono. */
+        @Volatile
+        var urlParaPruebas: String? = null
+
         const val REDIRECT_AUTH = "ruralitos://auth-callback"
     }
 }
