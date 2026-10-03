@@ -174,6 +174,20 @@ class FichaPdfPlantillaInstrumentedTest {
                             bitmap.compress(Bitmap.CompressFormat.PNG, 100, it)
                         }
                         bitmap.recycle()
+                        // Ampliación x3 en cuatro cuadrantes para revisar el detalle del texto.
+                        val grande = Bitmap.createBitmap(pagina.width * 3, pagina.height * 3, Bitmap.Config.ARGB_8888)
+                        grande.eraseColor(Color.WHITE)
+                        pagina.render(grande, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
+                        val mitadX = grande.width / 2
+                        val mitadY = grande.height / 2
+                        listOf(0 to 0, 1 to 0, 0 to 1, 1 to 1).forEachIndexed { q, (cx, cy) ->
+                            val recorte = Bitmap.createBitmap(grande, cx * mitadX, cy * mitadY, mitadX, mitadY)
+                            FileOutputStream(File(salida.parentFile, "pagina_${indice + 1}_q${q + 1}.png")).use {
+                                recorte.compress(Bitmap.CompressFormat.PNG, 90, it)
+                            }
+                            recorte.recycle()
+                        }
+                        grande.recycle()
                     }
                 }
             }
