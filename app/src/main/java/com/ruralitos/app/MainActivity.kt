@@ -113,6 +113,7 @@ import com.ruralitos.app.ui.screens.InicioRuralitosScreen
 import com.ruralitos.app.ui.screens.NotasDiariasScreen
 import com.ruralitos.app.ui.screens.AcercaDeScreen
 import com.ruralitos.app.ui.screens.AgendaScreen
+import com.ruralitos.app.ui.screens.MapaViviendasScreen
 import com.ruralitos.app.ui.screens.RutaSeguimientoScreen
 import com.ruralitos.app.data.agenda.PlanificadorSeguimiento
 import com.ruralitos.app.data.agenda.RecordatorioAgenda
@@ -278,6 +279,8 @@ fun RuralitosApp() {
     var fichaIdActual by remember { mutableStateOf<Long?>(null) }
     var fichaIdRuta by remember { mutableStateOf<Long?>(null) }
     var fichaAbiertaDesdeAgenda by remember { mutableStateOf(false) }
+    var fichaAbiertaDesdeMapa by remember { mutableStateOf(false) }
+    var rutaDesdeMapa by remember { mutableStateOf(false) }
     var fichaSeleccionada by remember { mutableStateOf<FichaFamiliarEntity?>(null) }
     var modoEdicion by remember { mutableStateOf(false) }
     var desdeRevision by remember { mutableStateOf(false) }
@@ -975,6 +978,7 @@ fun RuralitosApp() {
                             pantallaActual = "eliminarCuenta"
                         },
                         onAcercaDe = { pantallaActual = "acercaDe" },
+                        onMapaViviendas = { pantallaActual = "mapaViviendas" },
                         onCambiarClave = {
                             pantallaActual = "miClave"
                         },
@@ -1226,6 +1230,32 @@ fun RuralitosApp() {
                     )
                 }
 
+                "mapaViviendas" -> {
+                    MapaViviendasScreen(
+                        usuarioId = usuarioActual?.id ?: 0L,
+                        onRegresar = { pantallaActual = "inicio" },
+                        onAbrirFicha = { id ->
+                            scope.launch {
+                                fichaSeleccionada = withContext(Dispatchers.IO) {
+                                    database.fichaFamiliarDao().buscarPorId(id)
+                                }
+                                if (fichaSeleccionada != null) {
+                                    fichaIdActual = id
+                                    modoEdicion = true
+                                    fichaAbiertaDesdeAgenda = false
+                                    fichaAbiertaDesdeMapa = true
+                                    pantallaActual = "menuFicha"
+                                }
+                            }
+                        },
+                        onAbrirRuta = { id ->
+                            fichaIdRuta = id
+                            rutaDesdeMapa = true
+                            pantallaActual = "rutaSeguimiento"
+                        }
+                    )
+                }
+
                 "agenda" -> {
                     AgendaScreen(
                         usuarioId = usuarioActual?.id ?: 0L,
@@ -1240,11 +1270,13 @@ fun RuralitosApp() {
                                     fichaIdActual = id
                                     modoEdicion = true
                                     fichaAbiertaDesdeAgenda = true
+                                    fichaAbiertaDesdeMapa = false
                                     pantallaActual = "menuFicha"
                                 }
                             }
                         },
                         onAbrirRuta = { id ->
+                            rutaDesdeMapa = false
                             fichaIdRuta = id
                             pantallaActual = "rutaSeguimiento"
                         }
@@ -1256,7 +1288,7 @@ fun RuralitosApp() {
                     if (id != null) RutaSeguimientoScreen(
                         fichaId = id,
                         usuarioId = usuarioActual?.id,
-                        onRegresar = { pantallaActual = "agenda" },
+                        onRegresar = { pantallaActual = if (rutaDesdeMapa) "mapaViviendas" else "agenda" },
                         onAbrirFicha = {
                             scope.launch {
                                 fichaSeleccionada = withContext(Dispatchers.IO) {
@@ -1265,12 +1297,13 @@ fun RuralitosApp() {
                                 if (fichaSeleccionada != null) {
                                     fichaIdActual = id
                                     modoEdicion = true
-                                    fichaAbiertaDesdeAgenda = true
+                                    fichaAbiertaDesdeAgenda = !rutaDesdeMapa
+                                    fichaAbiertaDesdeMapa = rutaDesdeMapa
                                     pantallaActual = "menuFicha"
                                 }
                             }
                         }
-                    ) else pantallaActual = "agenda"
+                    ) else pantallaActual = if (rutaDesdeMapa) "mapaViviendas" else "agenda"
                 }
 
                 "sala" -> {
@@ -1380,6 +1413,7 @@ fun RuralitosApp() {
                     BuscarFichasScreen(
                         onFichaSeleccionada = { ficha ->
                             fichaAbiertaDesdeAgenda = false
+                            fichaAbiertaDesdeMapa = false
                             fichaSeleccionada = ficha
                             fichaIdActual = ficha.id
                             modoEdicion = true
@@ -1522,13 +1556,15 @@ fun RuralitosApp() {
                                     Toast.makeText(context, "Ficha eliminada definitivamente.", Toast.LENGTH_SHORT).show()
                                     fichaSeleccionada = null
                                     fichaIdActual = null
-                                    pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else "buscarFichas"
+                                    pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else if (fichaAbiertaDesdeMapa) "mapaViviendas" else "buscarFichas"
                                     fichaAbiertaDesdeAgenda = false
+                                    fichaAbiertaDesdeMapa = false
                                 }
                             },
                             onRegresar = {
-                                pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else "buscarFichas"
+                                pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else if (fichaAbiertaDesdeMapa) "mapaViviendas" else "buscarFichas"
                                 fichaAbiertaDesdeAgenda = false
+                                fichaAbiertaDesdeMapa = false
                             }
                         )
                     } else {
@@ -1889,8 +1925,9 @@ fun RuralitosApp() {
                                     actualizadoPorUsuarioId = usuarioActual?.id,
                                     actualizadoEn = System.currentTimeMillis()
                                 )
-                                pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else "inicio"
+                                pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else if (fichaAbiertaDesdeMapa) "mapaViviendas" else "inicio"
                                 fichaAbiertaDesdeAgenda = false
+                                fichaAbiertaDesdeMapa = false
                                 fichaIdActual = null
                                 fichaSeleccionada = null
                                 modoEdicion = false
@@ -2083,6 +2120,7 @@ fun PantallaPrincipal(
     onCambiarClave: () -> Unit,
     onCerrarSesion: () -> Unit,
     onAcercaDe: () -> Unit = {},
+    onMapaViviendas: () -> Unit = {},
     usuarioId: Long = 0L
 )  {
     InicioRuralitosScreen(
@@ -2107,7 +2145,8 @@ fun PantallaPrincipal(
         onCambiarClave = onCambiarClave,
         onCerrarSesion = onCerrarSesion,
         usuarioId = usuarioId,
-        onAcercaDe = onAcercaDe
+        onAcercaDe = onAcercaDe,
+        onMapaViviendas = onMapaViviendas
     )
 }
 

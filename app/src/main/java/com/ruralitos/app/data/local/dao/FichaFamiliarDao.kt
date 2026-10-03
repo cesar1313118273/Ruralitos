@@ -16,6 +16,24 @@ data class ResumenFichas(
     val archivadas: Int
 )
 
+data class ViviendaMapaFila(
+    val fichaId: Long,
+    val jefe: String,
+    val cedula: String,
+    val numero: String,
+    val barrio: String,
+    val casa: String,
+    val latitud: Double,
+    val longitud: Double,
+    val estado: String,
+    val syncEstado: String,
+    val nivelRiesgo: String,
+    val integrantes: Int,
+    val visitasAtrasadas: Int
+)
+
+data class SinUbicacionFila(val fichaId: Long, val jefe: String, val barrio: String, val numero: String)
+
 @Dao
 interface FichaFamiliarDao {
 
@@ -310,4 +328,31 @@ interface FichaFamiliarDao {
         FROM fichas_familiares
     """)
     fun observarResumen(): Flow<ResumenFichas>
+
+    /** Viviendas con ubicación válida, con lo necesario para pintarlas en el mapa general. */
+    @Query("""
+        SELECT f.id AS fichaId, f.nombreApellidoJefeFamilia AS jefe, f.cedulaJefeHogar AS cedula,
+               f.numeroFichaFamiliar AS numero, f.barrio AS barrio, f.numeroCasa AS casa,
+               f.latitud AS latitud, f.longitud AS longitud, f.estado AS estado, f.syncEstado AS syncEstado,
+               COALESCE((SELECT c.nivel FROM calificaciones_riesgo c WHERE c.fichaId = f.id ORDER BY c.id DESC LIMIT 1), '') AS nivelRiesgo,
+               (SELECT COUNT(*) FROM miembros_familia m WHERE m.fichaId = f.id) AS integrantes,
+               (SELECT COUNT(*) FROM actividades_agenda a
+                 WHERE a.fichaId = f.id AND a.usuarioId = :usuarioId AND a.estado = 'PENDIENTE'
+                   AND a.eliminadoEn IS NULL AND a.fechaHora < :ahora) AS visitasAtrasadas
+        FROM fichas_familiares f
+        WHERE f.latitud IS NOT NULL AND f.longitud IS NOT NULL AND f.estado != 'ARCHIVADA'
+          AND NOT (abs(f.latitud - (-1.8312)) < 0.000001 AND abs(f.longitud - (-78.1834)) < 0.000001)
+        ORDER BY f.id
+    """)
+    fun observarViviendasMapa(usuarioId: Long, ahora: Long): Flow<List<ViviendaMapaFila>>
+
+    /** Fichas que todavía no tienen la vivienda ubicada (o solo tienen el punto de ejemplo antiguo). */
+    @Query("""
+        SELECT id AS fichaId, nombreApellidoJefeFamilia AS jefe, barrio AS barrio, numeroFichaFamiliar AS numero
+        FROM fichas_familiares
+        WHERE estado != 'ARCHIVADA' AND (latitud IS NULL OR longitud IS NULL
+            OR (abs(latitud - (-1.8312)) < 0.000001 AND abs(longitud - (-78.1834)) < 0.000001))
+        ORDER BY actualizadoEn DESC
+    """)
+    fun observarSinUbicacion(): Flow<List<SinUbicacionFila>>
 }

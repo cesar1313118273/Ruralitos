@@ -135,7 +135,8 @@ fun InicioRuralitosScreen(
     onEliminarCuenta: () -> Unit,
     onCerrarSesion: () -> Unit,
     usuarioId: Long = 0L,
-    onAcercaDe: () -> Unit = {}
+    onAcercaDe: () -> Unit = {},
+    onMapaViviendas: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -459,11 +460,12 @@ fun InicioRuralitosScreen(
                     val accesos = listOf(
                         Triple("Registro general", R.drawable.ruralitos_icono_reportes, onDispensarizacion),
                         Triple("Territorios", R.drawable.ruralitos_icono_red, onSala),
+                        Triple("Mapa de viviendas", R.drawable.ruralitos_icono_mapa, onMapaViviendas),
                         Triple("Notas Diarias", R.drawable.ruralitos_icono_fichas, onNotasDiarias),
                         Triple("Agenda", R.drawable.ruralitos_icono_agenda, onAgenda)
                     )
-                    // 2 columnas en teléfonos, 4 en tabletas anchas.
-                    CuadriculaAdaptable(accesos, columnasAdaptables(compacta = 2, media = 2, expandida = 4)) { (titulo, icono, accion), modificador ->
+                    // 2 columnas en teléfonos, 3 en tabletas anchas.
+                    CuadriculaAdaptable(accesos, columnasAdaptables(compacta = 2, media = 2, expandida = 3)) { (titulo, icono, accion), modificador ->
                         AccesoInicio(titulo, icono, accion, modificador)
                     }
                     Spacer(Modifier.height(8.dp))
