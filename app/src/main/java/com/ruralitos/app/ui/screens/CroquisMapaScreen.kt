@@ -285,7 +285,13 @@ fun CroquisMapaScreen(
                 ubicacionElegida = true
                 latitud = actual.latitude
                 longitud = actual.longitude
-                altitud = actual.altitude.takeIf { actual.hasAltitude() }
+                // La altitud del GPS suele ser sobre el elipsoide (10 a 30 m de diferencia con el nivel del mar en Ecuador):
+                // desde Android 14 se prefiere la altitud sobre el nivel medio del mar.
+                altitud = if (android.os.Build.VERSION.SDK_INT >= 34 && actual.hasMslAltitude()) {
+                    actual.mslAltitudeMeters
+                } else {
+                    actual.altitude.takeIf { actual.hasAltitude() }
+                }
                 mensaje = if (actual.hasAccuracy()) {
                     "$origenGps: precisión estimada de ${actual.accuracy.roundToInt()} m. " +
                         "Comprueba la vivienda y ajusta el señalizador si hace falta."

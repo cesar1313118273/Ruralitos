@@ -9,21 +9,23 @@ import java.io.File
 /** El detalle de Ecuador se entrega con la aplicación y se prepara una sola vez. */
 object GestorMapaDetalle {
     const val ARCHIVO = "ecuador_zoom15.pmtiles"
-    private const val LONGITUD_ESPERADA = 140_147_517L
 
     suspend fun preparar(context: Context): String? = withContext(Dispatchers.IO) {
         val app = context.applicationContext
         val destino = File(app.filesDir, ARCHIVO)
-        if (!esArchivoValido(destino)) {
+        val esperada = runCatching { ArchivosMapa.longitudAsset(app, ARCHIVO) }.getOrDefault(-1L)
+        if (esperada <= 0L) return@withContext null
+        if (!esArchivoValido(destino, esperada)) {
             val parcial = File(app.filesDir, "$ARCHIVO.parcial")
             runCatching {
                 parcial.delete()
+                ArchivosMapa.verificarEspacio(app, esperada)
                 app.assets.open(ARCHIVO).use { entrada ->
                     parcial.outputStream().buffered().use { salida ->
                         entrada.copyTo(salida, bufferSize = 256 * 1024)
                     }
                 }
-                check(esArchivoValido(parcial)) { "El mapa detallado está incompleto" }
+                check(esArchivoValido(parcial, esperada)) { "El mapa detallado está incompleto" }
                 if (destino.exists()) check(destino.delete())
                 check(parcial.renameTo(destino)) { "No se pudo activar el mapa detallado" }
             }.onFailure {
@@ -34,8 +36,8 @@ object GestorMapaDetalle {
         "pmtiles://${Uri.fromFile(destino)}"
     }
 
-    private fun esArchivoValido(archivo: File): Boolean =
-        archivo.isFile && archivo.length() == LONGITUD_ESPERADA &&
+    private fun esArchivoValido(archivo: File, esperada: Long): Boolean =
+        archivo.isFile && archivo.length() == esperada &&
             runCatching {
                 archivo.inputStream().use { entrada ->
                     ByteArray(7).also { entrada.read(it) }

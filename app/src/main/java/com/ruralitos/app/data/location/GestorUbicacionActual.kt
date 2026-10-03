@@ -24,6 +24,8 @@ object GestorUbicacionActual {
             PackageManager.PERMISSION_GRANTED
 
     /** No devuelve un dato antiguo ni una ubicación de red de kilómetros como si fuera GPS preciso. */
+    // El permiso se comprueba en la primera línea; las llamadas están dentro de runCatching por si se retira a mitad.
+    @android.annotation.SuppressLint("MissingPermission")
     suspend fun obtener(context: Context): Location? = withTimeoutOrNull(25_000L) {
         if (!tienePermiso(context)) return@withTimeoutOrNull null
         val manager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager

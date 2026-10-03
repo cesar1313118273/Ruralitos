@@ -23,7 +23,6 @@ data class RutaCalculada(
 /** Red de OSM procesada en el dispositivo: nunca envía las ubicaciones del paciente. */
 object GestorRutasOffline {
     private const val ARCHIVO = "ecuador_valhalla_tiles.tar"
-    private const val LONGITUD_ESPERADA = 224_225_280L
     private val mutex = Mutex()
     private var motor: Valhalla? = null
 
@@ -80,7 +79,9 @@ object GestorRutasOffline {
 
     private fun prepararDatos(context: Context): File {
         val destino = File(context.filesDir, ARCHIVO)
-        if (destino.isFile && destino.length() == LONGITUD_ESPERADA) return destino
+        val esperada = ArchivosMapa.longitudAsset(context, ARCHIVO)
+        if (destino.isFile && destino.length() == esperada) return destino
+        ArchivosMapa.verificarEspacio(context, esperada)
         val parcial = File(context.filesDir, "$ARCHIVO.parcial")
         parcial.delete()
         try {
@@ -89,7 +90,7 @@ object GestorRutasOffline {
                     entrada.copyTo(salida, bufferSize = 256 * 1024)
                 }
             }
-            check(parcial.length() == LONGITUD_ESPERADA) { "La red vial quedó incompleta" }
+            check(parcial.length() == esperada) { "La red vial quedó incompleta" }
             if (destino.exists()) check(destino.delete())
             check(parcial.renameTo(destino)) { "No se pudo activar la red vial" }
         } finally {

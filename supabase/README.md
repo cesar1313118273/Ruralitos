@@ -58,6 +58,25 @@ cuando existe una red validada. Los adjuntos descargados del Storage privado se
 conservan dentro del almacenamiento interno de la aplicación.
 Las sesiones de Supabase se almacenan cifradas y se renuevan con el refresh token.
 
+Cómo se evitan pérdidas de datos al compartir fichas entre usuarios:
+
+- **Descarga atómica por ficha.** Primero se trae todo de la red a memoria y luego cada ficha (con sus datos hijos
+  y su estado `SINCRONIZADO`) se aplica en una sola transacción de la base local. Una ficha con cambios sin subir
+  (`PENDIENTE`, `ERROR` o `CONFLICTO`) nunca se pisa al descargar.
+- **Descarga incremental.** Después de una primera descarga completa solo se piden las filas con `updated_at` posterior
+  a la última marca (con 2 minutos de margen), por cursor `(updated_at, id)` en vez de `limit/offset`. Una descarga
+  completa cada 24 horas recoge lo que el modo incremental no ve (borrados reales, permisos retirados).
+- **Conflictos en fichas.** La cabecera se sube con `PATCH ... version=eq.N`: si otra persona la cambió antes, la
+  ficha pasa a `CONFLICTO` y la persona elige «conservar la mía» o «usar la del equipo». Nada se sobrescribe en silencio.
+- **Adjuntos.** El servidor admite un adjunto por ficha y tipo (`unique (ficha_id, tipo)`, aunque esté borrado): al
+  reemplazar o volver a crear uno se reutiliza el identificador existente y se reactiva (`deleted_at = null`).
+  Al eliminar un adjunto o una ficha también se borran sus archivos del Storage.
+- **Accesos.** Un administrador ve quién tiene acceso a la Sala y puede quitarlo (`miembros_organizacion.activo` y
+  `accesos_sala.activo` en `false`). En el teléfono de esa persona, la próxima sincronización retira las fichas ya
+  sincronizadas de la Sala (y las que ya no son visibles para ella). Las que tengan cambios sin subir se conservan.
+- **Un teléfono, una cuenta.** Al iniciar sesión con otra cuenta se borran los datos de pacientes de la anterior; si
+  la anterior dejó cambios sin sincronizar, el cambio de cuenta se bloquea hasta que se sincronicen.
+
 ## Datos de referencia
 
 La tabla `establecimientos_salud` se cargó desde

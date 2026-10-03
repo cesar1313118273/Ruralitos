@@ -10,20 +10,22 @@ import java.io.File
 /** Prepara una copia privada del mapa vectorial para que SQLite lo lea sin red. */
 object GestorMapaCampo {
     private const val ASSET = "ecuador_base.mbtiles"
-    private const val LONGITUD_ESPERADA = 123_170_816L
 
     suspend fun preparar(context: Context): String? = withContext(Dispatchers.IO) {
         val destino = File(context.applicationContext.filesDir, ASSET)
-        if (!esCopiaValida(destino)) {
+        val esperada = runCatching { ArchivosMapa.longitudAsset(context.applicationContext, ASSET) }.getOrDefault(-1L)
+        if (esperada <= 0L) return@withContext null
+        if (!esCopiaValida(destino, esperada)) {
             val parcial = File(context.applicationContext.filesDir, "$ASSET.parcial")
             runCatching {
                 parcial.delete()
+                ArchivosMapa.verificarEspacio(context.applicationContext, esperada)
                 context.applicationContext.assets.open(ASSET).use { entrada ->
                     parcial.outputStream().buffered().use { salida ->
                         entrada.copyTo(salida, bufferSize = 256 * 1024)
                     }
                 }
-                check(esCopiaValida(parcial)) { "La copia del mapa local quedó incompleta" }
+                check(esCopiaValida(parcial, esperada)) { "La copia del mapa local quedó incompleta" }
                 if (destino.exists()) check(destino.delete())
                 check(parcial.renameTo(destino)) { "No se pudo activar el mapa local" }
             }.onFailure {
@@ -72,8 +74,8 @@ object GestorMapaCampo {
         return estilo.toString()
     }
 
-    private fun esCopiaValida(archivo: File): Boolean =
-        archivo.isFile && archivo.length() == LONGITUD_ESPERADA &&
+    private fun esCopiaValida(archivo: File, esperada: Long): Boolean =
+        archivo.isFile && archivo.length() == esperada &&
             archivo.inputStream().use { entrada ->
                 ByteArray(16).also { entrada.read(it) }
                     .contentEquals("SQLite format 3\u0000".toByteArray(Charsets.US_ASCII))

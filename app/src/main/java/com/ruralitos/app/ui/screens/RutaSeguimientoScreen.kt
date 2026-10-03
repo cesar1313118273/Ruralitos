@@ -99,6 +99,7 @@ import kotlin.math.sqrt
 import kotlin.math.PI
 
 /** Navegación local desde el GPS actual hasta la vivienda guardada, sin alterar la ficha. */
+@android.annotation.SuppressLint("MissingPermission") // el permiso se comprueba antes de pedir actualizaciones (línea ~160)
 @Composable
 fun RutaSeguimientoScreen(fichaId: Long, usuarioId: Long?, onRegresar: () -> Unit, onAbrirFicha: () -> Unit) {
     val context = LocalContext.current

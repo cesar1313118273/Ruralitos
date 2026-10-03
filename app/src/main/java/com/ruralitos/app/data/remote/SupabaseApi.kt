@@ -753,6 +753,8 @@ class SupabaseApi(context: Context) {
         solicitar("GET", "/rest/v1/$rutaConConsulta", accessToken = tokenValido()).jsonArreglo()
 
     suspend fun seleccionarPaginado(rutaConConsulta: String, tamanoPagina: Int = 500): List<JSONObject> {
+        // Sin un orden explícito, limit/offset puede repetir o saltar filas si algo cambia mientras se descarga.
+        if (!rutaConConsulta.contains("order=")) return seleccionarPorCursor(rutaConConsulta, "id", null, tamanoPagina)
         val resultado = mutableListOf<JSONObject>()
         var offset = 0
         while (true) {
@@ -1050,6 +1052,8 @@ class SupabaseApi(context: Context) {
             codigo == 400 && remoto.contains("Invalid login", true) -> "Correo o contraseña incorrectos."
             codigo == 400 && remoto.contains("Email not confirmed", true) -> "Confirma primero el correo electrónico."
             codigo == 422 && remoto.contains("already", true) -> "Este correo ya esta registrado."
+            codigo == 403 || remoto.contains("row-level security", true) ->
+                "No tienes permiso para guardar estos datos en la Sala. Pide a un administrador que te dé acceso de edición."
             codigo == 429 -> "Demasiados intentos. Espera un momento y vuelve a intentar."
             codigo >= 500 -> "Supabase no está disponible temporalmente."
             else -> remoto.ifBlank { "Error de comunicación con Supabase ($codigo)." }
