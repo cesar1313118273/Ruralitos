@@ -19,6 +19,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -26,10 +27,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.ruralitos.app.data.backup.GestorRespaldoRuralitos
 import com.ruralitos.app.data.backup.ResultadoRestauracion
+import com.ruralitos.app.data.fichas.EliminadorFichas
+import com.ruralitos.app.data.local.database.RuralitosDatabase
+import com.ruralitos.app.data.sync.ProgramadorSincronizacion
 import com.ruralitos.app.data.local.entity.SalaEntity
 import com.ruralitos.app.data.local.entity.UsuarioEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -66,6 +71,11 @@ fun SeguridadRespaldoScreen(
     var procesando by remember { mutableStateOf(false) }
     var restauracionPendiente by remember { mutableStateOf<Uri?>(null) }
     var respaldoCreado by remember { mutableStateOf<Uri?>(null) }
+    val fichasGuardadas by remember(context) { RuralitosDatabase.obtenerBaseDatos(context).fichaFamiliarDao().listarFichas() }
+        .collectAsState(initial = emptyList())
+    var confirmarBorradoTotal by remember { mutableStateOf(false) }
+    var textoBorrado by remember { mutableStateOf("") }
+    var errorBorrado by remember { mutableStateOf(false) }
 
     fun compartir(uri: Uri) {
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -110,6 +120,65 @@ fun SeguridadRespaldoScreen(
         if (uri != null) restauracionPendiente = uri
     }
 
+    if (confirmarBorradoTotal) {
+        val cantidad = fichasGuardadas.size
+        AlertDialog(
+            onDismissRequest = { if (!procesando) confirmarBorradoTotal = false },
+            title = { Text("Eliminar todas las fichas") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Se eliminarán las $cantidad ficha(s) con todo su contenido: integrantes, salud, riesgos, croquis, " +
+                            "fotos y firmas, además de sus visitas en la agenda y tus notas sobre sus integrantes. " +
+                            "Se borran de este teléfono y de la nube, y tus compañeros dejarán de verlas."
+                    )
+                    Text(
+                        "Tu cuenta, tu Sala y los barrios se conservan. Esta acción no se puede deshacer; " +
+                            "si quieres guardar una copia, crea antes un respaldo.",
+                        color = RojoClinico
+                    )
+                    OutlinedTextField(
+                        value = textoBorrado,
+                        onValueChange = { textoBorrado = it; errorBorrado = false },
+                        label = { Text("Escribe ELIMINAR para confirmar") },
+                        singleLine = true,
+                        isError = errorBorrado,
+                        enabled = !procesando,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().testTag("texto_confirmar_borrado")
+                    )
+                    if (errorBorrado) Text("Escribe la palabra ELIMINAR tal como se ve para continuar.", color = RojoClinico, style = MaterialTheme.typography.bodySmall)
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    modifier = Modifier.testTag("confirmar_borrado_total"),
+                    onClick = {
+                        if (textoBorrado.trim() != "ELIMINAR") { errorBorrado = true; return@TextButton }
+                        procesando = true
+                        scope.launch {
+                            runCatching {
+                                EliminadorFichas.eliminarTodas(context, RuralitosDatabase.obtenerBaseDatos(context), usuario.id)
+                            }.onSuccess { total ->
+                                ProgramadorSincronizacion.ejecutarAhora(context)
+                                mensaje = "Se eliminaron $total ficha(s). Tu cuenta sigue igual y ya puedes empezar desde cero."
+                                esError = false
+                            }.onFailure {
+                                mensaje = "No se pudieron eliminar todas las fichas. Inténtalo de nuevo."
+                                esError = true
+                            }
+                            procesando = false
+                            confirmarBorradoTotal = false
+                            textoBorrado = ""
+                        }
+                    }
+                ) { Text(if (procesando) "Eliminando…" else "Eliminar todo", color = RojoClinico) }
+            },
+            dismissButton = {
+                TextButton(onClick = { if (!procesando) confirmarBorradoTotal = false }) { Text("Cancelar") }
+            }
+        )
+    }
     respaldoCreado?.let { uri ->
         AlertDialog(
             onDismissRequest = { respaldoCreado = null },
@@ -237,6 +306,24 @@ fun SeguridadRespaldoScreen(
                     onClick = { modo = "restaurar"; mensaje = null },
                     color = NaranjaClinico,
                     modifier = Modifier.padding(top = 10.dp)
+                )
+            }
+            SeccionFormularioRuralitos(
+                titulo = "Empezar desde cero",
+                descripcion = "Elimina todas las fichas, con su contenido, de este teléfono y de la nube. Tu cuenta se conserva."
+            ) {
+                MensajeEstadoRuralitos(
+                    titulo = "${fichasGuardadas.size} ficha(s) guardadas",
+                    descripcion = "Esta acción no se puede deshacer. Antes puedes crear un respaldo cifrado.",
+                    color = RojoClinico,
+                    simbolo = "!"
+                )
+                BotonPrincipalRuralitos(
+                    texto = "Eliminar todas las fichas",
+                    descripcion = "Borrar todos los registros de fichas",
+                    onClick = { textoBorrado = ""; errorBorrado = false; mensaje = null; confirmarBorradoTotal = true },
+                    color = RojoClinico,
+                    modifier = Modifier.padding(top = 10.dp).testTag("eliminar_todas_fichas")
                 )
             }
             SeccionFormularioRuralitos(

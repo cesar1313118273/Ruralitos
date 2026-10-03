@@ -11,6 +11,9 @@ interface HistorialFichaDao {
     @Insert
     suspend fun registrar(item: HistorialFichaEntity): Long
 
+    @Query("DELETE FROM historial_fichas WHERE fichaId = :fichaId")
+    suspend fun eliminarDeFicha(fichaId: Long)
+
     @Query("SELECT * FROM historial_fichas WHERE fichaId = :fichaId ORDER BY creadoEn DESC, id DESC")
     fun listar(fichaId: Long): Flow<List<HistorialFichaEntity>>
 }

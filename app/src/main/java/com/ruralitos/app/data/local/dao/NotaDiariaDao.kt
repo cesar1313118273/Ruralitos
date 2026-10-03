@@ -22,6 +22,15 @@ interface NotaDiariaDao {
     suspend fun eliminarConFecha(id: Long, ahora: Long)
     suspend fun eliminar(id: Long) = eliminarConFecha(id, System.currentTimeMillis())
 
+    /** Las notas realizadas ya no hacen falta: se eliminan (y la baja viaja a la nube con la siguiente sincronización). */
+    @Query("UPDATE notas_diarias SET eliminadoEn = :ahora, syncEstado = CASE WHEN usuarioId = 0 THEN 'LOCAL' ELSE 'PENDIENTE' END, actualizadoEn = :ahora WHERE realizada = 1 AND eliminadoEn IS NULL AND (usuarioId = :usuarioId OR usuarioId = 0)")
+    suspend fun eliminarRealizadasConFecha(usuarioId: Long, ahora: Long): Int
+    suspend fun eliminarRealizadas(usuarioId: Long) = eliminarRealizadasConFecha(usuarioId, System.currentTimeMillis())
+
+    /** Identificadores en la nube de las notas de esta cuenta sobre los integrantes de una ficha. */
+    @Query("SELECT n.syncId FROM notas_diarias n JOIN miembros_familia m ON m.id = n.miembroId WHERE m.fichaId = :fichaId AND n.usuarioId = :usuarioId AND n.syncId != ''")
+    suspend fun syncIdsDeFicha(fichaId: Long, usuarioId: Long): List<String>
+
     @Query("SELECT * FROM notas_diarias WHERE usuarioId = :usuarioId AND syncEstado = 'PENDIENTE'")
     suspend fun pendientesSync(usuarioId: Long): List<NotaDiariaEntity>
     @Query("SELECT COUNT(*) FROM notas_diarias WHERE usuarioId = :usuarioId AND syncEstado = 'PENDIENTE'")

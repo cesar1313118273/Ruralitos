@@ -77,6 +77,12 @@ object IconosMais {
     const val RIESGO_III_EMBARAZO = "riesgo_iii_embarazo"
     const val RIESGO_III_EMBARAZO_ADOLESCENTE = "riesgo_iii_embarazo_adolescente"
 
+    const val PRESTADOR_COMUNITARIO = "actor_prestador"
+    const val PARTERO_ANCESTRAL = "actor_partero"
+    const val SABIDURIA_ANCESTRAL = "actor_sabiduria"
+
+    val iconosActoresComunitarios = listOf(PRESTADOR_COMUNITARIO, PARTERO_ANCESTRAL, SABIDURIA_ANCESTRAL)
+
     val iconosGrupoEdad = listOf(
         RIESGO_I_MENOR_DOS, RIESGO_I_DOS_NUEVE, RIESGO_I_EMBARAZO,
         RIESGO_II_MENOR_DOS, RIESGO_II_DOS_NUEVE, RIESGO_II_ADOLESCENTE,
@@ -114,7 +120,7 @@ object IconosMais {
         DISCAPACIDAD_FISICA_APOYO,
         CUIDADOS_PALIATIVOS,
         VIH
-    ) + iconosGrupoEdad
+    ) + iconosGrupoEdad + iconosActoresComunitarios
 }
 
 data class PictogramaDispensarizacion(

@@ -131,6 +131,8 @@ fun NotasDiariasScreen(
             permisoAvisos.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         runCatching { RecordatorioNota.recuperarPendientes(context) }
+        // Una nota realizada ya no sirve: las que quedaron marcadas antes también se eliminan.
+        runCatching { withContext(Dispatchers.IO) { dao.eliminarRealizadas(usuarioId) } }
         while (true) {
             delay(30_000)
             hoy = fechaLocal()
@@ -353,12 +355,20 @@ fun NotasDiariasScreen(
             onTextoCambio = { textoNota = it },
             onRealizadaCambio = { realizada ->
                 val id = sesionNota?.notaId ?: return@DialogoNotaDiaria
-                scope.launch {
-                    runCatching {
-                        withContext(Dispatchers.IO) { dao.marcarRealizada(id, realizada) }
-                        if (realizada) RecordatorioNota.cancelar(context, id)
-                        else dao.buscar(id)?.let { RecordatorioNota.actualizar(context, it) }
-                    }.onFailure { errorGuardado = true }
+                if (realizada) {
+                    // Marcada como realizada, la nota se elimina: se cierra el cuadro para que el guardado automático
+                    // no la vuelva a escribir y se borra de inmediato.
+                    val persona = personaAbierta
+                    val restantes = notasPorPersona[persona?.miembroId].orEmpty().filter { it.id != id }
+                    sesionNota = restantes.firstOrNull()?.let { SesionNotaEnPantalla(it.miembroId, it.id) }
+                    textoNota = restantes.firstOrNull()?.contenido.orEmpty()
+                    if (restantes.isEmpty()) personaAbierta = null
+                    scope.launch {
+                        runCatching {
+                            withContext(Dispatchers.IO) { dao.eliminar(id) }
+                            RecordatorioNota.cancelar(context, id)
+                        }.onFailure { errorGuardado = true }
+                    }
                 }
             },
             onSeleccionar = { nota ->
@@ -784,7 +794,7 @@ private fun DialogoNotaDiaria(
                         )
                         Column {
                             Text("Realizada", color = AzulTituloNotas, fontWeight = FontWeight.SemiBold)
-                            Text("Al marcarla se detienen los avisos.", color = GrisTextoNotas, fontSize = 12.sp)
+                            Text("Al marcarla, la nota se elimina.", color = GrisTextoNotas, fontSize = 12.sp)
                         }
                     }
                 }

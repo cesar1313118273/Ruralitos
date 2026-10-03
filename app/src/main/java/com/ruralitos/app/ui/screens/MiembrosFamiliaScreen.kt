@@ -15,7 +15,12 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.ruralitos.app.R
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -922,7 +927,12 @@ private fun FormularioMiembroScreen(
                     prestadorComunitario = "PRESTADOR" in seleccion
                     parteroAncestral = "PARTERO" in seleccion
                     sabiduriaAncestral = "SABIDURIA" in seleccion
-                }
+                },
+                iconos = mapOf(
+                    "PRESTADOR" to R.drawable.prestador_comunitario,
+                    "PARTERO" to R.drawable.partero_ancestral,
+                    "SABIDURIA" to R.drawable.sabiduria_ancestral
+                )
             )
         }
         SeccionFormularioRuralitos(
@@ -1095,7 +1105,8 @@ private fun SelectorMultipleMiembro(
     titulo: String,
     opciones: List<Pair<String, String>>,
     seleccion: Set<String>,
-    onSeleccion: (Set<String>) -> Unit
+    onSeleccion: (Set<String>) -> Unit,
+    iconos: Map<String, Int> = emptyMap()
 ) {
     var expandido by remember { mutableStateOf(false) }
     Text(titulo, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 12.dp, bottom = 5.dp))
@@ -1120,7 +1131,19 @@ private fun SelectorMultipleMiembro(
             )
             opciones.forEach { (valor, etiqueta) ->
                 ItemMenuRuralitos(
-                    text = { Text("${if (valor in seleccion) "✓ " else ""}$etiqueta") },
+                    text = {
+                        Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                            iconos[valor]?.let {
+                                Image(
+                                    painter = painterResource(it),
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 10.dp).size(36.dp),
+                                    contentScale = ContentScale.Fit
+                                )
+                            }
+                            Text("${if (valor in seleccion) "✓ " else ""}$etiqueta")
+                        }
+                    },
                     onClick = {
                         onSeleccion(if (valor in seleccion) seleccion - valor else seleccion + valor)
                     }

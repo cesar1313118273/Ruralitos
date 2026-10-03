@@ -136,7 +136,8 @@ fun InicioRuralitosScreen(
     onCerrarSesion: () -> Unit,
     usuarioId: Long = 0L,
     onAcercaDe: () -> Unit = {},
-    onMapaViviendas: () -> Unit = {}
+    onMapaViviendas: () -> Unit = {},
+    onCumplimiento: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -462,7 +463,8 @@ fun InicioRuralitosScreen(
                         Triple("Territorios", R.drawable.ruralitos_icono_red, onSala),
                         Triple("Mapa de viviendas", R.drawable.ruralitos_icono_mapa, onMapaViviendas),
                         Triple("Notas Diarias", R.drawable.ruralitos_icono_fichas, onNotasDiarias),
-                        Triple("Agenda", R.drawable.ruralitos_icono_agenda, onAgenda)
+                        Triple("Agenda", R.drawable.ruralitos_icono_agenda, onAgenda),
+                        Triple("Cumplimiento", R.drawable.ruralitos_icono_cumplimiento, onCumplimiento)
                     )
                     // 2 columnas en teléfonos, 3 en tabletas anchas.
                     CuadriculaAdaptable(accesos, columnasAdaptables(compacta = 2, media = 2, expandida = 3)) { (titulo, icono, accion), modificador ->

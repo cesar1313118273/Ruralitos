@@ -115,6 +115,7 @@ import com.ruralitos.app.ui.screens.AcercaDeScreen
 import com.ruralitos.app.ui.screens.AgendaScreen
 import com.ruralitos.app.ui.screens.EstadoMapaSeguimiento
 import com.ruralitos.app.ui.screens.MapaParlanteScreen
+import com.ruralitos.app.ui.screens.CumplimientoScreen
 import com.ruralitos.app.ui.screens.RutaSeguimientoScreen
 import com.ruralitos.app.data.agenda.PlanificadorSeguimiento
 import com.ruralitos.app.data.agenda.RecordatorioAgenda
@@ -136,6 +137,7 @@ import com.ruralitos.app.ui.components.FondoRuralitos
 import com.ruralitos.app.ui.components.ContenidoAdaptable
 import com.ruralitos.app.data.remote.PerfilRemoto
 import com.ruralitos.app.data.remote.SupabaseApi
+import com.ruralitos.app.data.fichas.EliminadorFichas
 import com.ruralitos.app.data.sync.ProgramadorSincronizacion
 import com.ruralitos.app.data.sync.EstadoSincronizacion
 import com.ruralitos.app.data.sync.SincronizadorSalas
@@ -980,6 +982,7 @@ fun RuralitosApp() {
                         },
                         onAcercaDe = { pantallaActual = "acercaDe" },
                         onMapaViviendas = { pantallaActual = "mapaViviendas" },
+                        onCumplimiento = { pantallaActual = "cumplimiento" },
                         onCambiarClave = {
                             pantallaActual = "miClave"
                         },
@@ -1235,6 +1238,13 @@ fun RuralitosApp() {
                     MapaParlanteScreen(onRegresar = { pantallaActual = "inicio" })
                 }
 
+                "cumplimiento" -> {
+                    CumplimientoScreen(
+                        organizacionId = supabase.organizacionGuardada().orEmpty(),
+                        onRegresar = { pantallaActual = "inicio" }
+                    )
+                }
+
                 "agenda" -> {
                     AgendaScreen(
                         usuarioId = usuarioActual?.id ?: 0L,
@@ -1478,71 +1488,13 @@ fun RuralitosApp() {
                             },
                             onEliminar = {
                                 scope.launch {
-                                    val idsAgenda = withContext(Dispatchers.IO) {
-                                        database.agendaDao().idsDeFicha(ficha.id)
-                                    }
-                                    val archivosAEliminar = withContext(Dispatchers.IO) {
+                                    withContext(Dispatchers.IO) {
                                         registrarEvento(
                                             database, ficha.id, ficha.numeroFichaFamiliar,
                                             usuarioActual, "FICHA_ELIMINADA"
                                         )
-                                        database.withTransaction {
-                                            val syncDao = database.sincronizacionDao()
-                                            val adjuntos = syncDao.adjuntos(ficha.id)
-                                            val calificaciones = syncDao.calificaciones(ficha.id)
-                                            val registrosRemotos = mutableListOf<Pair<String, String>>()
-                                            registrosRemotos += "fichas_familiares" to ficha.syncId
-                                            registrosRemotos += syncDao.miembros(ficha.id)
-                                                .map { "miembros_familia" to it.syncId }
-                                            registrosRemotos += syncDao.embarazadas(ficha.id)
-                                                .map { "embarazadas" to it.syncId }
-                                            registrosRemotos += syncDao.mortalidad(ficha.id)
-                                                .map { "mortalidad_familiar" to it.syncId }
-                                            registrosRemotos += calificaciones
-                                                .map { "calificaciones_riesgo" to it.syncId }
-                                            calificaciones.forEach { calificacion ->
-                                                registrosRemotos += syncDao.valores(calificacion.id)
-                                                    .map { "valores_riesgo" to it.syncId }
-                                            }
-                                            registrosRemotos += syncDao.gestiones(ficha.id)
-                                                .map { "gestion_riesgo" to it.syncId }
-                                            registrosRemotos += syncDao.contaminaciones(ficha.id)
-                                                .map { "contaminacion_ambiental" to it.syncId }
-                                            registrosRemotos += syncDao.lugares(ficha.id)
-                                                .map { "lugares_tratamiento" to it.syncId }
-                                            registrosRemotos += adjuntos.map { "adjuntos_ficha" to it.syncId }
-
-                                            if (ficha.organizacionId.isNotBlank()) {
-                                                val ahora = System.currentTimeMillis()
-                                                syncDao.guardarEliminaciones(
-                                                    registrosRemotos
-                                                        .filter { (_, syncId) -> syncId.isNotBlank() }
-                                                        .distinct()
-                                                        .map { (tabla, syncId) ->
-                                                            EliminacionSyncEntity(
-                                                                tabla = tabla,
-                                                                registroSyncId = syncId,
-                                                                organizacionId = ficha.organizacionId,
-                                                                creadoEn = ahora
-                                                            )
-                                                        }
-                                                )
-                                            }
-                                            database.agendaDao().eliminarDeFicha(ficha.id)
-                                            database.fichaFamiliarDao().eliminarFicha(ficha)
-                                            adjuntos.map { it.uri } + listOfNotNull(ficha.firmaUri)
-                                        }
                                     }
-                                    idsAgenda.forEach { RecordatorioAgenda.cancelar(context, it) }
-                                    archivosAEliminar.forEach { uriTexto ->
-                                        val uri = android.net.Uri.parse(uriTexto)
-                                        val archivo = uri.path?.let(::File)
-                                        val raiz = context.filesDir.canonicalFile
-                                        if (uri.scheme == "file" && archivo != null) {
-                                            val seguro = archivo.canonicalFile
-                                            if (seguro.path.startsWith(raiz.path + File.separator)) seguro.delete()
-                                        }
-                                    }
+                                    EliminadorFichas.eliminarFicha(context, database, ficha, usuarioActual?.id ?: 0L)
                                     ProgramadorSincronizacion.ejecutarAhora(context)
                                     Toast.makeText(context, "Ficha eliminada definitivamente.", Toast.LENGTH_SHORT).show()
                                     fichaSeleccionada = null
@@ -2109,6 +2061,7 @@ fun PantallaPrincipal(
     onCerrarSesion: () -> Unit,
     onAcercaDe: () -> Unit = {},
     onMapaViviendas: () -> Unit = {},
+    onCumplimiento: () -> Unit = {},
     usuarioId: Long = 0L
 )  {
     InicioRuralitosScreen(
@@ -2134,7 +2087,8 @@ fun PantallaPrincipal(
         onCerrarSesion = onCerrarSesion,
         usuarioId = usuarioId,
         onAcercaDe = onAcercaDe,
-        onMapaViviendas = onMapaViviendas
+        onMapaViviendas = onMapaViviendas,
+        onCumplimiento = onCumplimiento
     )
 }
 

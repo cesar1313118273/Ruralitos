@@ -52,6 +52,9 @@ interface FichaFamiliarDao {
     @Query("SELECT * FROM fichas_familiares ORDER BY actualizadoEn DESC")
     fun listarFichas(): Flow<List<FichaFamiliarEntity>>
 
+    @Query("SELECT * FROM fichas_familiares")
+    suspend fun todas(): List<FichaFamiliarEntity>
+
     @Query("SELECT * FROM fichas_familiares WHERE cedulaJefeHogar = :cedula LIMIT 1")
     suspend fun buscarPorCedula(cedula: String): FichaFamiliarEntity?
 

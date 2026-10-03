@@ -68,7 +68,6 @@ fun AcercaDeScreen(onRegresar: () -> Unit) {
             "Apache POI (Apache License 2.0) para Excel; SQLCipher de Zetetic (licencia BSD) para el cifrado de la base de datos; " +
                 "Liberation Fonts (SIL Open Font License); Noto Sans (SIL Open Font License)."
         )
-        PlantillaExcel()
         InformeErrores()
         avisos.forEach { (titulo, texto) -> Bloque("Licencia: $titulo", texto) }
     }
@@ -116,46 +115,6 @@ private fun InformeErrores() {
                 com.ruralitos.app.data.diagnostico.RegistroErrores.borrar(context)
                 hayInforme = false
             }) { Text("Borrar informe") }
-        }
-    }
-}
-
-/** Cada centro puede usar su propia plantilla de Excel para la ficha (mismas hojas y casillas que la original). */
-@Composable
-private fun PlantillaExcel() {
-    val context = LocalContext.current
-    var propia by androidx.compose.runtime.remember {
-        androidx.compose.runtime.mutableStateOf(com.ruralitos.app.data.export.PlantillaPropia.existe(context))
-    }
-    var mensaje by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf<String?>(null) }
-    val selector = androidx.activity.compose.rememberLauncherForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            mensaje = runCatching { com.ruralitos.app.data.export.PlantillaPropia.importar(context, uri) }
-                .fold(
-                    onSuccess = { propia = true; "Plantilla guardada. Se usará al generar el Excel y el PDF de las fichas." },
-                    onFailure = { it.message ?: "No se pudo usar ese archivo." }
-                )
-        }
-    }
-    Bloque(
-        "Plantilla del Excel de la ficha",
-        (if (propia) "Estás usando tu propia plantilla. " else "Estás usando la plantilla que trae Ruralitos. ") +
-            "Si tu centro tiene su propio formato, puedes cargarlo: debe ser un .xlsx con las mismas cuatro hojas " +
-            "(«1» a «4») y las mismas casillas, porque Ruralitos escribe los datos por posición."
-    )
-    mensaje?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-    androidx.compose.foundation.layout.Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        androidx.compose.material3.Button(onClick = {
-            selector.launch(arrayOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-        }) { Text("Cargar mi plantilla") }
-        if (propia) {
-            androidx.compose.material3.OutlinedButton(onClick = {
-                com.ruralitos.app.data.export.PlantillaPropia.quitar(context)
-                propia = false
-                mensaje = "Se volvió a la plantilla de Ruralitos."
-            }) { Text("Usar la de Ruralitos") }
         }
     }
 }

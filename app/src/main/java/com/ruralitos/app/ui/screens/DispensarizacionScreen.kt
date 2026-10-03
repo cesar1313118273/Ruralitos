@@ -552,7 +552,8 @@ fun DispensarizacionScreen(
                             titulo = "Prestadores comunitarios",
                             subtitulo = "${resumenRegistro.prestadores.sumOf { it.second }} registro(s)",
                             color = AzulClinico,
-                            simbolo = "PC",
+                            simbolo = "",
+                            icono = R.drawable.prestador_comunitario,
                             expandido = panelIndicadorAbierto == PanelIndicador.PRESTADORES_COMUNITARIOS,
                             onToggle = {
                                 panelIndicadorAbierto = alternarPanel(
@@ -566,7 +567,12 @@ fun DispensarizacionScreen(
                                 titulo = "Prestadores comunitarios",
                                 datos = resumenRegistro.prestadores,
                                 color = AzulClinico,
-                                mostrarTitulo = false
+                                mostrarTitulo = false,
+                                iconos = listOf(
+                                    R.drawable.prestador_comunitario,
+                                    R.drawable.partero_ancestral,
+                                    R.drawable.sabiduria_ancestral
+                                )
                             )
                         }
                     }
@@ -1263,6 +1269,7 @@ private fun AcordeonIndicador(
     expandido: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    icono: Int? = null,
     contenido: @Composable () -> Unit
 ) {
     Surface(
@@ -1296,12 +1303,21 @@ private fun AcordeonIndicador(
                     border = BorderStroke(1.dp, color.copy(alpha = 0.12f))
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = simbolo,
-                            color = color,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = if (simbolo.length > 2) 11.sp else 14.sp
-                        )
+                        if (icono != null) {
+                            Image(
+                                painter = painterResource(icono),
+                                contentDescription = null,
+                                modifier = Modifier.size(34.dp),
+                                contentScale = ContentScale.Fit
+                            )
+                        } else {
+                            Text(
+                                text = simbolo,
+                                color = color,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = if (simbolo.length > 2) 11.sp else 14.sp
+                            )
+                        }
                     }
                 }
 
@@ -1483,7 +1499,8 @@ private fun GraficoBarrasRegistro(
     titulo: String,
     datos: List<Pair<String, Int>>,
     color: Color,
-    mostrarTitulo: Boolean = true
+    mostrarTitulo: Boolean = true,
+    iconos: List<Int> = emptyList()
 ) {
     val maximo = datos.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
     if (mostrarTitulo) {
@@ -1497,7 +1514,7 @@ private fun GraficoBarrasRegistro(
         Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        datos.take(10).forEach { (etiqueta, valor) ->
+        datos.take(10).forEachIndexed { indice, (etiqueta, valor) ->
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -1505,7 +1522,15 @@ private fun GraficoBarrasRegistro(
                 border = BorderStroke(1.dp, BordeClinico.copy(alpha = 0.45f))
             ) {
                 Column(Modifier.padding(horizontal = 11.dp, vertical = 9.dp)) {
-                    Row(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        iconos.getOrNull(indice)?.let {
+                            Image(
+                                painter = painterResource(it),
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp).size(30.dp),
+                                contentScale = ContentScale.Fit
+                            )
+                        }
                         Text(
                             etiqueta,
                             modifier = Modifier.weight(1f),

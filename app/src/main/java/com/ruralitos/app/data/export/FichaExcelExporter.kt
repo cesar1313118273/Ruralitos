@@ -117,8 +117,7 @@ object FichaExcelExporter {
     }
 
     internal fun abrirPlantilla(context: Context): XSSFWorkbook {
-        val original = PlantillaPropia.bytes(context)
-            ?: context.assets.open("ficha_familiar.xlsx").use { it.readBytes() }
+        val original = context.assets.open("ficha_familiar.xlsx").use { it.readBytes() }
         return XSSFWorkbook(ByteArrayInputStream(sanitizarPlantillaXlsx(original)))
     }
 
