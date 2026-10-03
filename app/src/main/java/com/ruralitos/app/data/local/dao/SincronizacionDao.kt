@@ -46,6 +46,17 @@ interface SincronizacionDao {
     @Query("SELECT COALESCE(MAX(actualizadoEn), 0) FROM fichas_familiares WHERE syncEstado NOT IN ('SINCRONIZADO', 'CONFLICTO')")
     fun observarUltimoCambioPendiente(): Flow<Long>
 
+    @Query("SELECT COUNT(*) FROM fichas_familiares")
+    suspend fun contarFichasDeTodasLasOrganizaciones(): Int
+
+    /** Fichas, agenda y notas con cambios que aún no llegaron al servidor (incluye los conflictos sin decidir). */
+    @Query("""
+        SELECT (SELECT COUNT(*) FROM fichas_familiares WHERE syncEstado <> 'SINCRONIZADO')
+             + (SELECT COUNT(*) FROM actividades_agenda WHERE syncEstado IN ('PENDIENTE', 'CONFLICTO'))
+             + (SELECT COUNT(*) FROM notas_diarias WHERE syncEstado IN ('PENDIENTE', 'CONFLICTO'))
+    """)
+    suspend fun contarCambiosSinSubir(): Int
+
     @Query("SELECT COUNT(*) FROM fichas_familiares WHERE organizacionId = :organizacionId")
     suspend fun contarFichasDeOrganizacion(organizacionId: String): Int
 

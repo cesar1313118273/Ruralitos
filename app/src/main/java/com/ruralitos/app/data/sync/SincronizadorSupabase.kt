@@ -116,6 +116,7 @@ class SincronizadorSupabase(context: Context) {
         api.tokenValido()
         val salasLocales = if (soloSubidas) database.salaDao().listarSalas() else emptyList()
         val salas = salasLocales.ifEmpty { SincronizadorSalas.actualizar(database, api) }
+        if (!soloSubidas) retirarSalasSinAcceso(salas.map { it.organizacionId }.toSet())
         if (salas.isEmpty()) return ResultadoSincronizacion(0, 0, 0)
 
         val activa = api.organizacionGuardada()
@@ -123,7 +124,6 @@ class SincronizadorSupabase(context: Context) {
             ?: salas.first().organizacionId
         api.guardarOrganizacionActiva(activa)
         dao.asignarOrganizacionPendiente(activa)
-        if (!soloSubidas) retirarSalasSinAcceso(salas.map { it.organizacionId }.toSet())
 
         var totalSubidas = 0
         var totalEliminaciones = 0

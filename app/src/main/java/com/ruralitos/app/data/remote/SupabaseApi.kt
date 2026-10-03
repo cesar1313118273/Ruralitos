@@ -41,6 +41,18 @@ data class PerfilRemoto(
     val apellidos: String = ""
 )
 
+data class MiembroEquipoRemoto(
+    val usuarioId: String,
+    val nombre: String,
+    val cargo: String,
+    val correo: String,
+    val rol: String,
+    val activo: Boolean,
+    val permiso: String,
+    /** Solo ve un EAIS o un barrio, no toda la Sala. */
+    val alcanceLimitado: Boolean
+)
+
 data class MembresiaRemota(
     val organizacionId: String,
     val rol: String,
@@ -678,6 +690,60 @@ class SupabaseApi(context: Context) {
                 expiraEn = it.optString("expira_en")
             )
         }
+    }
+
+    /** Personas con acceso a la Sala (solo la ve un administrador). */
+    suspend fun listarEquipo(organizacionId: String): List<MiembroEquipoRemoto> {
+        val org = codificar(organizacionId)
+        val miembros = seleccionarPaginado(
+            "miembros_organizacion?organizacion_id=eq.$org&select=usuario_id,rol,activo&order=creado_en.asc"
+        )
+        if (miembros.isEmpty()) return emptyList()
+        val accesos = seleccionarPaginado(
+            "accesos_sala?organizacion_id=eq.$org&activo=eq.true&select=usuario_id,permiso,alcance"
+        )
+        val ids = miembros.map { it.getString("usuario_id") }.distinct()
+        val perfiles = ids.chunked(50).flatMap { lote ->
+            seleccionar("perfiles?id=in.(${lote.joinToString(",")})&select=id,nombres,apellidos,cargo,correo")
+                .let { filas -> (0 until filas.length()).map { filas.getJSONObject(it) } }
+        }.associateBy { it.getString("id") }
+        return miembros.map { fila ->
+            val usuarioId = fila.getString("usuario_id")
+            val perfil = perfiles[usuarioId]
+            val permisos = accesos.filter { it.getString("usuario_id") == usuarioId }
+            MiembroEquipoRemoto(
+                usuarioId = usuarioId,
+                nombre = listOfNotNull(perfil?.optString("nombres"), perfil?.optString("apellidos"))
+                    .filter { it.isNotBlank() }.joinToString(" ").ifBlank { "Sin nombre" },
+                cargo = perfil?.optString("cargo").orEmpty(),
+                correo = perfil?.optString("correo").orEmpty(),
+                rol = fila.optString("rol"),
+                activo = fila.optBoolean("activo", true),
+                permiso = permisos.maxByOrNull { rangoPermiso(it.optString("permiso")) }
+                    ?.optString("permiso").orEmpty(),
+                alcanceLimitado = permisos.isNotEmpty() && permisos.none { it.optString("alcance") == "SALA" }
+            )
+        }
+    }
+
+    /**
+     * Quita el acceso de una persona a la Sala. Sus fichas y las de sus compañeros dejan de ser visibles para ella
+     * en la próxima sincronización de su teléfono, que además las retira de allí.
+     */
+    suspend fun revocarAcceso(organizacionId: String, usuarioId: String) {
+        val org = codificar(organizacionId)
+        val usuario = codificar(usuarioId)
+        val token = tokenValido()
+        solicitar(
+            "PATCH", "/rest/v1/accesos_sala?organizacion_id=eq.$org&usuario_id=eq.$usuario",
+            cuerpo = JSONObject().put("activo", false), accessToken = token,
+            headers = mapOf("Prefer" to "return=minimal")
+        )
+        solicitar(
+            "PATCH", "/rest/v1/miembros_organizacion?organizacion_id=eq.$org&usuario_id=eq.$usuario",
+            cuerpo = JSONObject().put("activo", false), accessToken = token,
+            headers = mapOf("Prefer" to "return=minimal")
+        )
     }
 
     suspend fun rpc(nombre: String, cuerpo: JSONObject): RespuestaHttp =

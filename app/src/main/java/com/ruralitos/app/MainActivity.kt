@@ -60,6 +60,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.core.content.ContextCompat
 import com.ruralitos.app.data.local.seed.EstablecimientosSaludSeeder
+import com.ruralitos.app.data.security.ControlPropietarioLocal
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.data.local.entity.SalaEntity
@@ -250,6 +251,7 @@ fun RuralitosApp() {
         return
     }
     val fichasPendientesSync by database.sincronizacionDao().observarPendientes().collectAsState(initial = 0)
+    val fichasConflictoSync by database.sincronizacionDao().observarConflictos().collectAsState(initial = 0)
     val ultimoCambioPendiente by database.sincronizacionDao()
         .observarUltimoCambioPendiente().collectAsState(initial = 0L)
     val salasLocales by database.salaDao().observarSalas().collectAsState(initial = emptyList())
@@ -441,7 +443,7 @@ fun RuralitosApp() {
                 ProgramadorSincronizacion.configurar(context)
             }
             if (supabase.sesionGuardada() != null && supabase.hayInternet()) {
-                runCatching { prepararUsuarioDesdeSupabase(database, supabase) }
+                runCatching { prepararUsuarioDesdeSupabase(context, database, supabase) }
                     .onSuccess { remoto ->
                         if (remoto != null) {
                             usuarioActual = remoto
@@ -453,7 +455,7 @@ fun RuralitosApp() {
         }
         sesion.cerrar()
         if (supabase.sesionGuardada() != null && supabase.hayInternet()) {
-            runCatching { prepararUsuarioDesdeSupabase(database, supabase) }
+            runCatching { prepararUsuarioDesdeSupabase(context, database, supabase) }
                 .onSuccess { usuario ->
                     usuarioActual = usuario
                     estadoAcceso = when {
@@ -530,8 +532,8 @@ fun RuralitosApp() {
     val revisionSincronizacion by EstadoSincronizacion.revision.collectAsState()
     val totalPendiente = fichasPendientesSync + agendaPendientesSync + notasPendientesSync
     val estadoSincronizacion = when {
-        agendaConflictosSync + notasConflictosSync > 0 ->
-            "${agendaConflictosSync + notasConflictosSync} cambios por revisar"
+        agendaConflictosSync + notasConflictosSync + fichasConflictoSync > 0 ->
+            "${agendaConflictosSync + notasConflictosSync + fichasConflictoSync} cambios por revisar"
         totalPendiente > 0 -> "$totalPendiente pendiente${if (totalPendiente == 1) "" else "s"} de sincronizar"
         !supabase.hayInternet() -> "Sin conexión · datos guardados en el teléfono"
         EstadoSincronizacion.ultimoIntentoCorrecto(context, usuarioActual?.supabaseId.orEmpty()) == false ->
@@ -607,7 +609,7 @@ fun RuralitosApp() {
                             runCatching {
                                 supabase.iniciarSesion(correo, clave)
 
-                                prepararUsuarioDesdeSupabase(database, supabase)
+                                prepararUsuarioDesdeSupabase(context, database, supabase)
                             }.onSuccess { usuario ->
                                 usuarioActual = usuario
                                 estadoAcceso = when {
@@ -654,7 +656,7 @@ fun RuralitosApp() {
                                     estadoAcceso = "login"
                                     mensajeAcceso = "Cuenta creada. Revisa tu correo y confirma el enlace antes de ingresar."
                                 } else {
-                                    usuarioActual = prepararUsuarioDesdeSupabase(database, supabase)
+                                    usuarioActual = prepararUsuarioDesdeSupabase(context, database, supabase)
                                     estadoAcceso = if (usuarioActual == null) "organizacion" else "configurarProfesional"
                                 }
                             }.onFailure {
@@ -701,7 +703,7 @@ fun RuralitosApp() {
                         scope.launch {
                             runCatching {
                                 supabase.aceptarInvitacion(codigo)
-                                checkNotNull(prepararUsuarioDesdeSupabase(database, supabase))
+                                checkNotNull(prepararUsuarioDesdeSupabase(context, database, supabase))
                             }.onSuccess { usuario ->
                                 usuarioActual = usuario
                                 estadoAcceso = if (usuario.firmaUri.isNullOrBlank()) "configurarProfesional" else "configurarPin"
@@ -731,7 +733,7 @@ fun RuralitosApp() {
                         scope.launch {
                             runCatching {
                                 supabase.crearSala(establecimiento.codigoUo)
-                                checkNotNull(prepararUsuarioDesdeSupabase(database, supabase))
+                                checkNotNull(prepararUsuarioDesdeSupabase(context, database, supabase))
                             }.onSuccess { usuario ->
                                 usuarioActual = usuario
                                 estadoAcceso = if (usuario.firmaUri.isNullOrBlank()) {
@@ -864,7 +866,7 @@ fun RuralitosApp() {
                         scope.launch {
                             runCatching {
                                 supabase.actualizarClave(nuevaClave)
-                                prepararUsuarioDesdeSupabase(database, supabase)
+                                prepararUsuarioDesdeSupabase(context, database, supabase)
                             }.onSuccess { usuario ->
                                 supabase.finalizarRecuperacion()
                                 usuarioActual = usuario
@@ -987,7 +989,33 @@ fun RuralitosApp() {
                 "usuarios" -> {
                     val usuario = usuarioActual
                     if (usuario?.esAdministrador == true) {
+                        var equipo by remember(usuario.organizacionId) { mutableStateOf<List<com.ruralitos.app.data.remote.MiembroEquipoRemoto>>(emptyList()) }
+                        var cargandoEquipo by remember(usuario.organizacionId) { mutableStateOf(true) }
+                        var revisionEquipo by remember(usuario.organizacionId) { mutableStateOf(0) }
+                        LaunchedEffect(usuario.organizacionId, revisionEquipo) {
+                            cargandoEquipo = true
+                            equipo = runCatching { supabase.listarEquipo(usuario.organizacionId) }.getOrDefault(emptyList())
+                            cargandoEquipo = false
+                        }
                         GestionEquipoSupabaseScreen(
+                            equipo = equipo,
+                            cargandoEquipo = cargandoEquipo,
+                            usuarioSupabaseId = usuario.supabaseId,
+                            onRevocar = { persona ->
+                                procesandoAcceso = true
+                                mensajeAcceso = null
+                                scope.launch {
+                                    runCatching { supabase.revocarAcceso(usuario.organizacionId, persona.usuarioId) }
+                                        .onSuccess {
+                                            mensajeAcceso = "Se quitó el acceso a ${persona.nombre}."
+                                            revisionEquipo++
+                                        }
+                                        .onFailure {
+                                            mensajeAcceso = it.message ?: "No se pudo quitar el acceso."
+                                        }
+                                    procesandoAcceso = false
+                                }
+                            },
                             procesando = procesandoAcceso,
                             mensaje = mensajeAcceso,
                             codigoGenerado = codigoInvitacion,
@@ -1056,6 +1084,7 @@ fun RuralitosApp() {
                                     withContext(Dispatchers.IO) {
                                         database.clearAllTables()
                                         EstablecimientosSaludSeeder.cargarSiEstaVacio(context)
+                                        ControlPropietarioLocal.olvidarPropietario(context)
                                     }
                                     usuarioActual = null
                                     fichaIdActual = null
@@ -1253,7 +1282,7 @@ fun RuralitosApp() {
                             scope.launch {
                                 runCatching {
                                     supabase.crearSala(establecimiento.codigoUo)
-                                    prepararUsuarioDesdeSupabase(database, supabase)
+                                    prepararUsuarioDesdeSupabase(context, database, supabase)
                                 }.onSuccess { actualizado ->
                                     if (actualizado != null) usuarioActual = actualizado
                                     pantallaActual = "sala"
@@ -1946,11 +1975,13 @@ private suspend fun guardarIdentidadProfesional(
 }
 
 private suspend fun prepararUsuarioDesdeSupabase(
+    context: Context,
     database: RuralitosDatabase,
     supabase: SupabaseApi
 ): UsuarioEntity? {
     val perfil: PerfilRemoto = supabase.obtenerPerfil()
         ?: throw IllegalStateException("No se encontró el perfil de la cuenta.")
+    ControlPropietarioLocal.verificar(context, database, supabase, perfil.id, perfil.cedula)
     val salas = SincronizadorSalas.actualizar(database, supabase)
     if (salas.isEmpty()) return null
     val activa = supabase.organizacionGuardada()
