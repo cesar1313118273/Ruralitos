@@ -1,66 +1,10 @@
 package com.ruralitos.app
 
-import com.ruralitos.app.data.local.dao.ViviendaMapaFila
-import com.ruralitos.app.domain.EstadoVivienda
-import com.ruralitos.app.domain.FiltroVivienda
 import com.ruralitos.app.domain.MapaViviendas
-import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class MapaViviendasTest {
-    private fun fila(
-        id: Long = 1, jefe: String = "PÉREZ LUIS", cedula: String = "0102030405", numero: String = "0142",
-        barrio: String = "San José", casa: String = "12", estado: String = "COMPLETA", sync: String = "SINCRONIZADO",
-        riesgo: String = "", atrasadas: Int = 0, lat: Double = -4.0, lon: Double = -79.2,
-        gestantes: Int = 0, menores: Int = 0, mayores: Int = 0
-    ) = ViviendaMapaFila(id, jefe, cedula, numero, barrio, casa, lat, lon, estado, sync, riesgo, 4, atrasadas, gestantes, menores, mayores)
-
-    @Test
-    fun elColorMuestraLoMasUrgenteDeLaFamilia() {
-        assertEquals(EstadoVivienda.AL_DIA, MapaViviendas.estado(fila()))
-        assertEquals(EstadoVivienda.RIESGO_ALTO, MapaViviendas.estado(fila(riesgo = "ALTO", estado = "BORRADOR", atrasadas = 3)))
-        assertEquals(EstadoVivienda.PENDIENTE, MapaViviendas.estado(fila(estado = "BORRADOR")))
-        assertEquals(EstadoVivienda.PENDIENTE, MapaViviendas.estado(fila(atrasadas = 1)))
-        assertEquals(EstadoVivienda.SIN_SINCRONIZAR, MapaViviendas.estado(fila(sync = "PENDIENTE")))
-        assertEquals("un riesgo medio no pinta de rojo", EstadoVivienda.AL_DIA, MapaViviendas.estado(fila(riesgo = "MEDIO")))
-    }
-
-    @Test
-    fun losFiltrosSeparanLasViviendas() {
-        val todas = listOf(
-            fila(1), fila(2, riesgo = "ALTO"), fila(3, estado = "BORRADOR"), fila(4, sync = "ERROR")
-        )
-        assertEquals(4, MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "").size)
-        assertEquals(listOf(3L), MapaViviendas.filtrar(todas, FiltroVivienda.PENDIENTES, "").map { it.fichaId })
-        assertEquals(listOf(2L), MapaViviendas.filtrar(todas, FiltroVivienda.RIESGO_ALTO, "").map { it.fichaId })
-        assertEquals(listOf(4L), MapaViviendas.filtrar(todas, FiltroVivienda.SIN_SINCRONIZAR, "").map { it.fichaId })
-    }
-
-    @Test
-    fun laBusquedaIgnoraTildesYMayusculasYAceptaVariasPalabras() {
-        val filas = listOf(fila(1, jefe = "PÉREZ LUIS", barrio = "San José"), fila(2, jefe = "GÓMEZ ANA", barrio = "Centro", cedula = "1111111111"))
-        assertEquals(listOf(1L), MapaViviendas.filtrar(filas, FiltroVivienda.TODAS, "perez").map { it.fichaId })
-        assertEquals(listOf(1L), MapaViviendas.filtrar(filas, FiltroVivienda.TODAS, "luis san jose").map { it.fichaId })
-        assertEquals(listOf(2L), MapaViviendas.filtrar(filas, FiltroVivienda.TODAS, "1111").map { it.fichaId })
-        assertEquals(2, MapaViviendas.filtrar(filas, FiltroVivienda.TODAS, "  ").size)
-        assertTrue(MapaViviendas.filtrar(filas, FiltroVivienda.TODAS, "nadie").isEmpty())
-    }
-
-    @Test
-    fun elGeoJsonTraeUnPuntoPorViviendaConSuColor() {
-        val json = JSONObject(MapaViviendas.geoJson(listOf(fila(7, riesgo = "ALTO", lat = -3.99, lon = -79.2), fila(8))))
-        val features = json.getJSONArray("features")
-        assertEquals(2, features.length())
-        val primero = features.getJSONObject(0)
-        assertEquals(7, primero.getJSONObject("properties").getInt("id"))
-        assertEquals("#D32F2F", primero.getJSONObject("properties").getString("color"))
-        assertEquals(-79.2, primero.getJSONObject("geometry").getJSONArray("coordinates").getDouble(0), 1e-9)
-        assertEquals(-3.99, primero.getJSONObject("geometry").getJSONArray("coordinates").getDouble(1), 1e-9)
-        assertEquals(0, JSONObject(MapaViviendas.geoJson(emptyList())).getJSONArray("features").length())
-    }
-
     @Test
     fun laDistanciaYElTiempoAPieSonRazonables() {
         // un grado de latitud ≈ 111 km
@@ -72,38 +16,7 @@ class MapaViviendasTest {
     }
 
     @Test
-    fun losConteosCuentanCadaEstado() {
-        val c = MapaViviendas.conteos(listOf(fila(1), fila(2, riesgo = "ALTO"), fila(3, riesgo = "ALTO"), fila(4, estado = "BORRADOR")))
-        assertEquals(1, c[EstadoVivienda.AL_DIA])
-        assertEquals(2, c[EstadoVivienda.RIESGO_ALTO])
-        assertEquals(1, c[EstadoVivienda.PENDIENTE])
-        assertEquals(0, c[EstadoVivienda.SIN_SINCRONIZAR])
-    }
-
-    @Test
-    fun losFiltrosPorGrupoDeRiesgoUsanLosIntegrantes() {
-        val todas = listOf(fila(1), fila(2, gestantes = 1), fila(3, menores = 2), fila(4, mayores = 1), fila(5, gestantes = 1, mayores = 2))
-        assertEquals(listOf(2L, 5L), MapaViviendas.filtrar(todas, FiltroVivienda.GESTANTES, "").map { it.fichaId })
-        assertEquals(listOf(3L), MapaViviendas.filtrar(todas, FiltroVivienda.MENORES_5, "").map { it.fichaId })
-        assertEquals(listOf(4L, 5L), MapaViviendas.filtrar(todas, FiltroVivienda.ADULTOS_MAYORES, "").map { it.fichaId })
-    }
-
-    @Test
-    fun elBarrioSeFiltraSinImportarTildesNiMayusculasYSeListaSinRepetir() {
-        val todas = listOf(
-            fila(1, barrio = "San José"), fila(2, barrio = "SAN JOSE"), fila(3, barrio = "El Carmen"), fila(4, barrio = "")
-        )
-        val barrios = MapaViviendas.barrios(todas)
-        assertEquals(listOf("El Carmen" to 1, "San José" to 2), barrios)
-        assertEquals(listOf(1L, 2L), MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "", "san jose").map { it.fichaId })
-        assertEquals(4, MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "", "").size)
-        assertEquals(listOf(3L), MapaViviendas.filtrar(todas, FiltroVivienda.TODAS, "carmen", "El Carmen").map { it.fichaId })
-    }
-
-    @Test
-    fun cadaEstadoTieneUnaLetraDistintaParaQuienNoDistingueColores() {
-        assertEquals(EstadoVivienda.entries.size, EstadoVivienda.entries.map { it.letra }.toSet().size)
-        val json = JSONObject(MapaViviendas.geoJson(listOf(fila(1, riesgo = "ALTO"))))
-        assertEquals("R", json.getJSONArray("features").getJSONObject(0).getJSONObject("properties").getString("letra"))
+    fun dosPuntosIgualesEstanADistanciaCero() {
+        assertEquals(0.0, MapaViviendas.distanciaMetros(-4.0, -79.2, -4.0, -79.2), 1e-6)
     }
 }

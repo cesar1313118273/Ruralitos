@@ -27,8 +27,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -53,9 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -75,12 +71,9 @@ import com.ruralitos.app.data.mapa.GestorMapaDetalle
 import com.ruralitos.app.data.mapa.GestorRutasOffline
 import com.ruralitos.app.data.mapa.RutaCalculada
 import com.ruralitos.app.domain.EstadoVisita
-import com.ruralitos.app.domain.FiltroEstadoVisita
-import com.ruralitos.app.domain.FiltroVivienda
 import com.ruralitos.app.domain.LlegadaVivienda
 import com.ruralitos.app.domain.MapaSeguimiento
 import com.ruralitos.app.domain.MapaViviendas
-import com.ruralitos.app.domain.PeriodoVisita
 import com.ruralitos.app.domain.PuntoSeguimiento
 import com.ruralitos.app.domain.RecorridoVisitas
 import com.ruralitos.app.ui.components.ClaseAncho
@@ -158,11 +151,13 @@ data class PlanRecorrido(
  * filtros, viviendas elegidas, recorrido ordenado y por cuál parada va.
  */
 class EstadoMapaSeguimiento {
-    var filtroEstado by mutableStateOf(FiltroEstadoVisita.TODAS)
-    var periodo by mutableStateOf(PeriodoVisita.TODAS)
-    var riesgo by mutableStateOf(FiltroVivienda.TODAS)
-    var barrio by mutableStateOf("")
-    var consulta by mutableStateOf("")
+    /** Estados de visita que se ven en el mapa; al entrar están los cuatro. */
+    var estados by mutableStateOf(EstadoVisita.entries.toSet())
+    /** Rango de fechas (inicio y fin, de día completo). Al entrar son las dos la fecha de hoy. */
+    var desde by mutableStateOf(MapaSeguimiento.inicioDia(System.currentTimeMillis()))
+    var hasta by mutableStateOf(desde)
+    /** Mientras nadie cambie las fechas se mantienen en «hoy», aunque la aplicación lleve días abierta. */
+    var fechasElegidas by mutableStateOf(false)
     var modoViaje by mutableStateOf("pedestrian")
     var seleccionadaId by mutableStateOf<Long?>(null)
     var modoRecorrido by mutableStateOf(false)
@@ -212,6 +207,7 @@ fun MapaSeguimientoVista(
         .collectAsState(initial = emptyList())
 
     var verSinUbicacion by remember { mutableStateOf(false) }
+    var ventanaFechas by remember { mutableStateOf(false) }
     var ubicacion by remember { mutableStateOf<Location?>(null) }
     var permiso by remember { mutableStateOf(GestorUbicacionActual.tienePermiso(context)) }
     var mapaLocal by remember { mutableStateOf<String?>(null) }
@@ -229,19 +225,24 @@ fun MapaSeguimientoVista(
     val gpsVivo by rememberUbicacionEnVivo(activo = estado.plan != null && permiso)
     val posicion = gpsVivo ?: ubicacion
 
-    val barrios = remember(viviendas) { MapaViviendas.barrios(viviendas) }
-    val viviendasFiltradas = remember(viviendas, estado.riesgo, estado.consulta, estado.barrio) {
-        MapaViviendas.filtrar(viviendas, estado.riesgo, estado.consulta, estado.barrio)
+    // Sin las fechas elegidas por el usuario, el rango siempre es el de hoy.
+    LaunchedEffect(ahora) {
+        if (!estado.fechasElegidas) {
+            val hoy = MapaSeguimiento.inicioDia(ahora)
+            if (estado.desde != hoy) estado.desde = hoy
+            if (estado.hasta != hoy) estado.hasta = hoy
+        }
     }
-    val puntos = remember(viviendasFiltradas, actividades, estado.filtroEstado, estado.periodo, ahora) {
-        MapaSeguimiento.puntos(viviendasFiltradas, actividades, estado.filtroEstado, estado.periodo, ahora)
+    val hastaFinDeDia = MapaSeguimiento.finDia(estado.hasta)
+    val puntos = remember(viviendas, actividades, estado.estados, estado.desde, estado.hasta, ahora) {
+        MapaSeguimiento.puntos(viviendas, actividades, estado.estados, estado.desde, hastaFinDeDia, ahora)
     }
-    val conteos = remember(viviendasFiltradas, actividades, estado.periodo, ahora) {
-        MapaSeguimiento.conteos(viviendasFiltradas, actividades, estado.periodo, ahora)
+    val conteos = remember(viviendas, actividades, estado.desde, estado.hasta, ahora) {
+        MapaSeguimiento.conteos(viviendas, actividades, estado.desde, hastaFinDeDia, ahora)
     }
     val seleccionado = remember(puntos, estado.seleccionadaId) { puntos.firstOrNull { it.vivienda.fichaId == estado.seleccionadaId } }
-    val sinUbicacionConVisita = remember(sinUbicacion, actividades, estado.filtroEstado, estado.periodo, ahora) {
-        val conVisita = MapaSeguimiento.fichasConVisita(actividades, estado.filtroEstado, estado.periodo, ahora)
+    val sinUbicacionConVisita = remember(sinUbicacion, actividades, estado.estados, estado.desde, estado.hasta, ahora) {
+        val conVisita = MapaSeguimiento.fichasConVisita(actividades, estado.estados, estado.desde, hastaFinDeDia, ahora)
         sinUbicacion.filter { it.fichaId in conVisita }
     }
     val ancho = LocalClaseAncho.current != ClaseAncho.COMPACTA
@@ -569,73 +570,49 @@ fun MapaSeguimientoVista(
 
     Column(modifier.fillMaxSize().background(Color(0xFFF6F9FB))) {
         val panelBusqueda: @Composable () -> Unit = {
-            Column(Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 8.dp)) {
-                CampoBusquedaMapa(estado.consulta) { estado.consulta = it }
-                Row(
-                    Modifier.padding(top = 8.dp).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    FiltroEstadoVisita.entries.forEach { f ->
-                        ChipFiltro(
-                            "${f.etiqueta} · ${conteos[f] ?: 0}", f == estado.filtroEstado,
-                            Modifier.testTag("chip_estado_${f.name}")
-                        ) { estado.filtroEstado = f }
+            Row(
+                Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                var abierto by remember { mutableStateOf(false) }
+                Box(Modifier.weight(1f)) {
+                    BotonControl(
+                        texto = if (estado.estados.size == EstadoVisita.entries.size) "Estado · todos" else "Estado · ${estado.estados.size} de ${EstadoVisita.entries.size}",
+                        activo = estado.estados.size != EstadoVisita.entries.size, modifier = Modifier.testTag("boton_estado")
+                    ) { abierto = true }
+                    DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
+                        EstadoVisita.entries.forEach { e ->
+                            val marcado = e in estado.estados
+                            DropdownMenuItem(
+                                modifier = Modifier.testTag("estado_${e.name}"),
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            Modifier.size(18.dp).clip(RoundedCornerShape(4.dp))
+                                                .background(if (marcado) VerdeAgenda else Color(0xFFE3EAF0)),
+                                            contentAlignment = Alignment.Center
+                                        ) { if (marcado) Text("✓", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                                        Spacer(Modifier.width(10.dp))
+                                        Box(Modifier.size(11.dp).clip(CircleShape).background(colorDe(e)))
+                                        Text("  ${e.etiqueta}", color = AzulTexto)
+                                        Text("  · ${conteos[e] ?: 0}", color = GrisTexto, fontSize = 12.sp)
+                                    }
+                                },
+                                // el menú queda abierto para marcar varios; siempre debe quedar al menos un estado
+                                onClick = {
+                                    if (marcado && estado.estados.size == 1) return@DropdownMenuItem
+                                    estado.estados = if (marcado) estado.estados - e else estado.estados + e
+                                    estado.plan = null
+                                }
+                            )
+                        }
                     }
                 }
-                Row(
-                    Modifier.padding(top = 6.dp).horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    PeriodoVisita.entries.forEach { p ->
-                        ChipFiltro(
-                            if (p == PeriodoVisita.HOY) "Hoy y atrasadas" else p.etiqueta, p == estado.periodo,
-                            Modifier.testTag("chip_periodo_${p.name}")
-                        ) { estado.periodo = p }
-                    }
-                    if (barrios.size > 1) {
-                        var abierto by remember { mutableStateOf(false) }
-                        Box {
-                            ChipFiltro(
-                                if (estado.barrio.isEmpty()) "Barrio ▾" else "${estado.barrio} ▾", estado.barrio.isNotEmpty(),
-                                Modifier.testTag("chip_barrio")
-                            ) { abierto = true }
-                            DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
-                                DropdownMenuItem(text = { Text("Todos los barrios (${viviendas.size})") }, onClick = { estado.barrio = ""; abierto = false })
-                                barrios.forEach { (nombre, cantidad) ->
-                                    DropdownMenuItem(text = { Text("$nombre ($cantidad)") }, onClick = { estado.barrio = nombre; abierto = false })
-                                }
-                            }
-                        }
-                    }
-                    run {
-                        var abierto by remember { mutableStateOf(false) }
-                        val grupos = listOf(
-                            FiltroVivienda.TODAS, FiltroVivienda.RIESGO_ALTO, FiltroVivienda.GESTANTES,
-                            FiltroVivienda.MENORES_5, FiltroVivienda.ADULTOS_MAYORES
-                        )
-                        Box {
-                            ChipFiltro(
-                                if (estado.riesgo == FiltroVivienda.TODAS) "Riesgo ▾" else "${estado.riesgo.etiqueta} ▾",
-                                estado.riesgo != FiltroVivienda.TODAS, Modifier.testTag("chip_riesgo")
-                            ) { abierto = true }
-                            DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
-                                grupos.forEach { g ->
-                                    val n = if (g == FiltroVivienda.TODAS) viviendas.size else viviendas.count { MapaViviendas.cumpleFiltro(it, g) }
-                                    DropdownMenuItem(
-                                        text = { Text(if (g == FiltroVivienda.TODAS) "Todos los grupos ($n)" else "${g.etiqueta} ($n)") },
-                                        onClick = { estado.riesgo = g; abierto = false }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    ChipFiltro(
-                        if (estado.modoRecorrido) "Recorrido · ${estado.paradasIds.size}" else "Recorrido del día", estado.modoRecorrido,
-                        Modifier.testTag("chip_recorrido")
-                    ) {
-                        if (estado.modoRecorrido) estado.reiniciarRecorrido()
-                        else { estado.modoRecorrido = true; estado.seleccionadaId = null }
-                    }
+                Box(Modifier.weight(1.5f)) {
+                    BotonControl(
+                        texto = textoRango(estado.desde, estado.hasta),
+                        activo = estado.fechasElegidas, modifier = Modifier.testTag("boton_fecha")
+                    ) { ventanaFechas = true }
                 }
             }
         }
@@ -663,7 +640,7 @@ fun MapaSeguimientoVista(
                     )
                 } else if (!estado.modoRecorrido) {
                     Row(
-                        Modifier.align(Alignment.TopCenter).padding(top = 8.dp, start = 8.dp, end = 56.dp),
+                        Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = if (!ancho && seleccionado != null) 250.dp else 30.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically
                     ) {
                         if (sinUbicacionConVisita.isNotEmpty()) {
@@ -686,14 +663,36 @@ fun MapaSeguimientoVista(
                     BotonMapa("+", "Acercar") { mapa?.animateCamera(CameraUpdateFactory.zoomIn()) }
                     BotonMapa("−", "Alejar") { mapa?.animateCamera(CameraUpdateFactory.zoomOut()) }
                 }
-                if (estado.plan == null) Surface(
-                    onClick = { onAgendar(null) },
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(end = 8.dp, bottom = if (!ancho && (seleccionado != null || estado.plan != null)) 220.dp else 30.dp).testTag("agendar_mapa"),
-                    shape = RoundedCornerShape(22.dp), color = VerdeAgenda, shadowElevation = 3.dp
+                if (estado.plan == null) Row(
+                    Modifier.align(Alignment.BottomEnd)
+                        .padding(end = 8.dp, bottom = if (!ancho && seleccionado != null) 250.dp else 30.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("＋ Agendar", Modifier.padding(horizontal = 16.dp, vertical = 11.dp), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Surface(
+                        onClick = {
+                            if (estado.modoRecorrido) estado.reiniciarRecorrido()
+                            else { estado.modoRecorrido = true; estado.seleccionadaId = null }
+                        },
+                        modifier = Modifier.testTag("chip_recorrido"),
+                        shape = RoundedCornerShape(22.dp), shadowElevation = 3.dp,
+                        color = if (estado.modoRecorrido) AzulTexto else Color.White,
+                        border = BorderStroke(1.dp, if (estado.modoRecorrido) AzulTexto else VerdeAgenda)
+                    ) {
+                        Text(
+                            if (estado.modoRecorrido) "Recorrido · ${estado.paradasIds.size}" else "Recorrido",
+                            Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+                            color = if (estado.modoRecorrido) Color.White else VerdeAgenda, fontWeight = FontWeight.SemiBold, fontSize = 14.sp
+                        )
+                    }
+                    Surface(
+                        onClick = { onAgendar(null) },
+                        modifier = Modifier.testTag("agendar_mapa"),
+                        shape = RoundedCornerShape(22.dp), color = VerdeAgenda, shadowElevation = 3.dp
+                    ) {
+                        Text("＋ Agendar", Modifier.padding(horizontal = 16.dp, vertical = 11.dp), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    }
                 }
-                if (!ancho && estado.plan == null) Leyenda(conteos, Modifier.align(Alignment.BottomStart).padding(start = 8.dp, bottom = if (seleccionado == null && estado.plan == null) 30.dp else 220.dp))
+                if (!ancho && estado.plan == null && !estado.modoRecorrido) Leyenda(conteos, Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 8.dp))
                 if (viviendas.isEmpty()) {
                     Surface(
                         modifier = Modifier.align(Alignment.Center).padding(24.dp),
@@ -710,7 +709,7 @@ fun MapaSeguimientoVista(
                         shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp
                     ) {
                         Text(
-                            "No hay visitas con estos filtros. Prueba con «Todas» y «Todas las fechas», o agenda una visita.",
+                            "No hay visitas en estas fechas con los estados marcados. Cambia las fechas o agenda una visita.",
                             Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp
                         )
                     }
@@ -786,7 +785,7 @@ fun MapaSeguimientoVista(
                             )
                         }
                     }
-                    item(key = "busqueda") { panelBusqueda() }
+                    item(key = "filtros") { panelBusqueda() }
                     item(key = "leyenda") { Leyenda(conteos, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), horizontal = true) }
                     items(puntos, key = { it.vivienda.fichaId }) { p ->
                         val numero = estado.plan?.paradas?.indexOfFirst { it.vivienda.fichaId == p.vivienda.fichaId }?.takeIf { it >= 0 }?.plus(1)
@@ -802,6 +801,22 @@ fun MapaSeguimientoVista(
             panelBusqueda()
             mapaConControles(Modifier.weight(1f).fillMaxWidth())
         }
+    }
+
+    if (ventanaFechas) {
+        VentanaFechas(
+            desde = estado.desde, hasta = estado.hasta,
+            onAplicar = { d, h ->
+                estado.desde = d; estado.hasta = h; estado.fechasElegidas = true; estado.plan = null
+                ventanaFechas = false
+            },
+            onHoy = {
+                val hoy = MapaSeguimiento.inicioDia(System.currentTimeMillis())
+                estado.desde = hoy; estado.hasta = hoy; estado.fechasElegidas = false; estado.plan = null
+                ventanaFechas = false
+            },
+            onCerrar = { ventanaFechas = false }
+        )
     }
 
     if (verSinUbicacion) {
@@ -844,28 +859,133 @@ fun MapaSeguimientoVista(
     }
 }
 
+private val MESES = listOf(
+    "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+)
+
+private fun textoRango(desde: Long, hasta: Long): String {
+    fun f(t: Long) = "%02d/%02d/%d".format(MapaSeguimiento.dia(t), MapaSeguimiento.mes(t), MapaSeguimiento.anio(t))
+    return "${f(desde)} – ${f(hasta)}"
+}
+
 @Composable
-private fun CampoBusquedaMapa(valor: String, alCambiar: (String) -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color(0xFFF2F6F9))
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun BotonControl(texto: String, activo: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick, modifier = modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp),
+        color = if (activo) Color(0xFFE3F4F7) else Color.White,
+        border = BorderStroke(1.dp, if (activo) VerdeAgenda else Color(0xFFCFDDE5))
     ) {
-        Text("⌕", color = GrisTexto, fontSize = 18.sp)
-        Spacer(Modifier.width(8.dp))
-        Box(Modifier.weight(1f)) {
-            if (valor.isEmpty()) Text("Buscar familia, cédula o barrio", color = Color(0xFF8A9BB0), fontSize = 14.sp)
-            BasicTextField(
-                value = valor, onValueChange = alCambiar, singleLine = true,
-                textStyle = TextStyle(color = AzulTexto, fontSize = 14.sp),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                modifier = Modifier.fillMaxWidth().testTag("busqueda_mapa")
-            )
-        }
-        if (valor.isNotEmpty()) {
-            Text("✕", color = GrisTexto, fontSize = 16.sp, modifier = Modifier.clickable { alCambiar("") }.padding(start = 8.dp))
+        Row(Modifier.padding(horizontal = 12.dp, vertical = 11.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(texto, Modifier.weight(1f), color = AzulTexto, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(" ▾", color = VerdeAgenda, fontSize = 14.sp)
         }
     }
+}
+
+/** Una lista desplegable pequeña: muestra el valor elegido y, al tocarla, todas las opciones. */
+@Composable
+private fun SelectorDesplegable(
+    etiqueta: String,
+    valor: String,
+    opciones: List<Pair<Int, String>>,
+    etiquetaTest: String,
+    modifier: Modifier = Modifier,
+    onElegir: (Int) -> Unit
+) {
+    var abierto by remember { mutableStateOf(false) }
+    Box(modifier) {
+        Surface(
+            onClick = { abierto = true }, modifier = Modifier.fillMaxWidth().testTag("sel_$etiquetaTest"),
+            shape = RoundedCornerShape(10.dp), color = Color.White, border = BorderStroke(1.dp, Color(0xFFCFDDE5))
+        ) {
+            Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                Text(etiqueta, color = GrisTexto, fontSize = 10.sp)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(valor, Modifier.weight(1f), color = AzulTexto, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                    Text("▾", color = VerdeAgenda, fontSize = 12.sp)
+                }
+            }
+        }
+        DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
+            opciones.forEach { (v, texto) ->
+                DropdownMenuItem(
+                    modifier = Modifier.testTag("op_${etiquetaTest}_$v"),
+                    text = { Text(texto, color = AzulTexto) },
+                    onClick = { onElegir(v); abierto = false }
+                )
+            }
+        }
+    }
+}
+
+/** Fecha de inicio y fecha de fin, cada una con día, mes y año. Ninguna puede quedar antes de la otra. */
+@Composable
+private fun VentanaFechas(
+    desde: Long,
+    hasta: Long,
+    onAplicar: (Long, Long) -> Unit,
+    onHoy: () -> Unit,
+    onCerrar: () -> Unit
+) {
+    var diaI by remember { mutableStateOf(MapaSeguimiento.dia(desde)) }
+    var mesI by remember { mutableStateOf(MapaSeguimiento.mes(desde)) }
+    var anioI by remember { mutableStateOf(MapaSeguimiento.anio(desde)) }
+    var diaF by remember { mutableStateOf(MapaSeguimiento.dia(hasta)) }
+    var mesF by remember { mutableStateOf(MapaSeguimiento.mes(hasta)) }
+    var anioF by remember { mutableStateOf(MapaSeguimiento.anio(hasta)) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val anioActual = MapaSeguimiento.anio(System.currentTimeMillis())
+    val anios = (minOf(anioActual - 5, anioI, anioF)..maxOf(anioActual + 3, anioI, anioF)).map { it to it.toString() }
+    val meses = MESES.mapIndexed { i, nombre -> (i + 1) to nombre.replaceFirstChar { it.uppercase() } }
+
+    @Composable
+    fun Fila(titulo: String, marca: String, dia: Int, mes: Int, anio: Int, cambiar: (Int, Int, Int) -> Unit) {
+        Text(titulo, color = AzulTexto, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SelectorDesplegable(
+                "Día", dia.toString(), (1..MapaSeguimiento.diasDelMes(anio, mes)).map { it to it.toString() }, "${marca}_dia",
+                Modifier.weight(0.8f)
+            ) { error = null; cambiar(it, mes, anio) }
+            SelectorDesplegable(
+                "Mes", MESES[mes - 1].replaceFirstChar { it.uppercase() }, meses, "${marca}_mes", Modifier.weight(1.5f)
+            ) { error = null; cambiar(minOf(dia, MapaSeguimiento.diasDelMes(anio, it)), it, anio) }
+            SelectorDesplegable(
+                "Año", anio.toString(), anios, "${marca}_anio", Modifier.weight(1f)
+            ) { error = null; cambiar(minOf(dia, MapaSeguimiento.diasDelMes(it, mes)), mes, it) }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onCerrar,
+        title = { Text("Fechas del mapa", color = AzulTexto) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Fila("Fecha inicio", "ini", diaI, mesI, anioI) { d, m, a -> diaI = d; mesI = m; anioI = a }
+                Spacer(Modifier.height(10.dp))
+                Fila("Fecha fin", "fin", diaF, mesF, anioF) { d, m, a -> diaF = d; mesF = m; anioF = a }
+                if (error != null) {
+                    Text(error!!, color = Color(0xFFC83E4D), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp).testTag("error_fechas"))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                modifier = Modifier.testTag("aplicar_fechas"),
+                onClick = {
+                    val d = MapaSeguimiento.fecha(anioI, mesI, diaI)
+                    val h = MapaSeguimiento.fecha(anioF, mesF, diaF)
+                    if (h < d) error = "La fecha fin no puede ser anterior a la fecha inicio."
+                    else onAplicar(d, h)
+                }
+            ) { Text("Aplicar", color = VerdeAgenda, fontWeight = FontWeight.SemiBold) }
+        },
+        dismissButton = {
+            Row {
+                TextButton(modifier = Modifier.testTag("fechas_hoy"), onClick = onHoy) { Text("Hoy", color = AzulClinico) }
+                TextButton(onClick = onCerrar) { Text("Cancelar") }
+            }
+        }
+    )
 }
 
 @Composable
@@ -894,20 +1014,14 @@ private fun BotonMapa(texto: String, descripcion: String, modifier: Modifier = M
 }
 
 @Composable
-private fun Leyenda(conteos: Map<FiltroEstadoVisita, Int>, modifier: Modifier = Modifier, horizontal: Boolean = false) {
-    val cantidades = mapOf(
-        EstadoVisita.ATRASADA to (conteos[FiltroEstadoVisita.ATRASADAS] ?: 0),
-        EstadoVisita.POR_CONFIRMAR to (conteos[FiltroEstadoVisita.POR_CONFIRMAR] ?: 0),
-        EstadoVisita.CONFIRMADA to (conteos[FiltroEstadoVisita.CONFIRMADAS] ?: 0),
-        EstadoVisita.REALIZADA to (conteos[FiltroEstadoVisita.REALIZADAS] ?: 0)
-    )
+private fun Leyenda(conteos: Map<EstadoVisita, Int>, modifier: Modifier = Modifier, horizontal: Boolean = false) {
     val contenido: @Composable () -> Unit = {
         EstadoVisita.entries.forEach { e ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = if (horizontal) 10.dp else 0.dp)) {
                 Box(Modifier.size(15.dp).clip(CircleShape).background(colorDe(e)), contentAlignment = Alignment.Center) {
                     Text(e.letra, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 }
-                Text(" ${e.etiqueta} · ${cantidades[e] ?: 0}", color = AzulTexto, fontSize = 11.sp)
+                Text(" ${e.etiqueta} · ${conteos[e] ?: 0}", color = AzulTexto, fontSize = 11.sp)
             }
         }
     }

@@ -6,25 +6,10 @@ import java.util.Calendar
 
 /** Estado de una visita tal como lo muestra la agenda, para pintar el mapa con los mismos colores y nombres. */
 enum class EstadoVisita(val etiqueta: String, val colorHex: String, val letra: String) {
-    ATRASADA("Atrasada", "#D32F2F", "A"),
     POR_CONFIRMAR("Por confirmar", "#F7941D", "P"),
     CONFIRMADA("Confirmada", "#1565C0", "C"),
+    ATRASADA("Atrasada", "#D32F2F", "A"),
     REALIZADA("Realizada", "#0889A0", "R")
-}
-
-enum class FiltroEstadoVisita(val etiqueta: String) {
-    TODAS("Todas"),
-    POR_CONFIRMAR("Por confirmar"),
-    CONFIRMADAS("Confirmadas"),
-    ATRASADAS("Atrasadas"),
-    REALIZADAS("Realizadas")
-}
-
-enum class PeriodoVisita(val etiqueta: String) {
-    HOY("Hoy"),
-    SEMANA("Semana"),
-    MES("Mes"),
-    TODAS("Todas las fechas")
 }
 
 /** Una vivienda en el mapa de seguimiento con las visitas que cumplen los filtros. */
@@ -40,6 +25,8 @@ data class PuntoSeguimiento(
  * Mapa de seguimiento: junta las visitas de la agenda con la ubicación de cada vivienda. Las reglas de estado son las
  * de la pestaña Seguimiento: una visita de seguimiento sin confirmar está «por confirmar»; una confirmada o manual cuya
  * hora ya pasó está «atrasada»; las demás están «confirmadas» hasta que se marcan «realizadas».
+ *
+ * El mapa solo se filtra por estado y por un rango de fechas (inicio y fin incluidos, de día completo).
  */
 object MapaSeguimiento {
     fun estado(a: ActividadAgendaEntity, ahora: Long): EstadoVisita? = when {
@@ -50,98 +37,90 @@ object MapaSeguimiento {
         else -> EstadoVisita.CONFIRMADA
     }
 
-    private fun inicioDia(t: Long): Long = Calendar.getInstance().apply {
+    // ---- fechas -------------------------------------------------------------------------------------------------
+
+    fun inicioDia(t: Long): Long = Calendar.getInstance().apply {
         timeInMillis = t
         set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
     }.timeInMillis
 
-    /** Rango [desde, hasta) de un periodo; nulo si no limita. «Hoy» además arrastra lo atrasado, que aún falta por hacer. */
-    private fun rango(periodo: PeriodoVisita, ahora: Long): Pair<Long, Long>? {
-        val hoy = inicioDia(ahora)
-        val c = Calendar.getInstance().apply { timeInMillis = hoy }
-        return when (periodo) {
-            PeriodoVisita.TODAS -> null
-            PeriodoVisita.HOY -> hoy to c.apply { add(Calendar.DAY_OF_MONTH, 1) }.timeInMillis
-            PeriodoVisita.SEMANA -> {
-                val dia = (c.get(Calendar.DAY_OF_WEEK) + 5) % 7 // lunes = 0
-                c.add(Calendar.DAY_OF_MONTH, -dia)
-                val desde = c.timeInMillis
-                c.add(Calendar.DAY_OF_MONTH, 7)
-                desde to c.timeInMillis
-            }
-            PeriodoVisita.MES -> {
-                c.set(Calendar.DAY_OF_MONTH, 1)
-                val desde = c.timeInMillis
-                c.add(Calendar.MONTH, 1)
-                desde to c.timeInMillis
-            }
-        }
-    }
+    /** El último instante del día de [t]. */
+    fun finDia(t: Long): Long = Calendar.getInstance().apply {
+        timeInMillis = inicioDia(t)
+        add(Calendar.DAY_OF_MONTH, 1)
+        add(Calendar.MILLISECOND, -1)
+    }.timeInMillis
 
-    fun cumpleFiltroEstado(e: EstadoVisita, filtro: FiltroEstadoVisita): Boolean = when (filtro) {
-        FiltroEstadoVisita.TODAS -> true
-        FiltroEstadoVisita.POR_CONFIRMAR -> e == EstadoVisita.POR_CONFIRMAR
-        FiltroEstadoVisita.CONFIRMADAS -> e == EstadoVisita.CONFIRMADA
-        FiltroEstadoVisita.ATRASADAS -> e == EstadoVisita.ATRASADA
-        FiltroEstadoVisita.REALIZADAS -> e == EstadoVisita.REALIZADA
-    }
+    /** Cuántos días tiene el mes (1 = enero … 12 = diciembre) de ese año. */
+    fun diasDelMes(anio: Int, mes: Int): Int = Calendar.getInstance().apply {
+        clear(); set(anio, mes - 1, 1)
+    }.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-    fun cumplePeriodo(a: ActividadAgendaEntity, e: EstadoVisita, periodo: PeriodoVisita, ahora: Long): Boolean {
-        val rango = rango(periodo, ahora) ?: return true
-        if (a.fechaHora in rango.first until rango.second) return true
-        // Lo que quedó atrasado sigue siendo trabajo de hoy.
-        return periodo == PeriodoVisita.HOY && (e == EstadoVisita.ATRASADA ||
-            (e == EstadoVisita.POR_CONFIRMAR && a.fechaHora < rango.first))
-    }
+    /** El inicio del día [dia]/[mes]/[anio]; si el día no existe en ese mes se usa el último. */
+    fun fecha(anio: Int, mes: Int, dia: Int): Long = Calendar.getInstance().apply {
+        clear(); set(anio, mes - 1, dia.coerceIn(1, diasDelMes(anio, mes)))
+    }.timeInMillis
+
+    fun anio(t: Long): Int = Calendar.getInstance().apply { timeInMillis = t }.get(Calendar.YEAR)
+    fun mes(t: Long): Int = Calendar.getInstance().apply { timeInMillis = t }.get(Calendar.MONTH) + 1
+    fun dia(t: Long): Int = Calendar.getInstance().apply { timeInMillis = t }.get(Calendar.DAY_OF_MONTH)
+
+    // ---- puntos -------------------------------------------------------------------------------------------------
 
     private val prioridad = mapOf(
         EstadoVisita.ATRASADA to 0, EstadoVisita.POR_CONFIRMAR to 1, EstadoVisita.CONFIRMADA to 2, EstadoVisita.REALIZADA to 3
     )
 
+    private fun cumple(a: ActividadAgendaEntity, estados: Set<EstadoVisita>, desde: Long, hasta: Long, ahora: Long): EstadoVisita? {
+        val e = estado(a, ahora) ?: return null
+        return e.takeIf { it in estados && a.fechaHora in desde..hasta }
+    }
+
     /**
-     * Un punto por vivienda con al menos una visita que cumpla el estado y el periodo. [viviendas] ya viene filtrada por
-     * barrio, riesgo o búsqueda.
+     * Un punto por vivienda con al menos una visita de un estado elegido dentro del rango [desde]..[hasta] (ambos
+     * incluidos, en milisegundos).
      */
     fun puntos(
         viviendas: List<ViviendaMapaFila>,
         actividades: List<ActividadAgendaEntity>,
-        filtro: FiltroEstadoVisita,
-        periodo: PeriodoVisita,
+        estados: Set<EstadoVisita>,
+        desde: Long,
+        hasta: Long,
         ahora: Long
     ): List<PuntoSeguimiento> {
         val porFicha = actividades.filter { it.fichaId != null }.groupBy { it.fichaId!! }
         return viviendas.mapNotNull { v ->
             val coinciden = porFicha[v.fichaId].orEmpty().mapNotNull { a ->
-                val e = estado(a, ahora) ?: return@mapNotNull null
-                if (cumpleFiltroEstado(e, filtro) && cumplePeriodo(a, e, periodo, ahora)) Triple(a, e, a.fechaHora) else null
+                cumple(a, estados, desde, hasta, ahora)?.let { Triple(a, it, a.fechaHora) }
             }
             if (coinciden.isEmpty()) return@mapNotNull null
             val urgente = coinciden.minOf { prioridad.getValue(it.second) }
             val delEstado = coinciden.filter { prioridad.getValue(it.second) == urgente }
-            val principal = if (urgente == prioridad.getValue(EstadoVisita.REALIZADA)) delEstado.maxBy { it.third } else delEstado.minBy { it.third }
+            val soloRealizadas = urgente == prioridad.getValue(EstadoVisita.REALIZADA)
+            val principal = if (soloRealizadas) delEstado.maxBy { it.third } else delEstado.minBy { it.third }
             PuntoSeguimiento(v, coinciden.sortedBy { it.third }.map { it.first }, principal.second, principal.first)
         }
     }
 
-    /** Las fichas que tienen alguna visita con ese estado y periodo, tengan o no la vivienda ubicada. */
+    /** Las fichas que tienen alguna visita así, tengan o no la vivienda ubicada. */
     fun fichasConVisita(
         actividades: List<ActividadAgendaEntity>,
-        filtro: FiltroEstadoVisita,
-        periodo: PeriodoVisita,
+        estados: Set<EstadoVisita>,
+        desde: Long,
+        hasta: Long,
         ahora: Long
-    ): Set<Long> = actividades.filter { a ->
-        val e = estado(a, ahora)
-        a.fichaId != null && e != null && cumpleFiltroEstado(e, filtro) && cumplePeriodo(a, e, periodo, ahora)
-    }.mapTo(mutableSetOf()) { it.fichaId!! }
+    ): Set<Long> = actividades.filter { a -> a.fichaId != null && cumple(a, estados, desde, hasta, ahora) != null }
+        .mapTo(mutableSetOf()) { it.fichaId!! }
 
-    /** Cuántas viviendas hay por estado, con el resto de filtros ya aplicados. */
+    /** Cuántas viviendas tienen visitas de cada estado dentro del rango, sin importar qué estados estén marcados. */
     fun conteos(
         viviendas: List<ViviendaMapaFila>,
         actividades: List<ActividadAgendaEntity>,
-        periodo: PeriodoVisita,
+        desde: Long,
+        hasta: Long,
         ahora: Long
-    ): Map<FiltroEstadoVisita, Int> = FiltroEstadoVisita.entries.associateWith { f ->
-        puntos(viviendas, actividades, f, periodo, ahora).size
+    ): Map<EstadoVisita, Int> = EstadoVisita.entries.associateWith { e ->
+        puntos(viviendas, actividades, setOf(e), desde, hasta, ahora).size
     }
 
     /** Las visitas que la agenda trata como una sola: la visita familiar de seguimiento comparte ficha y hora. */

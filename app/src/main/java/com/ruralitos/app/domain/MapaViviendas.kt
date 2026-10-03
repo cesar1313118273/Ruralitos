@@ -1,7 +1,5 @@
 package com.ruralitos.app.domain
 
-import com.ruralitos.app.data.local.dao.ViviendaMapaFila
-import java.text.Normalizer
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -9,91 +7,8 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/**
- * Qué muestra el mapa general de viviendas y de qué color. Todo sale de datos que ya existen en la ficha:
- * la calificación de riesgo, el borrador, las visitas de seguimiento atrasadas y el estado de sincronización.
- */
-enum class EstadoVivienda(val etiqueta: String, val colorHex: String, val letra: String) {
-    RIESGO_ALTO("Riesgo alto", "#D32F2F", "R"),
-    PENDIENTE("Pendiente", "#F7941D", "P"),
-    SIN_SINCRONIZAR("Sin sincronizar", "#9E9E9E", "S"),
-    AL_DIA("Al día", "#0889A0", "A")
-}
-
-enum class FiltroVivienda(val etiqueta: String) {
-    TODAS("Todas"),
-    PENDIENTES("Pendientes"),
-    RIESGO_ALTO("Riesgo alto"),
-    SIN_SINCRONIZAR("Sin sincronizar"),
-    GESTANTES("Gestantes"),
-    MENORES_5("Menores de 5"),
-    ADULTOS_MAYORES("Mayores de 65")
-}
-
+/** Distancias en línea recta entre dos puntos, para mostrar «a cuánto está» una vivienda antes de calcular la ruta. */
 object MapaViviendas {
-    /** Un punto muestra lo más urgente de la familia: riesgo alto, luego pendiente, luego sin sincronizar. */
-    fun estado(fila: ViviendaMapaFila): EstadoVivienda = when {
-        fila.nivelRiesgo.equals("ALTO", ignoreCase = true) -> EstadoVivienda.RIESGO_ALTO
-        fila.estado == "BORRADOR" || fila.visitasAtrasadas > 0 -> EstadoVivienda.PENDIENTE
-        fila.syncEstado != "SINCRONIZADO" -> EstadoVivienda.SIN_SINCRONIZAR
-        else -> EstadoVivienda.AL_DIA
-    }
-
-    fun cumpleFiltro(fila: ViviendaMapaFila, filtro: FiltroVivienda): Boolean = when (filtro) {
-        FiltroVivienda.TODAS -> true
-        FiltroVivienda.PENDIENTES -> estado(fila) == EstadoVivienda.PENDIENTE
-        FiltroVivienda.RIESGO_ALTO -> estado(fila) == EstadoVivienda.RIESGO_ALTO
-        FiltroVivienda.SIN_SINCRONIZAR -> fila.syncEstado != "SINCRONIZADO"
-        FiltroVivienda.GESTANTES -> fila.gestantes > 0
-        FiltroVivienda.MENORES_5 -> fila.menoresCinco > 0
-        FiltroVivienda.ADULTOS_MAYORES -> fila.adultosMayores > 0
-    }
-
-    /** Barrios distintos (sin repetir por tildes o mayúsculas), ordenados, con cuántas viviendas tiene cada uno. */
-    fun barrios(filas: List<ViviendaMapaFila>): List<Pair<String, Int>> =
-        filas.filter { it.barrio.isNotBlank() }
-            .groupBy { normalizar(it.barrio) }
-            .map { (_, grupo) -> grupo.first().barrio.trim() to grupo.size }
-            .sortedBy { normalizar(it.first) }
-
-    fun mismoBarrio(fila: ViviendaMapaFila, barrio: String): Boolean =
-        barrio.isEmpty() || normalizar(fila.barrio) == normalizar(barrio)
-
-    private fun normalizar(texto: String): String =
-        Normalizer.normalize(texto, Normalizer.Form.NFD).filterNot { it in '̀'..'ͯ' }.lowercase().trim()
-
-    /** Busca por nombre del jefe o jefa, cédula, número de ficha, barrio o casa; sin tildes ni mayúsculas. */
-    fun coincide(fila: ViviendaMapaFila, consulta: String): Boolean {
-        val q = normalizar(consulta)
-        if (q.isEmpty()) return true
-        return q.split(' ').filter { it.isNotEmpty() }.all { palabra ->
-            listOf(fila.jefe, fila.cedula, fila.numero, fila.barrio, fila.casa).any { normalizar(it).contains(palabra) }
-        }
-    }
-
-    fun filtrar(
-        filas: List<ViviendaMapaFila>,
-        filtro: FiltroVivienda,
-        consulta: String,
-        barrio: String = ""
-    ): List<ViviendaMapaFila> =
-        filas.filter { cumpleFiltro(it, filtro) && coincide(it, consulta) && mismoBarrio(it, barrio) }
-
-    fun conteos(filas: List<ViviendaMapaFila>): Map<EstadoVivienda, Int> =
-        EstadoVivienda.entries.associateWith { e -> filas.count { estado(it) == e } }
-
-    /** GeoJSON para MapLibre: un punto por vivienda con su color; MapLibre las agrupa solo al alejar el mapa. */
-    fun geoJson(filas: List<ViviendaMapaFila>): String {
-        val sb = StringBuilder("""{"type":"FeatureCollection","features":[""")
-        filas.forEachIndexed { i, f ->
-            if (i > 0) sb.append(',')
-            val e = estado(f)
-            sb.append("""{"type":"Feature","geometry":{"type":"Point","coordinates":[${f.longitud},${f.latitud}]},""")
-            sb.append(""""properties":{"id":${f.fichaId},"color":"${e.colorHex}","estado":"${e.name}","letra":"${e.letra}"}}""")
-        }
-        return sb.append("]}").toString()
-    }
-
     /** Distancia en línea recta (metros) entre dos puntos. */
     fun distanciaMetros(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
         val r = 6_371_000.0

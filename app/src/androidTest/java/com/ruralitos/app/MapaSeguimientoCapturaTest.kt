@@ -5,7 +5,6 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ruralitos.app.data.local.database.RuralitosDatabase
@@ -21,7 +20,7 @@ import org.junit.runner.RunWith
 /**
  * Herramienta de revisión visual: abre la agenda en la pestaña Mapa con visitas de ejemplo y deja
  * `seguimiento_<etiqueta>.png` en los archivos externos de la app. Se activa con `-e dejarAbierto 1`;
- * con `-e elegir cerezal` también toca la primera vivienda de la lista, con `-e recorrido 1` ordena un recorrido.
+ * con `-e estado 1` abre el menú de estados, con `-e ventana 1` la ventana de fechas y con `-e recorrido 1` ordena un recorrido.
  */
 @RunWith(AndroidJUnit4::class)
 class MapaSeguimientoCapturaTest {
@@ -64,13 +63,18 @@ class MapaSeguimientoCapturaTest {
             }
         }
         rule.waitUntil(30_000) { rule.onAllNodes(hasTestTag("mapa_viviendas")).fetchSemanticsNodes().isNotEmpty() }
-        args.getString("elegir")?.let {
-            rule.onNodeWithTag("chip_estado_ATRASADAS").performScrollTo().performClick()
+        if (args.getString("estado") == "1") {
+            rule.onNodeWithTag("boton_estado").performClick()
+            rule.waitUntil(10_000) { rule.onAllNodes(hasTestTag("estado_ATRASADA")).fetchSemanticsNodes().isNotEmpty() }
+        }
+        if (args.getString("ventana") == "1") {
+            rule.onNodeWithTag("boton_fecha").performClick()
+            rule.waitUntil(10_000) { rule.onAllNodes(hasTestTag("aplicar_fechas")).fetchSemanticsNodes().isNotEmpty() }
         }
         if (args.getString("recorrido") == "1") {
-            rule.onNodeWithTag("chip_recorrido").performScrollTo().performClick()
+            rule.onNodeWithTag("chip_recorrido").performClick()
             rule.waitUntil(10_000) { rule.onAllNodes(hasTestTag("recorrido_visibles")).fetchSemanticsNodes().isNotEmpty() }
-            rule.onNodeWithTag("recorrido_visibles").performScrollTo().performClick()
+            rule.onNodeWithTag("recorrido_visibles").performClick()
             rule.waitUntil(10_000) { rule.onAllNodes(androidx.compose.ui.test.hasText("elegidas", substring = true)).fetchSemanticsNodes().isNotEmpty() }
             rule.onNodeWithTag("recorrido_ordenar").performClick()
             rule.waitUntil(240_000) { rule.onAllNodes(hasTestTag("tarjeta_recorrido")).fetchSemanticsNodes().isNotEmpty() }
