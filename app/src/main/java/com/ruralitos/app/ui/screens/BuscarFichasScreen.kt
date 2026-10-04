@@ -35,6 +35,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.testTag
+import com.ruralitos.app.domain.FechasBusqueda
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -95,6 +98,7 @@ private data class FiltrosFichasAplicados(
     val sector: String,
     val fechaInicio: String,
     val fechaFin: String,
+    val todasLasFechas: Boolean,
     val estado: String
 )
 
@@ -102,16 +106,28 @@ private data class FiltrosFichasAplicados(
 @Composable
 fun BuscarFichasScreen(
     onFichaSeleccionada: (FichaFamiliarEntity) -> Unit,
-    onRegresar: () -> Unit
+    onRegresar: () -> Unit,
+    /** Reloj de la pantalla (las pruebas lo adelantan para simular que pasa la medianoche). */
+    ahora: () -> Date = { Date() },
+    intervaloRelojMs: Long = 30_000L
 ) {
     val context = LocalContext.current
     val dao = remember(context) { RuralitosDatabase.obtenerBaseDatos(context).fichaFamiliarDao() }
-    val fechaHoy = remember { fechaVisible(Date()) }
+    // «Hoy» es el día en que se mira: se vuelve a leer mientras la pantalla está abierta, para que al pasar la
+    // medianoche la lista del día anterior desaparezca sola.
+    var fechaHoy by remember { mutableStateOf(fechaVisible(ahora())) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(intervaloRelojMs)
+            fechaHoy = fechaVisible(ahora())
+        }
+    }
     var texto by remember { mutableStateOf("") }
     var unidad by remember { mutableStateOf("") }
     var sector by remember { mutableStateOf("") }
     var fechaInicio by remember { mutableStateOf("") }
     var fechaFin by remember { mutableStateOf("") }
+    var todasLasFechas by remember { mutableStateOf(false) }
     var estado by remember { mutableStateOf("ACTIVAS") }
     var filtrosAplicados by remember {
         mutableStateOf(
@@ -121,6 +137,7 @@ fun BuscarFichasScreen(
                 sector = "",
                 fechaInicio = "",
                 fechaFin = "",
+                todasLasFechas = false,
                 estado = "ACTIVAS"
             )
         )
@@ -130,7 +147,8 @@ fun BuscarFichasScreen(
     var errorFiltros by remember { mutableStateOf<String?>(null) }
     var filtrosAvanzados by remember { mutableStateOf(false) }
 
-    fun buscar() {
+    fun buscar(forzarTodasLasFechas: Boolean = false) {
+        if (forzarTodasLasFechas) { todasLasFechas = true; fechaInicio = ""; fechaFin = "" }
         val inicioMillis = fechaParaSelectorMillis(fechaInicio)
         val finMillis = fechaParaSelectorMillis(fechaFin)
         errorFiltros = when {
@@ -146,31 +164,35 @@ fun BuscarFichasScreen(
                 sector = sector.trim(),
                 fechaInicio = fechaInicio,
                 fechaFin = fechaFin,
+                todasLasFechas = todasLasFechas,
                 estado = estado
             )
             pagina = 1
         }
     }
 
-    val flujo = remember(filtrosAplicados, pagina) {
+    val (inicioEfectivo, finEfectivo) = FechasBusqueda.efectivas(
+        filtrosAplicados.fechaInicio, filtrosAplicados.fechaFin, filtrosAplicados.todasLasFechas, fechaHoy
+    )
+    val flujo = remember(filtrosAplicados, pagina, inicioEfectivo, finEfectivo) {
         dao.buscarFichasFiltradasPaginadas(
             texto = filtrosAplicados.texto,
             unidad = filtrosAplicados.unidad,
             sector = filtrosAplicados.sector,
-            fechaInicioClave = fechaAClaveOrdenable(filtrosAplicados.fechaInicio),
-            fechaFinClave = fechaAClaveOrdenable(filtrosAplicados.fechaFin),
+            fechaInicioClave = fechaAClaveOrdenable(inicioEfectivo),
+            fechaFinClave = fechaAClaveOrdenable(finEfectivo),
             estado = filtrosAplicados.estado,
             limite = FICHAS_POR_PAGINA,
             desplazamiento = (pagina - 1) * FICHAS_POR_PAGINA
         )
     }
-    val totalFlujo = remember(filtrosAplicados) {
+    val totalFlujo = remember(filtrosAplicados, inicioEfectivo, finEfectivo) {
         dao.contarFichasFiltradas(
             texto = filtrosAplicados.texto,
             unidad = filtrosAplicados.unidad,
             sector = filtrosAplicados.sector,
-            fechaInicioClave = fechaAClaveOrdenable(filtrosAplicados.fechaInicio),
-            fechaFinClave = fechaAClaveOrdenable(filtrosAplicados.fechaFin),
+            fechaInicioClave = fechaAClaveOrdenable(inicioEfectivo),
+            fechaFinClave = fechaAClaveOrdenable(finEfectivo),
             estado = filtrosAplicados.estado
         )
     }
@@ -194,6 +216,7 @@ fun BuscarFichasScreen(
                 TextButton(
                     onClick = {
                         selector.selectedDateMillis?.let { millis ->
+                            todasLasFechas = false
                             if (campo == CampoFechaBusqueda.INICIO) {
                                 fechaInicio = millisAFechaVisible(millis)
                             } else {
@@ -254,6 +277,10 @@ Column(
                     },
                     fechaInicio = fechaInicio,
                     fechaFin = fechaFin,
+                    fechaHoy = fechaHoy,
+                    todasLasFechas = todasLasFechas,
+                    onSoloHoy = { fechaInicio = ""; fechaFin = ""; todasLasFechas = false; errorFiltros = null },
+                    onTodasLasFechas = { fechaInicio = ""; fechaFin = ""; todasLasFechas = true; errorFiltros = null },
                     onFechaInicio = {
                         selectorFecha = CampoFechaBusqueda.INICIO
                     },
@@ -269,7 +296,18 @@ Column(
                         estado = siguienteEstado(estado)
                     },
                     errorFiltros = errorFiltros,
-                    onBuscar = ::buscar
+                    onBuscar = { buscar() }
+                )
+            }
+
+            item(key = "alcance_fechas") {
+                Text(
+                    text = FechasBusqueda.descripcion(
+                        filtrosAplicados.fechaInicio, filtrosAplicados.fechaFin, filtrosAplicados.todasLasFechas, fechaHoy
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).testTag("alcance_fechas")
                 )
             }
 
@@ -324,11 +362,23 @@ Column(
                                 fontWeight = FontWeight.SemiBold
                             )
 
+                            val delDia = FechasBusqueda.esDelDia(
+                                filtrosAplicados.fechaInicio, filtrosAplicados.fechaFin, filtrosAplicados.todasLasFechas
+                            )
                             Text(
-                                text = "No hay fichas con los filtros aplicados.",
+                                text = if (delDia) {
+                                    "Hoy no hay fichas que coincidan. Las de otros días se buscan eligiendo las fechas, " +
+                                        "en «Fechas, barrio y estado»."
+                                } else "No hay fichas con los filtros aplicados.",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(top = 5.dp)
                             )
+                            if (!filtrosAplicados.todasLasFechas) {
+                                TextButton(
+                                    onClick = { buscar(forzarTodasLasFechas = true) },
+                                    modifier = Modifier.testTag("buscar_todas_fechas")
+                                ) { Text("Buscar en todas las fechas", color = CianRuralitos, fontWeight = FontWeight.SemiBold) }
+                            }
                         }
                     }
                 }
@@ -433,6 +483,10 @@ private fun TarjetaBusquedaFichas(
     onAlternarFiltros: () -> Unit,
     fechaInicio: String,
     fechaFin: String,
+    fechaHoy: String,
+    todasLasFechas: Boolean,
+    onSoloHoy: () -> Unit,
+    onTodasLasFechas: () -> Unit,
     onFechaInicio: () -> Unit,
     onFechaFin: () -> Unit,
     unidad: String,
@@ -587,12 +641,16 @@ private fun TarjetaBusquedaFichas(
                                 SelectorFechaBusqueda(
                                     etiqueta = "Fecha inicial",
                                     fecha = fechaInicio,
+                                    fechaHoy = fechaHoy,
+                                    todas = todasLasFechas,
                                     onClick = onFechaInicio
                                 )
 
                                 SelectorFechaBusqueda(
                                     etiqueta = "Fecha final",
                                     fecha = fechaFin,
+                                    fechaHoy = fechaHoy,
+                                    todas = todasLasFechas,
                                     onClick = onFechaFin
                                 )
                             }
@@ -603,6 +661,8 @@ private fun TarjetaBusquedaFichas(
                                 SelectorFechaBusqueda(
                                     etiqueta = "Fecha inicial",
                                     fecha = fechaInicio,
+                                    fechaHoy = fechaHoy,
+                                    todas = todasLasFechas,
                                     onClick = onFechaInicio,
                                     modifier = Modifier.weight(1f)
                                 )
@@ -610,10 +670,24 @@ private fun TarjetaBusquedaFichas(
                                 SelectorFechaBusqueda(
                                     etiqueta = "Fecha final",
                                     fecha = fechaFin,
+                                    fechaHoy = fechaHoy,
+                                    todas = todasLasFechas,
                                     onClick = onFechaFin,
                                     modifier = Modifier.weight(1f)
                                 )
                             }
+                        }
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TextButton(onClick = onSoloHoy, modifier = Modifier.testTag("fechas_solo_hoy")) {
+                            Text("Solo hoy", color = CianRuralitos, fontWeight = FontWeight.SemiBold)
+                        }
+                        TextButton(onClick = onTodasLasFechas, modifier = Modifier.testTag("fechas_todas")) {
+                            Text("Todas las fechas", color = CianRuralitos, fontWeight = FontWeight.SemiBold)
                         }
                     }
 
@@ -988,6 +1062,8 @@ private fun TarjetaFichaElegante(
 private fun SelectorFechaBusqueda(
     etiqueta: String,
     fecha: String,
+    fechaHoy: String,
+    todas: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1012,7 +1088,7 @@ private fun SelectorFechaBusqueda(
                 )
 
                 Text(
-                    text = fecha.ifBlank { "Todas las fechas" },
+                    text = fecha.ifBlank { if (todas) "Todas las fechas" else "Hoy, $fechaHoy" },
                     style = MaterialTheme.typography.titleSmall,
                     color = CianRuralitos,
                     fontWeight = FontWeight.SemiBold,
@@ -1032,7 +1108,7 @@ private fun SelectorFechaBusqueda(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = fecha.take(2).ifBlank { "--" },
+                    text = fecha.take(2).ifBlank { if (todas) "--" else fechaHoy.take(2) },
                     color = CianRuralitos,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(
