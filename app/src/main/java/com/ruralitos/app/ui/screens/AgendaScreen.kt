@@ -391,6 +391,10 @@ fun AgendaScreen(
         val actividad = grupo.first()
         val estadoActual = estadoVisible(actividad, ahora)
         val colorActual = colorEstado(actividad, ahora)
+        val confirmada = !(actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada)
+        // «Marcar como realizada» solo con la cita confirmada y únicamente el mismo día de la visita.
+        val esDiaDeLaVisita = inicioDia(actividad.fechaHora) == inicioDia(ahora)
+        val puedeMarcarRealizada = actividad.estado == "PENDIENTE" && confirmada && esDiaDeLaVisita
         VentanaRuralitos(
             titulo = if (grupo.size > 1) "Visita familiar (${grupo.size})" else actividad.tipo,
             subtitulo = estadoActual,
@@ -404,22 +408,28 @@ fun AgendaScreen(
                     "${formato(actividad.fechaHora, "EEEE d 'de' MMMM · HH:mm")}${if (actividad.barrio.isNotBlank()) " · ${actividad.barrio}" else ""}"
                 )
                 if (actividad.nota.isNotBlank()) DatoVentanaRuralitos("Nota", actividad.nota)
-                if (estadoActual == "Atrasada") {
+                if (actividad.estado == "PENDIENTE" && !puedeMarcarRealizada) {
                     Text(
-                        "La fecha ya pasó. Si se hizo la visita, márcala como realizada; si no, reprográmala o elimínala.",
-                        color = agendaRojoAtraso, fontSize = 12.sp
+                        when {
+                            !confirmada -> "Primero confirma la fecha con la familia. El día de la visita podrás marcarla como realizada."
+                            actividad.fechaHora < ahora && !esDiaDeLaVisita -> "La fecha ya pasó. Reprograma la visita o elimínala."
+                            else -> "Podrás marcarla como realizada el día de la visita."
+                        },
+                        color = if (estadoActual == "Atrasada") agendaRojoAtraso else agendaSecundario,
+                        fontSize = 12.sp
                     )
                 }
             },
             acciones = {
                 if (actividad.estado != "COMPLETADA") {
-                    // Se puede registrar como realizada en cualquier estado: una visita hecha tarde también hay que guardarla.
-                    BotonPrincipalRuralitos(
-                        texto = "Marcar como realizada",
-                        color = agendaVerde,
-                        modifier = Modifier.testTag("marcar_realizada"),
-                        onClick = { completarGrupo(grupo) }
-                    )
+                    if (puedeMarcarRealizada) {
+                        BotonPrincipalRuralitos(
+                            texto = "Marcar como realizada",
+                            color = agendaVerde,
+                            modifier = Modifier.testTag("marcar_realizada"),
+                            onClick = { completarGrupo(grupo) }
+                        )
+                    }
                     if (actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada) {
                         BotonPrincipalRuralitos(
                             texto = "Confirmar fecha",

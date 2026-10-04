@@ -218,12 +218,12 @@ class MapaSeguimientoUiTest {
     }
 
     @Test
-    fun laTarjetaAbreFichaYVisitaYYaNoTraeAgendarNiRutaAparte() {
+    fun laTarjetaSoloTraeVerVisitaYNoTraeAgendarNiRutaNiFichaNiLista() {
         mostrar(ClaseAncho.EXPANDIDA)
         rule.onNodeWithText("PÉREZ LUIS").performClick()
         rule.waitUntil(5_000) { hayTag("tarjeta_vivienda") }
-        rule.onNodeWithTag("abrir_ficha_mapa").performClick()
-        assertEquals(ids["confirmada"], fichaAbierta)
+        assertFalse("la tarjeta solo trae Ver visita", hayTag("abrir_ficha_mapa"))
+        assertFalse("y ya no lista las actividades de la vivienda", hay("Visita domiciliaria"))
         rule.onNodeWithTag("ver_visita_mapa").performClick()
         assertEquals(listOf(visitas["confirmada"]), grupoAbierto?.map { it.id })
         // agendar solo existe en la Agenda: ni en la tarjeta ni como botón general del mapa

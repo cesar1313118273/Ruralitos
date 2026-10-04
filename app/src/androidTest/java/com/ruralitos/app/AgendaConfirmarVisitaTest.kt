@@ -79,14 +79,42 @@ class AgendaConfirmarVisitaTest {
         assertTrue("las pendientes anteriores se reemplazaron", nuevas.none { it.id == visita.id })
     }
 
-    @Test
-    fun marcarRealizadaDesdeSeguimientoGuardaLaVisitaYCalculaLasProximas() {
-        rule.setContent {
-            RuralitosTheme { AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}) }
+    private val dia = 24 * 3600_000L
+    private val hoy get() = MapaSeguimiento.inicioDia(System.currentTimeMillis())
+
+    /** Toma una visita automática (la más temprana) de las fichas dadas y la deja en la fecha y el estado pedidos. */
+    private fun prepararVisita(fichas: Collection<Long>, fecha: Long, confirmada: Boolean): ActividadAgendaEntity {
+        esperar { pendientes(fichas).isNotEmpty() }
+        val visita = pendientes(fichas).first().copy(fechaHora = fecha, fechaEditada = confirmada)
+        runBlocking { database.agendaDao().actualizar(visita) }
+        return visita
+    }
+
+    private fun mostrarMapa(visita: ActividadAgendaEntity): EstadoMapaSeguimiento {
+        val estadoMapa = EstadoMapaSeguimiento().apply {
+            desde = hoy - 30 * dia; hasta = hoy + 3650L * dia; fechasElegidas = true
         }
-        esperar { existe("boton_agendar") && pendientes(ids.values).isNotEmpty() }
-        val visita = pendientes(ids.values).first()
+        rule.setContent {
+            RuralitosTheme {
+                AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, estadoMapa = estadoMapa, pestanaInicial = 2)
+            }
+        }
+        rule.runOnIdle { estadoMapa.seleccionadaId = visita.fichaId }
+        esperar { existe("ver_visita_mapa") }
+        return estadoMapa
+    }
+
+    private val conUbicacion get() = listOf("c1", "c2", "c3", "e1").map { ids.getValue(it) }
+
+    @Test
+    fun elDiaDeLaVisitaConfirmadaSeMarcaRealizadaDesdeLaAgenda() {
+        // el evento ya corre con la pantalla abierta: se crea el plan y luego se deja una visita confirmada para hoy
+        rule.setContent {
+            RuralitosTheme { AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, pestanaInicial = 1) }
+        }
+        val visita = prepararVisita(ids.values, hoy + 12 * 3600_000L, confirmada = true)
         esperar { existe("tarjeta_actividad_${visita.id}") }
+        assertTrue("el + de agendar está en la Agenda", existe("boton_agendar"))
         rule.onNodeWithTag("tarjeta_actividad_${visita.id}").performClick()
         esperar { existe("marcar_realizada") }
         rule.onNodeWithTag("marcar_realizada").performClick()
@@ -96,27 +124,48 @@ class AgendaConfirmarVisitaTest {
     }
 
     @Test
-    fun marcarRealizadaDesdeElMapaDeVisitasGuardaLaVisita() {
-        val conUbicacion = listOf("c1", "c2", "c3", "e1").map { ids.getValue(it) }
-        val estadoMapa = EstadoMapaSeguimiento().apply {
-            val hoy = MapaSeguimiento.inicioDia(System.currentTimeMillis())
-            desde = hoy; hasta = hoy + 3650L * 24 * 3600_000; fechasElegidas = true
-        }
+    fun elDiaDeLaVisitaConfirmadaSeMarcaRealizadaDesdeElMapa() {
         rule.setContent {
-            RuralitosTheme {
-                AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, estadoMapa = estadoMapa, pestanaInicial = 2)
-            }
+            RuralitosTheme { AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}) }
         }
-        esperar { pendientes(conUbicacion).isNotEmpty() }
-        val visita = pendientes(conUbicacion).first()
-        rule.runOnIdle { estadoMapa.seleccionadaId = visita.fichaId }
-        esperar { existe("ver_visita_mapa") }
-        assertTrue("en el mapa no hay botón de agendar", !existe("boton_agendar") && !existe("agendar_mapa"))
+        val visita = prepararVisita(conUbicacion, hoy + 12 * 3600_000L, confirmada = true)
+        rule.activityRule.scenario.recreate()
+        val estadoMapa = mostrarMapa(visita)
+        assertTrue("en el mapa no hay botón de agendar ni de abrir ficha", !existe("boton_agendar") && !existe("agendar_mapa") && !existe("abrir_ficha_mapa"))
         rule.onNodeWithTag("ver_visita_mapa").performClick()
         esperar { existe("marcar_realizada") }
         rule.onNodeWithTag("marcar_realizada").performClick()
         esperar { existe("confirmar_registro_visita") }
         rule.onNodeWithTag("confirmar_registro_visita").performClick()
         comprobarRegistro(visita)
+    }
+
+    @Test
+    fun fueraDelDiaOSinConfirmarElBotonNoAparece() {
+        rule.setContent {
+            RuralitosTheme { AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}) }
+        }
+        var visita = prepararVisita(conUbicacion, hoy + dia + 12 * 3600_000L, confirmada = true) // mañana, confirmada
+        rule.activityRule.scenario.recreate()
+        mostrarMapa(visita)
+        fun abrirYComprobar(motivo: String, confirmarFecha: Boolean) {
+            rule.onNodeWithTag("ver_visita_mapa").performClick()
+            esperar { rule.onAllNodes(androidx.compose.ui.test.hasContentDescription("Cerrar")).fetchSemanticsNodes().isNotEmpty() }
+            assertTrue(motivo, !existe("marcar_realizada"))
+            assertEquals("el botón de confirmar fecha $motivo", confirmarFecha, existe("confirmar_fecha"))
+            rule.onNode(androidx.compose.ui.test.hasContentDescription("Cerrar")).performClick()
+            rule.waitForIdle()
+        }
+        abrirYComprobar("visita de mañana", confirmarFecha = false)
+
+        visita = visita.copy(fechaHora = hoy - dia + 12 * 3600_000L, fechaEditada = true) // ayer, confirmada
+        runBlocking { database.agendaDao().actualizar(visita) }
+        rule.waitForIdle()
+        abrirYComprobar("visita de ayer", confirmarFecha = false)
+
+        visita = visita.copy(fechaHora = hoy + 12 * 3600_000L, fechaEditada = false) // hoy, sin confirmar
+        runBlocking { database.agendaDao().actualizar(visita) }
+        rule.waitForIdle()
+        abrirYComprobar("visita de hoy sin confirmar", confirmarFecha = true)
     }
 }

@@ -721,7 +721,6 @@ fun MapaSeguimientoVista(
                     TarjetaVisita(
                         seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
                         onCerrar = { estado.seleccionadaId = null },
-                        onAbrirFicha = { onAbrirFicha(seleccionado.vivienda.fichaId) },
                         onVerVisita = { abrirVisita(seleccionado) },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
                     )
@@ -765,7 +764,6 @@ fun MapaSeguimientoVista(
                             TarjetaVisita(
                                 seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
                                 onCerrar = { estado.seleccionadaId = null },
-                                onAbrirFicha = { onAbrirFicha(seleccionado.vivienda.fichaId) },
                                 onVerVisita = { abrirVisita(seleccionado) },
                                 modifier = Modifier.padding(8.dp)
                             )
@@ -1056,7 +1054,6 @@ private fun TarjetaVisita(
     modo: String,
     onModo: (String) -> Unit,
     onCerrar: () -> Unit,
-    onAbrirFicha: () -> Unit,
     onVerVisita: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1075,20 +1072,6 @@ private fun TarjetaVisita(
                     if (direccion.isNotBlank()) Text(direccion, color = GrisTexto, fontSize = 12.sp)
                 }
                 Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.clickable(onClick = onCerrar).padding(4.dp))
-            }
-            // Las visitas de la vivienda con los filtros actuales
-            Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                p.visitas.take(3).forEach { a ->
-                    val e = MapaSeguimiento.estado(a, System.currentTimeMillis()) ?: p.estado
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Etiqueta(e.etiqueta, colorDe(e))
-                        Text(
-                            "  ${fecha(a.fechaHora)} · ${a.tipo}", color = AzulTexto, fontSize = 12.sp,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-                if (p.visitas.size > 3) Text("y ${p.visitas.size - 3} más", color = GrisTexto, fontSize = 11.sp)
             }
             if (v.gestantes + v.menoresCinco + v.adultosMayores > 0 || v.nivelRiesgo.equals("ALTO", true)) {
                 Row(Modifier.padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -1111,10 +1094,7 @@ private fun TarjetaVisita(
                     color = AzulTexto, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp).testTag("distancia_ruta")
                 )
             }
-            Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BotonTarjeta("Abrir ficha", relleno = true, Modifier.weight(1f).testTag("abrir_ficha_mapa"), onAbrirFicha)
-                BotonTarjeta("Ver visita", relleno = false, Modifier.weight(1f).testTag("ver_visita_mapa"), onVerVisita)
-            }
+            BotonTarjeta("Ver visita", relleno = true, Modifier.fillMaxWidth().padding(top = 10.dp).testTag("ver_visita_mapa"), onVerVisita)
         }
     }
 }
