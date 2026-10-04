@@ -1,5 +1,11 @@
 # Changelog de Supabase
 
+## 2026-10-07 — Se elimina asignar visitas
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261007400000_quitar_asignar_visita.sql`).
+- Tipo: elimina la función `asignar_visita` (creada en 20261006200000); ninguna tabla ni dato cambia. Las visitas ya asignadas, si las hubo, siguen en la agenda de cada persona.
+
+
 ## 2026-10-07 — info_fichas_compartidas por Sala y más liviana
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261007300000_info_compartidas_por_sala.sql`).

@@ -211,7 +211,7 @@ fun FichaSeccionesScreen(
             if (!EtiquetasFicha.esRecibida(ficha) && ficha.syncEstado == "SINCRONIZADO") {
                 BotonSecundarioRuralitos(
                     texto = "Con quién compartiste esta ficha",
-                    descripcion = "Ver permisos, asignar una visita o quitar el acceso.",
+                    descripcion = "Ver permisos, quitar el acceso o traspasarla.",
                     onClick = { verAccesos = true },
                     modifier = Modifier.testTag("ver_accesos_ficha")
                 )

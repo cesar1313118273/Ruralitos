@@ -72,7 +72,6 @@ fun AccesosDeFichaRuralitos(
     var recarga by remember { mutableIntStateOf(0) }
     var trabajando by remember { mutableStateOf(false) }
     var porQuitar by remember { mutableStateOf<PersonaConAccesoFicha?>(null) }
-    var paraVisita by remember { mutableStateOf<PersonaConAccesoFicha?>(null) }
     var porTraspasar by remember { mutableStateOf<PersonaConAccesoFicha?>(null) }
 
     LaunchedEffect(recarga) {
@@ -146,15 +145,6 @@ fun AccesosDeFichaRuralitos(
         )
     }
 
-    paraVisita?.let { persona ->
-        AsignarVisitaRuralitos(
-            ficha = ficha,
-            persona = persona,
-            onCerrar = { paraVisita = null },
-            onAsignada = { paraVisita = null; aviso = "Visita asignada. A ${persona.nombre} le aparece en su agenda al sincronizar." }
-        )
-    }
-
     VentanaRuralitos(
         titulo = "Con quién compartiste esta ficha",
         subtitulo = ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha ${ficha.numeroFichaFamiliar}" },
@@ -188,11 +178,6 @@ fun AccesosDeFichaRuralitos(
                             fontWeight = FontWeight.SemiBold
                         )
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            TextButton(
-                                onClick = { paraVisita = persona },
-                                enabled = !trabajando,
-                                modifier = Modifier.testTag("asignar_visita_${persona.usuarioId}")
-                            ) { Text("Asignar visita", color = AzulClinico, fontWeight = FontWeight.SemiBold) }
                             if (persona.via == "FICHA") {
                                 TextButton(
                                     onClick = { porQuitar = persona },
@@ -223,105 +208,6 @@ fun AccesosDeFichaRuralitos(
         },
         acciones = {
             BotonSecundarioRuralitos(texto = "Cerrar", onClick = onCerrar)
-        }
-    )
-}
-
-/** Elegir fecha, hora y una nota para la visita que se le asigna a un compañero. */
-@Composable
-private fun AsignarVisitaRuralitos(
-    ficha: FichaFamiliarEntity,
-    persona: PersonaConAccesoFicha,
-    onCerrar: () -> Unit,
-    onAsignada: () -> Unit
-) {
-    val context = LocalContext.current
-    val api = remember(context) { SupabaseApi(context) }
-    val scope = rememberCoroutineScope()
-    val manana = remember { inicioDiaLocal(System.currentTimeMillis() + 24L * 60 * 60 * 1000) }
-    var dia by remember { mutableLongStateOf(manana) }
-    var hora by remember { mutableIntStateOf(8) }
-    var minuto by remember { mutableIntStateOf(0) }
-    var nota by remember { mutableStateOf("") }
-    var eligiendoDia by remember { mutableStateOf(false) }
-    var eligiendoHora by remember { mutableStateOf(false) }
-    var enviando by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    if (eligiendoDia) {
-        CalendarioRuralitos(
-            titulo = "Día de la visita",
-            fechaInicialMillis = dia,
-            onElegida = { dia = it; eligiendoDia = false },
-            onCerrar = { eligiendoDia = false }
-        )
-    }
-    if (eligiendoHora) {
-        HoraRuralitos(
-            titulo = "Hora de la visita",
-            horaInicial = hora,
-            minutoInicial = minuto,
-            onElegida = { h, m -> hora = h; minuto = m; eligiendoHora = false },
-            onCerrar = { eligiendoHora = false }
-        )
-    }
-
-    VentanaRuralitos(
-        titulo = "Asignar visita",
-        subtitulo = "${persona.nombre} · ${ficha.nombreApellidoJefeFamilia.ifBlank { "Ficha ${ficha.numeroFichaFamiliar}" }}",
-        simbolo = "◔",
-        color = AzulClinico,
-        cerrarAlTocarFuera = false,
-        onCerrar = onCerrar,
-        contenido = {
-            BotonSecundarioRuralitos(
-                texto = "Día: " + SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(dia),
-                onClick = { eligiendoDia = true },
-                modifier = Modifier.testTag("visita_dia")
-            )
-            BotonSecundarioRuralitos(
-                texto = "Hora: " + String.format(Locale.US, "%02d:%02d", hora, minuto),
-                onClick = { eligiendoHora = true },
-                modifier = Modifier.testTag("visita_hora")
-            )
-            OutlinedTextField(
-                value = nota,
-                onValueChange = { nota = it.take(200) },
-                label = { Text("Nota para quien visita (opcional)") },
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
-                modifier = Modifier.fillMaxWidth().testTag("visita_nota")
-            )
-            Text(
-                "Le aparece en su Agenda con un recordatorio la próxima vez que sincronice.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            error?.let {
-                Text(it, color = NaranjaClinico, fontWeight = FontWeight.SemiBold)
-            }
-        },
-        acciones = {
-            BotonPrincipalRuralitos(
-                texto = if (enviando) "Asignando…" else "Asignar visita",
-                enabled = !enviando,
-                color = AzulClinico,
-                onClick = {
-                    val momento = Calendar.getInstance().apply {
-                        timeInMillis = dia
-                        set(Calendar.HOUR_OF_DAY, hora); set(Calendar.MINUTE, minuto)
-                    }.timeInMillis
-                    enviando = true
-                    error = null
-                    scope.launch {
-                        runCatching { api.asignarVisita(ficha.syncId, persona.usuarioId, momento, nota) }
-                            .onSuccess { onAsignada() }
-                            .onFailure { error = it.message ?: "No se pudo asignar la visita." }
-                        enviando = false
-                    }
-                },
-                modifier = Modifier.testTag("confirmar_visita")
-            )
-            BotonSecundarioRuralitos(texto = "Cancelar", onClick = onCerrar, enabled = !enviando)
         }
     )
 }

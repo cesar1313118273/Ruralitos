@@ -850,19 +850,6 @@ class SupabaseApi(context: Context) {
         rpc("traspasar_ficha", JSONObject().put("p_ficha_id", fichaId).put("p_usuario_id", usuarioId))
     }
 
-    /** Le asigna una visita a alguien con quien ya compartí la ficha; le aparece en su agenda al sincronizar. */
-    suspend fun asignarVisita(fichaId: String, usuarioId: String, fechaHoraMillis: Long, nota: String) {
-        rpc(
-            "asignar_visita",
-            JSONObject()
-                .put("p_ficha_id", fichaId)
-                .put("p_usuario_id", usuarioId)
-                .put("p_fecha_hora", fechaHoraMillis)
-                .put("p_tipo", "Visita domiciliaria")
-                .put("p_nota", nota.trim())
-        )
-    }
-
     suspend fun actualizarPerfil(perfil: PerfilRemoto) {
         val basico = JSONObject()
             .put("cedula", perfil.cedula)
