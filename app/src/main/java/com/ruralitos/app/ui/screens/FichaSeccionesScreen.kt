@@ -57,6 +57,7 @@ import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.domain.EtiquetasFicha
+import com.ruralitos.app.domain.RutaAVivienda
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.testTag
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -94,6 +95,11 @@ fun FichaSeccionesScreen(
     onRegresar: () -> Unit
 ) {
     var confirmarEliminacion by remember { mutableStateOf(false) }
+    var verAccesos by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    if (verAccesos) {
+        com.ruralitos.app.ui.components.AccesosDeFichaRuralitos(ficha = ficha, onCerrar = { verAccesos = false })
+    }
     val grupos = listOf(
         GrupoFicha(
             "1. Información del hogar",
@@ -172,6 +178,40 @@ fun FichaSeccionesScreen(
             if (ficha.syncEstado == "CONFLICTO") AvisoConflictoFicha(ficha)
 
             EtiquetasFicha.texto(ficha)?.let { AvisoFichaCompartida(ficha, it) }
+
+            if (RutaAVivienda.tieneUbicacion(ficha.latitud, ficha.longitud)) {
+                BotonSecundarioRuralitos(
+                    texto = "Cómo llegar a la vivienda",
+                    descripcion = "Abre tu aplicación de mapas con la ruta hasta la casa.",
+                    onClick = {
+                        val lat = ficha.latitud ?: return@BotonSecundarioRuralitos
+                        val lng = ficha.longitud ?: return@BotonSecundarioRuralitos
+                        val abrir = { enlace: String ->
+                            runCatching {
+                                context.startActivity(
+                                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(enlace))
+                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                                )
+                            }.isSuccess
+                        }
+                        if (!abrir(RutaAVivienda.enlaceNavegacion(lat, lng)) &&
+                            !abrir(RutaAVivienda.enlaceMapa(lat, lng, ficha.nombreApellidoJefeFamilia))
+                        ) {
+                            com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se encontró una aplicación de mapas.")
+                        }
+                    },
+                    modifier = Modifier.testTag("como_llegar")
+                )
+            }
+
+            if (!EtiquetasFicha.esRecibida(ficha) && ficha.syncEstado == "SINCRONIZADO") {
+                BotonSecundarioRuralitos(
+                    texto = "Con quién compartiste esta ficha",
+                    descripcion = "Ver permisos, asignar una visita o quitar el acceso.",
+                    onClick = { verAccesos = true },
+                    modifier = Modifier.testTag("ver_accesos_ficha")
+                )
+            }
 
             if (EtiquetasFicha.soloLectura(ficha)) {
                 ResumenSoloLectura(ficha)

@@ -1,5 +1,13 @@
 # Changelog de Supabase
 
+## 2026-10-06 — Detalle por ficha, quitar ficha por ficha y asignar visitas
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261006200000_visitas_y_acceso_por_ficha.sql`).
+- Tipo: cambio compatible; solo agrega funciones, no toca tablas ni datos.
+- `personas_con_acceso_ficha`, `fichas_compartidas_con` y `quitar_acceso_ficha`: ver quién ve cada ficha mía y quitar el acceso dado ficha por ficha (solo su autor).
+- `asignar_visita`: el autor de una ficha agenda una visita a alguien con quien ya la compartió; se escribe en `agenda_privada` del compañero y le llega al sincronizar.
+
+
 ## 2026-10-06 — Etiquetas de fichas compartidas y «quitarme el acceso»
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261006100000_fichas_compartidas_etiquetas.sql`).

@@ -112,6 +112,23 @@ data class InfoFichaCompartida(
     val personas: Int
 )
 
+/** Una persona que ve una de mis fichas; `via` = FICHA, BARRIO, EAIS o CENTRO. */
+data class PersonaConAccesoFicha(
+    val usuarioId: String,
+    val nombre: String,
+    val cargo: String,
+    val permiso: String,
+    val via: String
+)
+
+/** Una ficha suelta que le compartí a una persona. */
+data class FichaCompartidaCon(
+    val fichaId: String,
+    val numero: String,
+    val jefe: String,
+    val permiso: String
+)
+
 data class MembresiaRemota(
     val organizacionId: String,
     val rol: String,
@@ -784,6 +801,54 @@ class SupabaseApi(context: Context) {
                 personas = f.optInt("personas")
             )
         }
+    }
+
+    /** Personas que ven una ficha que yo creé y por qué vía (ficha suelta, barrio, EAIS o centro). */
+    suspend fun personasConAccesoFicha(fichaId: String): List<PersonaConAccesoFicha> {
+        val filas = rpc("personas_con_acceso_ficha", JSONObject().put("p_ficha_id", fichaId)).jsonArreglo()
+        return (0 until filas.length()).map { i ->
+            val f = filas.getJSONObject(i)
+            PersonaConAccesoFicha(
+                usuarioId = f.getString("usuario_id"),
+                nombre = f.optString("nombres").takeIf { it.isNotBlank() && it != "null" }
+                    ?: f.optString("correo").takeIf { it.isNotBlank() && it != "null" } ?: "Persona sin nombre",
+                cargo = f.optString("cargo").takeIf { it != "null" }.orEmpty(),
+                permiso = f.optString("permiso"),
+                via = f.optString("via")
+            )
+        }
+    }
+
+    /** Quita a una persona el acceso a una sola ficha mía (solo el acceso dado ficha por ficha). */
+    suspend fun quitarAccesoFicha(fichaId: String, usuarioId: String) {
+        rpc("quitar_acceso_ficha", JSONObject().put("p_ficha_id", fichaId).put("p_usuario_id", usuarioId))
+    }
+
+    /** Fichas sueltas que le compartí a una persona. */
+    suspend fun fichasCompartidasCon(usuarioId: String): List<FichaCompartidaCon> {
+        val filas = rpc("fichas_compartidas_con", JSONObject().put("p_usuario_id", usuarioId)).jsonArreglo()
+        return (0 until filas.length()).map { i ->
+            val f = filas.getJSONObject(i)
+            FichaCompartidaCon(
+                fichaId = f.getString("ficha_id"),
+                numero = f.optString("numero").takeIf { it != "null" }.orEmpty(),
+                jefe = f.optString("jefe").takeIf { it != "null" }.orEmpty(),
+                permiso = f.optString("permiso")
+            )
+        }
+    }
+
+    /** Le asigna una visita a alguien con quien ya compartí la ficha; le aparece en su agenda al sincronizar. */
+    suspend fun asignarVisita(fichaId: String, usuarioId: String, fechaHoraMillis: Long, nota: String) {
+        rpc(
+            "asignar_visita",
+            JSONObject()
+                .put("p_ficha_id", fichaId)
+                .put("p_usuario_id", usuarioId)
+                .put("p_fecha_hora", fechaHoraMillis)
+                .put("p_tipo", "Visita domiciliaria")
+                .put("p_nota", nota.trim())
+        )
     }
 
     suspend fun actualizarPerfil(perfil: PerfilRemoto) {

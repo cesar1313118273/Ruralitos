@@ -45,6 +45,7 @@ import com.ruralitos.app.data.local.entity.SalaEntity
 import com.ruralitos.app.data.local.entity.TerritorioSalaEntity
 import com.ruralitos.app.data.remote.SupabaseApi
 import com.ruralitos.app.data.remote.AccesoRecibido
+import com.ruralitos.app.data.remote.FichaCompartidaCon
 import com.ruralitos.app.data.sync.SincronizadorSupabase
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.semantics.semantics
@@ -283,6 +284,38 @@ fun SalaScreen(
             .onFailure { errorOtorgados = it.message ?: "No se pudo cargar la lista." }
         cargandoOtorgados = false
     }
+    // Detalle de «Compartido con»: las fichas sueltas que le di a una persona, para quitárselas de una en una.
+    var fichasAbiertasDe by remember { mutableStateOf<String?>(null) }
+    var fichasSueltas by remember { mutableStateOf<List<FichaCompartidaCon>>(emptyList()) }
+    var cargandoSueltas by remember { mutableStateOf(false) }
+    var fichaPorQuitar by remember { mutableStateOf<Pair<AccesoOtorgado, FichaCompartidaCon>?>(null) }
+    LaunchedEffect(fichasAbiertasDe, recargaOtorgados) {
+        val usuario = fichasAbiertasDe ?: return@LaunchedEffect
+        cargandoSueltas = true
+        fichasSueltas = emptyList()
+        runCatching { supabase.fichasCompartidasCon(usuario) }.onSuccess { fichasSueltas = it }
+        cargandoSueltas = false
+    }
+    fichaPorQuitar?.let { (persona, ficha) ->
+        VentanaConfirmarRuralitos(
+            titulo = "Quitar acceso a esta ficha",
+            mensaje = "${persona.nombre} dejará de ver la ficha de ${ficha.jefe.ifBlank { "esta familia" }}. " +
+                "Las demás fichas que le compartiste no cambian.",
+            textoConfirmar = "Quitar acceso",
+            confirmarHabilitado = !procesando,
+            onConfirmar = {
+                fichaPorQuitar = null
+                ejecutar("Se quitó el acceso a la ficha correctamente.") {
+                    supabase.quitarAccesoFicha(ficha.fichaId, persona.usuarioId)
+                    recargaOtorgados++
+                }
+            },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { fichaPorQuitar = null }
+        )
+    }
+
     // Botón redondo de «Compartido con»: yo mismo me quito el acceso a lo que otras personas me compartieron.
     var recibidosAbierto by remember { mutableStateOf(false) }
     var recibidos by remember { mutableStateOf<List<AccesoRecibido>>(emptyList()) }
@@ -1013,6 +1046,48 @@ fun SalaScreen(
                                                 enabled = !procesando,
                                                 modifier = Modifier.testTag("quitar_${persona.usuarioId}")
                                             ) { Text("Quitar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
+                                        }
+                                        if (persona.fichas > 0) {
+                                            val abierta = fichasAbiertasDe == persona.usuarioId
+                                            TextButton(
+                                                onClick = { fichasAbiertasDe = if (abierta) null else persona.usuarioId },
+                                                modifier = Modifier.testTag("ver_fichas_${persona.usuarioId}")
+                                            ) {
+                                                Text(
+                                                    if (abierta) "Ocultar fichas sueltas" else "Ver fichas sueltas (${persona.fichas})",
+                                                    color = AzulClinico,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                            }
+                                            if (abierta) {
+                                                when {
+                                                    cargandoSueltas -> Text("Cargando…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    fichasSueltas.isEmpty() -> Text(
+                                                        "No hay fichas sueltas.",
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    else -> fichasSueltas.forEach { ficha ->
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Column(Modifier.weight(1f)) {
+                                                                Text(ficha.jefe.ifBlank { "Familia sin nombre" }, fontWeight = FontWeight.SemiBold)
+                                                                Text(
+                                                                    "Ficha ${ficha.numero} · " + if (ficha.permiso == "LECTOR") "Solo lectura" else "Puede editar",
+                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                                )
+                                                            }
+                                                            TextButton(
+                                                                onClick = { fichaPorQuitar = persona to ficha },
+                                                                enabled = !procesando,
+                                                                modifier = Modifier.testTag("quitar_ficha_${ficha.fichaId}")
+                                                            ) { Text("Quitar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                         HorizontalDivider()
                                     }
