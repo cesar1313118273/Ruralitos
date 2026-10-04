@@ -845,6 +845,11 @@ class SupabaseApi(context: Context) {
         }
     }
 
+    /** Fecha del último cambio visible en una Sala (vacía si no se pudo saber): sirve para decidir si vale la pena descargar. */
+    suspend fun huellaDeCambios(organizacionId: String): String =
+        rpc("huella_de_cambios", JSONObject().put("p_organizacion_id", organizacionId))
+            .texto.trim().trim('"').takeIf { it != "null" }.orEmpty()
+
     /** Traspasa la ficha a otra persona (con la que ya está compartida); quien la creó conserva acceso para editar. */
     suspend fun traspasarFicha(fichaId: String, usuarioId: String) {
         rpc("traspasar_ficha", JSONObject().put("p_ficha_id", fichaId).put("p_usuario_id", usuarioId))

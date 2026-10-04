@@ -34,6 +34,13 @@ internal class MarcasDescarga(context: Context) {
         preferencias.edit().putLong("completa_$organizacionId", ahora).apply()
     }
 
+    /** Última «huella de cambios» de la Sala con la que este teléfono quedó al día (ver `huella_de_cambios`). */
+    fun huella(organizacionId: String): String? = preferencias.getString("huella_$organizacionId", null)
+
+    fun guardarHuella(organizacionId: String, valor: String) {
+        preferencias.edit().putString("huella_$organizacionId", valor).apply()
+    }
+
     fun olvidar(organizacionId: String) {
         preferencias.edit().apply {
             preferencias.all.keys.filter { it.endsWith("_$organizacionId") || it.contains("_${organizacionId}_") }

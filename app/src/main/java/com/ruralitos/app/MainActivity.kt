@@ -77,6 +77,8 @@ import java.io.File
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.withTimeoutOrNull
 import com.ruralitos.app.ui.screens.BuscarUnidadOperativaScreen
 import com.ruralitos.app.data.local.entity.EstablecimientoSaludEntity
 import com.ruralitos.app.ui.screens.UbicacionFamiliaScreen
@@ -588,8 +590,49 @@ fun RuralitosApp() {
             supabase.hayInternet()) {
             // Al completar un formulario se producen varias escrituras consecutivas.
             // Agruparlas evita lanzar una sincronización completa por cada cambio.
-            delay(8_000)
+            delay(2_000)
             ProgramadorSincronizacion.ejecutarCambiosLocales(context)
+        }
+    }
+
+    // Con la aplicación abierta se revisa la nube cada pocos segundos (una consulta liviana por Sala): si alguien cambió
+    // algo, se sincroniza al instante en vez de esperar los 15 minutos del trabajo en segundo plano.
+    val cicloDeVida = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    LaunchedEffect(estadoAcceso) {
+        if (estadoAcceso != "autenticado") return@LaunchedEffect
+        val sincronizador = com.ruralitos.app.data.sync.SincronizadorSupabase(context)
+        cicloDeVida.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            var ultimoDisparo = 0L
+            while (true) {
+                if (supabase.hayInternet()) {
+                    val hay = runCatching { withContext(Dispatchers.IO) { sincronizador.hayNovedades() } }.getOrDefault(false)
+                    val ahora = System.currentTimeMillis()
+                    // Como máximo una sincronización cada 45 s por este camino, aunque algo siga fallando.
+                    if (hay && ahora - ultimoDisparo > 45_000L) {
+                        ultimoDisparo = ahora
+                        ProgramadorSincronizacion.ejecutarAhora(context)
+                    }
+                }
+                delay(15_000)
+            }
+        }
+    }
+
+    // Al abrir una ficha compartida, antes de trabajar en ella se trae su última versión de la nube.
+    LaunchedEffect(pantallaActual, fichaIdActual) {
+        val abierta = fichaSeleccionada
+        if (estadoAcceso != "autenticado" || pantallaActual != "menuFicha" || abierta == null) return@LaunchedEffect
+        if (abierta.miPermiso.isBlank() && abierta.compartidaConPersonas == 0) return@LaunchedEffect
+        if (!supabase.hayInternet()) return@LaunchedEffect
+        val huboCambios = runCatching {
+            withTimeoutOrNull(3_000L) {
+                withContext(Dispatchers.IO) { com.ruralitos.app.data.sync.SincronizadorSupabase(context).refrescarFicha(abierta.id) }
+            }
+        }.getOrNull() == true
+        if (huboCambios) {
+            val actualizada = withContext(Dispatchers.IO) { database.fichaFamiliarDao().buscarPorId(abierta.id) }
+            if (actualizada != null && fichaSeleccionada?.id == abierta.id) fichaSeleccionada = actualizada
+            else if (actualizada == null) pantallaActual = "buscarFichas"
         }
     }
 

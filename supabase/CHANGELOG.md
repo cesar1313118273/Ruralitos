@@ -1,5 +1,12 @@
 # Changelog de Supabase
 
+## 2026-10-08 — Huella de cambios para sincronizar rápido
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261008100000_huella_de_cambios.sql`).
+- Tipo: cambio compatible; solo agrega la función `huella_de_cambios(organizacion)`.
+- Devuelve la fecha del último cambio visible en la Sala (fichas, sus datos y los accesos de quien pregunta). Usa los índices de sincronización que ya existían. La app la consulta cada pocos segundos con la aplicación abierta y descarga solo si cambió.
+
+
 ## 2026-10-07 — Se elimina asignar visitas
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261007400000_quitar_asignar_visita.sql`).

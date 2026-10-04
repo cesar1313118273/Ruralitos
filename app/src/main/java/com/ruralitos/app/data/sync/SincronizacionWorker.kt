@@ -82,7 +82,8 @@ object ProgramadorSincronizacion {
 
     fun ejecutarCambiosLocales(context: Context) {
         val inmediata = OneTimeWorkRequestBuilder<SincronizacionWorker>()
-            .setInputData(workDataOf(SincronizacionWorker.CLAVE_SOLO_SUBIDAS to true))
+            // Tras guardar cambios también se baja lo de los demás en la misma pasada: así se evitan ediciones cruzadas.
+            .setInputData(workDataOf(SincronizacionWorker.CLAVE_SOLO_SUBIDAS to false))
             .setConstraints(restriccionesInmediatas)
             .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
             .build()

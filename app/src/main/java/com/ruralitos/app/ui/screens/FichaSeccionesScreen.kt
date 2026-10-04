@@ -179,8 +179,6 @@ fun FichaSeccionesScreen(
                 .padding(horizontal = 16.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            if (ficha.syncEstado == "CONFLICTO") AvisoConflictoFicha(ficha)
-
             EtiquetasFicha.texto(ficha)?.let { AvisoFichaCompartida(ficha, it) }
 
             if (RutaAVivienda.tieneUbicacion(ficha.latitud, ficha.longitud)) {
@@ -710,80 +708,5 @@ private fun colorEstadoFicha(estado: String): Color {
         "BORRADOR" -> NaranjaClinico
         "ARCHIVADA" -> MoradoClinico
         else -> AzulClinico
-    }
-}
-
-
-/**
- * Aviso cuando otra persona modificó esta misma ficha mientras se editaba aquí: no se pisa el trabajo de nadie,
- * se pide elegir qué versión conservar.
- */
-@Composable
-private fun AvisoConflictoFicha(ficha: FichaFamiliarEntity) {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val alcance = androidx.compose.runtime.rememberCoroutineScope()
-    var trabajando by remember { mutableStateOf(false) }
-    var mensaje by remember { mutableStateOf<String?>(null) }
-    var confirmarServidor by remember { mutableStateOf(false) }
-
-    fun resolver(usarServidor: Boolean) {
-        trabajando = true
-        mensaje = null
-        alcance.launch {
-            val ok = runCatching {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val sincronizador = com.ruralitos.app.data.sync.SincronizadorSupabase(context)
-                    if (usarServidor) sincronizador.resolverConflictoUsandoServidor(ficha.id)
-                    else sincronizador.resolverConflictoConservandoLocal(ficha.id)
-                }
-            }.getOrDefault(false)
-            trabajando = false
-            if (ok) {
-                if (!usarServidor) com.ruralitos.app.data.sync.ProgramadorSincronizacion.ejecutarAhora(context)
-            } else {
-                mensaje = "No se pudo completar. Comprueba la conexión a internet e inténtalo de nuevo."
-            }
-        }
-    }
-
-    if (confirmarServidor) {
-        VentanaConfirmarRuralitos(
-            titulo = "Usar la versión del servidor",
-            mensaje = "Se descartarán los cambios que hiciste en esta ficha desde la última sincronización y se descargará la versión de tu compañero. No se puede deshacer.",
-            textoConfirmar = "Descartar mis cambios",
-            onConfirmar = { confirmarServidor = false; resolver(true) },
-            textoCancelar = "Cancelar",
-            peligro = true,
-            onCancelar = { confirmarServidor = false }
-        )
-    }
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = NaranjaClinico.copy(alpha = 0.12f),
-        shape = RoundedCornerShape(16.dp),
-        border = BorderStroke(1.dp, NaranjaClinico)
-    ) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text("Esta ficha cambió en dos lugares", fontWeight = FontWeight.Bold, color = AzulClinicoOscuro)
-            Text(
-                "Otra persona del equipo modificó esta ficha mientras tú la editabas. Ruralitos no sobrescribe " +
-                    "el trabajo de nadie: elige qué versión conservar.",
-                style = MaterialTheme.typography.bodyMedium
-            )
-            mensaje?.let { Text(it, color = RojoClinico, style = MaterialTheme.typography.bodySmall) }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                androidx.compose.material3.Button(
-                    onClick = { resolver(false) },
-                    enabled = !trabajando,
-                    modifier = Modifier.weight(1f)
-                ) { Text("Conservar la mía") }
-                androidx.compose.material3.OutlinedButton(
-                    onClick = { confirmarServidor = true },
-                    enabled = !trabajando,
-                    modifier = Modifier.weight(1f)
-                ) { Text("Usar la del equipo") }
-            }
-        }
     }
 }

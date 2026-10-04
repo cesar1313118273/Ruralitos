@@ -47,8 +47,11 @@ internal fun errorSincronizacionReintentable(error: Throwable): Boolean = when (
     else -> false
 }
 
-/** Otra persona cambió la ficha en el servidor después de la última sincronización de este teléfono. */
-internal class ConflictoFichaException(mensaje: String) : Exception(mensaje)
+/** Su autor eliminó la ficha en la nube mientras este teléfono tenía cambios sin subir: la baja manda. */
+internal class FichaEliminadaEnNubeException : Exception("La ficha fue eliminada por su autor.")
+
+/** Marca interna: al subir, la nube tenía un cambio más reciente y es la que gana (ver [guardarCabeceraCon]). */
+private const val GANA_NUBE = "_gana_nube"
 
 private data class ResultadoDescarga(val descargadas: Int, val errores: Int, val reintentables: Int)
 
@@ -79,25 +82,35 @@ class SincronizadorSupabase(context: Context) {
         bloqueoProceso.withLock { ejecutarSerializado(soloSubidas) }
 
     /**
-     * Decisión del usuario ante un conflicto: «usar la del servidor». Se descartan los cambios de este teléfono
-     * en esa ficha y se baja su versión actual completa.
+     * Revisión barata (una consulta por Sala): ¿hay algo nuevo en la nube desde la última sincronización completa?
+     * No descarga nada. Se usa con la aplicación abierta para enterarse de los cambios de los demás en pocos segundos.
      */
-    suspend fun resolverConflictoUsandoServidor(fichaId: Long): Boolean = bloqueoProceso.withLock {
-        val ficha = dao.fichaPorSyncId(dao.fichaSyncId(fichaId) ?: return@withLock false)
+    suspend fun hayNovedades(): Boolean {
+        val salas = database.salaDao().listarSalas()
+        return salas.any { sala ->
+            val huella = runCatching { api.huellaDeCambios(sala.organizacionId) }.getOrDefault("")
+            huella.isNotBlank() && huella != marcas.huella(sala.organizacionId)
+        }
+    }
+
+    /**
+     * Al abrir una ficha compartida para trabajar en ella: se trae su última versión (y sus datos) de la nube, para
+     * empezar siempre sobre lo más reciente. No toca una ficha con cambios sin subir. Devuelve verdadero si hubo algo que traer.
+     */
+    suspend fun refrescarFicha(fichaId: Long): Boolean = bloqueoProceso.withLock {
+        val syncId = dao.fichaSyncId(fichaId) ?: return@withLock false
+        val ficha = dao.fichaPorSyncId(syncId) ?: return@withLock false
+        if (ficha.syncEstado == "PENDIENTE" || ficha.syncEstado == "ERROR" || ficha.syncEstado == "CONFLICTO") return@withLock false
+        val cabecera = api.seleccionar("fichas_familiares?id=eq.$syncId&select=*").optJSONObject(0)
             ?: return@withLock false
-        if (ficha.syncEstado != "CONFLICTO") return@withLock false
         val org = ficha.organizacionId
-        val cabecera = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=*").optJSONObject(0)
-        if (cabecera == null || cabecera.estaEliminada()) {
-            // La otra persona eliminó la ficha: se acepta la baja.
-            dao.marcarSincronizadaDescarga(ficha.id, ficha.syncVersion)
-            aplicador.eliminarFichas(org, setOf(ficha.syncId))
+        if (cabecera.estaEliminada()) {
+            aplicador.eliminarFichas(org, setOf(syncId))
             return@withLock true
         }
         val grupo = GrupoFicha().also { it.cabecera = cabecera }
-        traerHijosDeFicha(ficha.syncId, grupo)
-        val datos = construirDatos(org, ficha.syncId, grupo)
-        aplicador.aplicar(org, datos, completo = true, forzar = true)
+        traerHijosDeFicha(syncId, grupo)
+        aplicador.aplicar(org, construirDatos(org, syncId, grupo), completo = true)
     }
 
     /**
@@ -111,20 +124,6 @@ class SincronizadorSupabase(context: Context) {
             aplicador.eliminarFichas(org, fichas.mapTo(mutableSetOf()) { it.syncId })
         }
         retirar.size
-    }
-
-    /** Decisión del usuario ante un conflicto: «conservar mis cambios» (se vuelven a subir encima). */
-    suspend fun resolverConflictoConservandoLocal(fichaId: Long): Boolean = bloqueoProceso.withLock {
-        val ficha = dao.fichaPorSyncId(dao.fichaSyncId(fichaId) ?: return@withLock false)
-            ?: return@withLock false
-        if (ficha.syncEstado != "CONFLICTO") return@withLock false
-        val remota = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=version,deleted_at").optJSONObject(0)
-        if (remota == null || remota.estaEliminada()) {
-            // Ya no existe en el servidor: se vuelve a crear con los datos de este teléfono.
-            dao.conservarLocalTrasConflicto(ficha.id, 0L) > 0
-        } else {
-            dao.conservarLocalTrasConflicto(ficha.id, remota.optLong("version", ficha.syncVersion)) > 0
-        }
     }
 
     private suspend fun ejecutarSerializado(soloSubidas: Boolean): ResultadoSincronizacion {
@@ -147,7 +146,12 @@ class SincronizadorSupabase(context: Context) {
         var totalReintentables = 0
         var totalConflictos = 0
         salas.forEach { sala ->
+            // La huella se toma ANTES de sincronizar: si alguien cambia algo durante la sincronización, la próxima revisión lo notará.
+            val huellaAntes = if (soloSubidas) "" else runCatching { api.huellaDeCambios(sala.organizacionId) }.getOrDefault("")
             val parcial = sincronizarSala(sala.organizacionId, soloSubidas)
+            if (!soloSubidas && parcial.errores == 0 && huellaAntes.isNotBlank()) {
+                marcas.guardarHuella(sala.organizacionId, huellaAntes)
+            }
             totalSubidas += parcial.subidas
             totalEliminaciones += parcial.eliminaciones
             totalErrores += parcial.errores
@@ -182,7 +186,9 @@ class SincronizadorSupabase(context: Context) {
         var eliminadas = 0
         var errores = 0
         var reintentables = 0
-        var conflictos = 0
+        val conflictos = 0
+        // Versiones anteriores dejaban fichas «por revisar»: ahora se resuelven solas al subirlas.
+        dao.convertirConflictosEnPendientes()
         procesarEliminaciones(organizacionId).let {
             eliminadas += it.eliminadas
             errores += it.errores
@@ -195,9 +201,12 @@ class SincronizadorSupabase(context: Context) {
                 .onSuccess { guardadaSinCambiosPosteriores ->
                     if (guardadaSinCambiosPosteriores) subidas++
                 }.onFailure { error ->
-                    if (error is ConflictoFichaException) {
-                        conflictos++
-                        dao.marcarConflicto(ficha.id, error.message.orEmpty().take(300))
+                    if (error is FichaEliminadaEnNubeException) {
+                        // Su autor la eliminó: se quita también de este teléfono.
+                        runCatching {
+                            dao.marcarSincronizadaDescarga(ficha.id, ficha.syncVersion)
+                            aplicador.eliminarFichas(organizacionId, setOf(ficha.syncId))
+                        }
                     } else {
                         errores++
                         if (errorSincronizacionReintentable(error)) reintentables++
@@ -300,8 +309,10 @@ class SincronizadorSupabase(context: Context) {
     // ---- subida ----------------------------------------------------------------------------
 
     /**
-     * Sube la cabecera comprobando la versión: si otra persona la cambió desde la última sincronización de este
-     * teléfono, NO se pisa su trabajo (se marca CONFLICTO). Devuelve falso si el usuario siguió editando mientras tanto.
+     * Sube la ficha. Si otra persona (o este mismo usuario desde otro teléfono) la cambió mientras tanto, no se
+     * pregunta nada: gana el cambio más reciente en los datos de la ficha y los registros nuevos de las dos partes se
+     * unen (ver [guardarCabeceraCon] y [subirSoloLoNuevoYTomarDeLaNube]). Devuelve falso si el usuario siguió
+     * editando mientras tanto.
      */
     private suspend fun subirFicha(ficha: FichaFamiliarEntity, organizacionId: String): Boolean {
         var version = ficha.syncVersion
@@ -311,6 +322,10 @@ class SincronizadorSupabase(context: Context) {
         var respuesta = guardarCabecera(ficha, primera, version)
         version = respuesta.optLong("version", version + 1)
         dao.fijarVersion(ficha.id, version)
+
+        if (respuesta.optBoolean(GANA_NUBE)) {
+            return subirSoloLoNuevoYTomarDeLaNube(ficha, organizacionId, respuesta)
+        }
 
         val firmaRuta = subirFirmaSiExiste(ficha, organizacionId)
         if (firmaRuta != null && respuesta.texto("firma_storage_path") != firmaRuta) {
@@ -350,12 +365,74 @@ class SincronizadorSupabase(context: Context) {
             // registrarse. Se toma su versión como base y se actualiza.
             version = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=version")
                 .optJSONObject(0)?.optLong("version", 0L) ?: 0L
-            if (version == 0L) throw ConflictoFichaException("El servidor no aceptó crear la ficha.")
+            if (version == 0L) throw ErrorSupabase("El servidor no aceptó crear la ficha.")
         }
-        return api.actualizarPrivadoSiVersion("fichas_familiares", ficha.syncId, version, json)
-            ?: throw ConflictoFichaException(
-                "Otra persona modificó esta ficha mientras la editabas. Elige qué versión conservar."
-            )
+        api.actualizarPrivadoSiVersion("fichas_familiares", ficha.syncId, version, json)?.let { return it }
+
+        // La ficha cambió en la nube desde la última sincronización de este teléfono: se resuelve sola.
+        val remota = api.seleccionar("fichas_familiares?id=eq.${ficha.syncId}&select=*").optJSONObject(0)
+            ?: throw ErrorSupabase("No se pudo leer la ficha en la nube.")
+        if (remota.estaEliminada()) throw FichaEliminadaEnNubeException()
+        val remotaMs = ConversionesSync.timestampMillis(remota.texto("updated_at"), 0L)
+        if (ficha.actualizadoEn >= remotaMs) {
+            // El cambio de este teléfono es el más reciente: se sube encima de la versión actual de la nube.
+            return api.actualizarPrivadoSiVersion("fichas_familiares", ficha.syncId, remota.optLong("version", 0L), json)
+                ?: throw ErrorSupabase("La ficha cambió otra vez mientras se sincronizaba; se reintentará.")
+        }
+        // El cambio de la nube es más reciente: sus datos se quedan, y de este teléfono solo se suman los registros nuevos.
+        return remota.put(GANA_NUBE, true)
+    }
+
+    /**
+     * La nube tenía un cambio más reciente. De este teléfono se suben únicamente los registros que la nube no conoce
+     * (integrantes, adjuntos y demás creados aquí), y luego se baja la ficha completa de la nube para que quede igual
+     * en todos los teléfonos. Devuelve falso si el usuario siguió editando mientras tanto (se reintenta en la próxima).
+     */
+    private suspend fun subirSoloLoNuevoYTomarDeLaNube(
+        ficha: FichaFamiliarEntity,
+        organizacionId: String,
+        cabeceraNube: JSONObject
+    ): Boolean {
+        val enNube = GrupoFicha().also { it.cabecera = cabeceraNube }
+        traerHijosDeFicha(ficha.syncId, enNube)
+        fun ids(filas: List<JSONObject>) = filas.mapTo(mutableSetOf()) { it.getString("id") }
+
+        val miembros = ids(enNube.miembros)
+        api.upsertVarios("miembros_familia", dao.miembros(ficha.id).filter { it.syncId !in miembros }
+            .map { miembroJson(it, ficha.syncId, organizacionId) })
+        val embarazadas = ids(enNube.embarazadas)
+        api.upsertVarios("embarazadas", dao.embarazadas(ficha.id).filter { it.syncId !in embarazadas }
+            .map { embarazadaJson(it, ficha.syncId, organizacionId) })
+        val mortalidad = ids(enNube.mortalidad)
+        api.upsertVarios("mortalidad_familiar", dao.mortalidad(ficha.id).filter { it.syncId !in mortalidad }
+            .map { mortalidadJson(it, ficha.syncId, organizacionId) })
+        val calificacionesNube = ids(enNube.calificaciones)
+        val calificacionesNuevas = dao.calificaciones(ficha.id).filter { it.syncId !in calificacionesNube }
+        api.upsertVarios("calificaciones_riesgo", calificacionesNuevas.map { calificacionJson(it, ficha.syncId, organizacionId) })
+        api.upsertVarios(
+            "valores_riesgo",
+            calificacionesNuevas.flatMap { c -> dao.valores(c.id).map { valorJson(it, c.syncId, organizacionId) } },
+            "calificacion_id,componente"
+        )
+        val gestiones = ids(enNube.gestiones)
+        api.upsertVarios("gestion_riesgo", dao.gestiones(ficha.id).filter { it.syncId !in gestiones }
+            .map { gestionJson(it, ficha.syncId, organizacionId) })
+        val contaminaciones = ids(enNube.contaminaciones)
+        api.upsertVarios("contaminacion_ambiental", dao.contaminaciones(ficha.id).filter { it.syncId !in contaminaciones }
+            .map { contaminacionJson(it, ficha.syncId, organizacionId) })
+        val lugares = ids(enNube.lugares)
+        api.upsertVarios("lugares_tratamiento", dao.lugares(ficha.id).filter { it.syncId !in lugares }
+            .map { lugarJson(it, ficha.syncId, organizacionId) })
+        val tiposEnNube = enNube.adjuntos.map { it.texto("tipo") }.toSet()
+        dao.adjuntos(ficha.id).filter { it.tipo !in tiposEnNube }.forEach { subirAdjunto(it, ficha.syncId, organizacionId) }
+        subirHistorial(ficha, organizacionId)
+
+        // Ahora sí: la ficha completa de la nube (con lo nuevo de este teléfono ya dentro) pasa a este teléfono.
+        val actual = dao.fichaPorSyncId(ficha.syncId) ?: return false
+        if (actual.actualizadoEn != ficha.actualizadoEn) return false
+        val final = GrupoFicha().also { it.cabecera = cabeceraNube }
+        traerHijosDeFicha(ficha.syncId, final)
+        return aplicador.aplicar(organizacionId, construirDatos(organizacionId, ficha.syncId, final), completo = true, forzar = true)
     }
 
     private class ResultadoEliminaciones {

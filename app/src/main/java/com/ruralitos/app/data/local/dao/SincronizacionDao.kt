@@ -96,6 +96,10 @@ interface SincronizacionDao {
     @Query("UPDATE fichas_familiares SET syncEstado = 'CONFLICTO', syncError = :mensaje WHERE id = :id")
     suspend fun marcarConflicto(id: Long, mensaje: String)
 
+    /** Las fichas que versiones anteriores dejaron en conflicto vuelven a la cola de subida. */
+    @Query("UPDATE fichas_familiares SET syncEstado = 'PENDIENTE', syncError = '' WHERE syncEstado = 'CONFLICTO'")
+    suspend fun convertirConflictosEnPendientes(): Int
+
     /** «Conservar mis cambios»: se toma como base la versión actual del servidor y se vuelve a subir. */
     @Query("""
         UPDATE fichas_familiares SET syncEstado = 'PENDIENTE', syncError = '', syncVersion = :version
