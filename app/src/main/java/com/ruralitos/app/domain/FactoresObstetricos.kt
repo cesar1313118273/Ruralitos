@@ -8,7 +8,7 @@ data class FactorObstetrico(
     val codigo: String,
     val etiqueta: String,
     val nivel: Int,
-    /** Patología crónica: por definición del Grupo III. El resto de criterios es un factor de riesgo (Grupo II). */
+    /** Pertenece al Grupo III por definición (patología crónica, consumo problemático). El resto es un factor de riesgo (Grupo II). */
     val cronico: Boolean = false
 )
 
@@ -55,8 +55,8 @@ object FactoresObstetricos {
         f("CONTROL_INSUFICIENTE", "Control insuficiente: menos de 3 visitas prenatales", 1),
         f("EDAD_EXTREMA", "Menor de 19 años, o mayor de 35 en el primer embarazo", 1),
         f("MENOR_15", "Adolescente menor de 15 años", 1),
-        f("DROGADICCION", "Drogadicción", 1),
-        f("ALCOHOLISMO", "Alcoholismo", 1),
+        f("CONSUMO_DROGAS", "Consumo problemático de drogas", 1, cronico = true),
+        f("CONSUMO_ALCOHOL", "Consumo problemático de alcohol", 1, cronico = true),
         f("TABAQUISMO", "Tabaquismo", 1),
         f("GRAN_MULTIPARIDAD", "Gran multiparidad: más de 3 gestas", 1),
         f("INCOMPATIBILIDAD_RH", "Incompatibilidad Rh", 1),
@@ -114,6 +114,13 @@ object FactoresObstetricos {
 
     fun codificar(codigos: Collection<String>): String = ListaDeCodigos.codificar(codigos)
     fun decodificar(texto: String): Set<String> = ListaDeCodigos.decodificar(texto)
+
+    /** Los criterios que coinciden con lo escrito (sin tildes ni mayúsculas) y que aún no se eligieron. */
+    fun sugerencias(escrito: String, elegidos: Set<String>, maximo: Int = 8): List<FactorObstetrico> {
+        val buscado = textoParaBuscar(escrito)
+        if (buscado.isEmpty()) return emptyList()
+        return todos.filter { it.codigo !in elegidos && textoParaBuscar(it.etiqueta).contains(buscado) }.take(maximo)
+    }
 
     /** Diagnósticos CIE-10 (sin punto, ej. O600) que equivalen a un criterio de la escala. */
     private val porDiagnostico: List<Pair<Regex, String>> = listOf(
@@ -186,7 +193,12 @@ object FactoresObstetricos {
 
         if (miembro != null) {
             if (miembro.escolaridad.trim().uppercase() == "SIN") agregar("ANALFABETISMO", OrigenRazonObstetrica.FICHA_DE_LA_PERSONA)
-            if (miembro.consumoAlcoholDrogas == true) agregar("ALCOHOLISMO", OrigenRazonObstetrica.FICHA_DE_LA_PERSONA)
+            val factoresPersona = FactoresRiesgoEdad.vigentes(miembro).map { it.codigo }.toSet()
+            if (FactoresRiesgoEdad.CONSUMO_ALCOHOL in factoresPersona) agregar("CONSUMO_ALCOHOL", OrigenRazonObstetrica.FICHA_DE_LA_PERSONA)
+            if (FactoresRiesgoEdad.CONSUMO_DROGAS in factoresPersona) agregar("CONSUMO_DROGAS", OrigenRazonObstetrica.FICHA_DE_LA_PERSONA)
+            if (miembro.consumoAlcoholDrogas == true && vistos.none { it.startsWith("CONSUMO_") }) {
+                agregar("CONSUMO_ALCOHOL", OrigenRazonObstetrica.FICHA_DE_LA_PERSONA)
+            }
             when (miembro.estadoNutricional) {
                 DispensarizacionAutomatica.NUTRICION_OBESIDAD -> agregar("OBESIDAD", OrigenRazonObstetrica.FICHA_DE_LA_PERSONA)
                 DispensarizacionAutomatica.NUTRICION_DESNUTRICION_AGUDA,

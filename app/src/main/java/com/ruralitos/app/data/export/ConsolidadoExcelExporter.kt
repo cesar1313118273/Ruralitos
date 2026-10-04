@@ -177,7 +177,7 @@ object ConsolidadoExcelExporter {
     private fun booleanCodigo(v:Boolean?)=when(v){true->1;false->2;null->null}
     private fun escolaridad(v:String)=when(normal(v)){"SIN","SIN ESCOLARIDAD"->1;"BAS","BASICA"->2;"BACH","BACHILLER"->3;"SUP","SUPERIOR"->4;"ESP","ESPECIALIDAD"->5;else->null}
     private fun ocupacion(v:String):Int?{val n=normal(v);return when{"ESTUD" in n->5;"AMA" in n||"HOGAR" in n->3;"DESEMP" in n->4;"INDEPEND" in n->2;n.isBlank()||"NING" in n->6;else->1}}
-    private fun parentesco(v:String):Int{val n=normal(v);return when{"JEFE" in n->8;"CONY" in n||"ESPOS" in n->1;"HIJ" in n->2;"NIET" in n->3;"PRIM" in n->4;"ABUEL" in n->5;"MADRE" in n->9;"PADRE" in n->10;"EQUIV" in n->7;else->6}}
+    private fun parentesco(v:String):Int{val n=normal(v);return when{"JEF" in n->8;"CONY" in n||"ESPOS" in n->1;"HIJ" in n->2;"NIET" in n->3;"PRIM" in n->4;"ABUEL" in n->5;"MADRE" in n->9;"PADRE" in n->10;"EQUIV" in n->7;else->6}}
     private fun discapacidad(m:MiembroFamiliaEntity)=when{m.discapacidadAuditiva==true->1;m.discapacidadFisica==true->2;m.discapacidadVisual==true->3;m.discapacidadLenguaje==true->4;m.discapacidadIntelectual==true->5;m.discapacidadPsicosocial==true->6;else->0}
     private fun riesgoObstetrico(v:String?)=when(normal(v.orEmpty())){"SIN_RIESGO"->1;"BAJO"->2;"ALTO"->3;"MUY_ALTO"->4;else->null}
     private fun calificacion(v:String?)=when(normal(v.orEmpty())){"SIN_RIESGO"->1;"BAJO"->2;"MEDIO"->3;"ALTO"->4;else->null}

@@ -179,7 +179,11 @@ object DispensarizacionAutomatica {
             if (miembro.diabetesMellitus == true) add("Diabetes mellitus registrada")
             if (miembro.tuberculosis == true) add("Tuberculosis registrada")
             if (miembro.problemaSaludMental == true) add("Problema de salud mental registrado")
-            if (miembro.enfermedadCronica == true) add("Otra enfermedad crónica registrada")
+            // Solo cuentan los diagnósticos que son del Grupo III (enfermedades crónicas, trastornos neurológicos o
+            // psiquiátricos, consumo de sustancias, lesiones autoinfligidas); uno agudo no cambia el grupo.
+            if (EstrategiasDesdeCie10.hayGrupoIII(diagnosticos)) add("Diagnóstico CIE-10 de enfermedad crónica o del Grupo III")
+            if (miembro.consumoAlcoholDrogas == true) add("Consumo problemático de alcohol u otras drogas registrado")
+            FactoresRiesgoEdad.vigentesGrupoIII(miembro).forEach { add(it.etiqueta) }
             if (miembro.cuidadosPaliativos == true) add("Cuidados paliativos registrados")
             if (miembro.vih == true) add("VIH registrado")
             // Una embarazada solo entra al Grupo III por una patología crónica marcada en su escala de riesgo.
@@ -194,7 +198,6 @@ object DispensarizacionAutomatica {
                 NUTRICION_DESNUTRICION_AGUDA -> add("Desnutrición aguda registrada")
                 NUTRICION_DESNUTRICION_CRONICA -> add("Desnutrición crónica registrada")
             }
-            if (miembro.consumoAlcoholDrogas == true) add("Consumo de alcohol u otras drogas registrado")
             if (embarazo != null) {
                 if (embarazo.antecedentesPatologicosObstetricos.isNotBlank()) {
                     add("Embarazo con antecedente obstétrico registrado")
@@ -204,7 +207,7 @@ object DispensarizacionAutomatica {
                     ?.filter { !it.cronica && (it.origen != OrigenRazonObstetrica.FICHA_DE_LA_PERSONA || it.codigo == "ANALFABETISMO") }
                     ?.forEach { add("Embarazo: ${it.etiqueta.replaceFirstChar { c -> c.lowercase() }}") }
             }
-            FactoresRiesgoEdad.vigentes(miembro).forEach { add("Factor de riesgo: ${it.etiqueta.replaceFirstChar { c -> c.lowercase() }}") }
+            FactoresRiesgoEdad.vigentesGrupoII(miembro).forEach { add("Factor de riesgo: ${it.etiqueta.replaceFirstChar { c -> c.lowercase() }}") }
             if (miembro.riesgoEnfermedadDiscapacidad.isNotBlank()) {
                 add("Antecedente de texto libre pendiente de validación clínica")
             }

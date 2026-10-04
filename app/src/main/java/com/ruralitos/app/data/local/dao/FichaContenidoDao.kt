@@ -104,7 +104,7 @@ interface FichaContenidoDao {
     @Query("SELECT * FROM miembros_familia ORDER BY fichaId, id")
     fun listarTodosMiembros(): Flow<List<MiembroFamiliaEntity>>
 
-    @Query("SELECT * FROM miembros_familia WHERE fichaId = :fichaId AND parentesco LIKE 'JEFE%' ORDER BY id LIMIT 1")
+    @Query("SELECT * FROM miembros_familia WHERE fichaId = :fichaId AND parentesco LIKE 'JEF%' ORDER BY id LIMIT 1")
     suspend fun buscarJefeFamilia(fichaId: Long): MiembroFamiliaEntity?
 
     @Query("SELECT * FROM embarazadas WHERE fichaId = :fichaId ORDER BY id")

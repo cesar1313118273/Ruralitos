@@ -54,6 +54,9 @@ import com.ruralitos.app.data.local.entity.EmbarazadaEntity
 import com.ruralitos.app.data.local.entity.MiembroFamiliaEntity
 import com.ruralitos.app.data.local.entity.MortalidadFamiliarEntity
 import com.ruralitos.app.domain.DispensarizacionAutomatica
+import com.ruralitos.app.ui.components.OpcionBusqueda
+import com.ruralitos.app.ui.components.BuscadorDeFactores
+import com.ruralitos.app.domain.RolFamiliar
 import com.ruralitos.app.domain.GrupoEdadFamiliar
 import com.ruralitos.app.domain.ValidadorIdentidadEcuador
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -415,7 +418,7 @@ private fun FormularioEmbarazadaScreen(
     var nombres by remember { mutableStateOf(personaInicial?.apellidosNombres ?: item?.apellidosNombres.orEmpty()) }
     var cedula by remember { mutableStateOf(personaInicial?.cedula.orEmpty()) }
     var fechaNacimiento by remember { mutableStateOf(personaInicial?.fechaNacimiento.orEmpty()) }
-    var parentesco by remember { mutableStateOf(personaInicial?.parentesco.orEmpty().ifBlank { "CÓNYUGE/PAREJA" }) }
+    var parentesco by remember { mutableStateOf(RolFamiliar.normalizar(personaInicial?.parentesco.orEmpty(), "M").ifBlank { "CÓNYUGE/PAREJA" }) }
     var escolaridad by remember { mutableStateOf(personaInicial?.escolaridad.orEmpty().ifBlank { "SIN" }) }
     var ocupacion by remember { mutableStateOf(personaInicial?.ocupacion.orEmpty()) }
     var fum by remember { mutableStateOf(item?.fechaUltimaMenstruacion.orEmpty()) }
@@ -514,7 +517,7 @@ private fun FormularioEmbarazadaScreen(
                 nombres = persona.apellidosNombres
                 cedula = persona.cedula
                 fechaNacimiento = persona.fechaNacimiento
-                parentesco = persona.parentesco.ifBlank { parentesco }
+                parentesco = RolFamiliar.normalizar(persona.parentesco, "M").ifBlank { parentesco }
                 escolaridad = persona.escolaridad.ifBlank { escolaridad }
                 ocupacion = persona.ocupacion
             }
@@ -529,8 +532,8 @@ private fun FormularioEmbarazadaScreen(
             )
             CampoFecha(fechaNacimiento, "Fecha de nacimiento") { calendario = "nacimiento" }
             SelectorTextoSalud(
-                "Parentesco",
-                listOf("JEFE/A DE FAMILIA", "CÓNYUGE/PAREJA", "HIJO/A", "MADRE", "OTRO FAMILIAR", "NO FAMILIAR"),
+                "Rol familiar",
+                RolFamiliar.opcionesMujer.map { it.first },
                 parentesco
             ) { parentesco = it }
             SelectorTextoSalud("Escolaridad", listOf("SIN", "BAS", "BACH", "SUP", "ESP"), escolaridad) { escolaridad = it }
@@ -569,28 +572,20 @@ private fun FormularioEmbarazadaScreen(
             )
         }
         val detectados = evaluacion.razones.filter { it.automatica }.map { it.codigo }.toSet()
-        listOf(
-            Triple("5. Riesgo 1 · Bajo", "Marca los criterios que tenga. Pasan a la embarazada al Grupo II.", FactoresObstetricos.riesgo1),
-            Triple("6. Riesgo 2 · Alto", "Una patología crónica la lleva al Grupo III; los demás criterios, al Grupo II.", FactoresObstetricos.riesgo2),
-            Triple("7. Riesgo 3 · Inminente", "Requiere atención inmediata. Una patología crónica la lleva al Grupo III; los demás, al Grupo II.", FactoresObstetricos.riesgo3)
-        ).forEach { (titulo, descripcion, criterios) ->
-            SeccionFormularioRuralitos(
-                titulo = titulo,
-                desplegable = true,
-                abiertaInicial = false,
-                descripcion = descripcion
-            ) {
-                criterios.forEach { criterio ->
-                    val automatico = criterio.codigo in detectados
-                    CasillaCriterioObstetrico(
-                        criterio = criterio,
-                        marcada = automatico || criterio.codigo in factoresObstetricos,
-                        automatico = automatico
-                    ) { marcado ->
-                        factoresObstetricos = if (marcado) factoresObstetricos + criterio.codigo else factoresObstetricos - criterio.codigo
-                    }
-                }
-            }
+        SeccionFormularioRuralitos(
+            titulo = "5. Riesgo obstétrico",
+            descripcion = "Escribe y elige los criterios de la escala de riesgo obstétrico (Riesgo 1, 2 y 3). Algunos se detectan solos con los datos de la ficha."
+        ) {
+            BuscadorDeFactores(
+                titulo = "Escribe un criterio de riesgo obstétrico",
+                opciones = FactoresObstetricos.todos.map {
+                    OpcionBusqueda(it.codigo, it.etiqueta, "Riesgo ${it.nivel}", grupoIII = it.cronico)
+                },
+                elegidos = factoresObstetricos,
+                onCambio = { factoresObstetricos = it },
+                prefijoPrueba = "criterio",
+                automaticos = detectados
+            )
         }
         ResultadoRiesgoObstetrico(evaluacion, miembroActual, embarazoActual)
         error?.let {
@@ -618,39 +613,10 @@ private fun FormularioEmbarazadaScreen(
     }
 }
 
-@Composable
-private fun CasillaCriterioObstetrico(
-    criterio: FactorObstetrico,
-    marcada: Boolean,
-    automatico: Boolean,
-    onCambio: (Boolean) -> Unit
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clickable(enabled = !automatico) { onCambio(!marcada) }
-            .padding(vertical = 2.dp)
-            .testTag("criterio_${criterio.codigo}"),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Checkbox(checked = marcada, onCheckedChange = null, enabled = !automatico)
-        Column(Modifier.padding(start = 10.dp, top = 6.dp, bottom = 6.dp)) {
-            Text(criterio.etiqueta)
-            if (automatico) Text(
-                "Detectado automáticamente con los datos de la ficha",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (criterio.cronico) Text(
-                "Patología crónica",
-                style = MaterialTheme.typography.bodySmall,
-                color = MoradoClinico
-            )
-        }
-    }
-}
-
-/** Cuadro bajo la lista: nivel de riesgo obstétrico y grupo de dispensarización, con el motivo. */
+/**
+ * Cuadro bajo los criterios: nivel de riesgo obstétrico y grupo de dispensarización. El grupo se decide del IV al I y se
+ * queda en el primero que cumple: una patología crónica (o el consumo problemático) es Grupo III y no sigue buscando.
+ */
 @Composable
 private fun ResultadoRiesgoObstetrico(
     evaluacion: com.ruralitos.app.domain.EvaluacionObstetrica,
@@ -664,8 +630,14 @@ private fun ResultadoRiesgoObstetrico(
     }
     // El resto de la ficha de la persona (discapacidad, enfermedades, factores) puede subir el grupo.
     val completo = remember(miembro, embarazo) { DispensarizacionAutomatica.clasificar(miembro, embarazo) }
-    val grupo = if (completo.grupo != GrupoDispensarizacion.PENDIENTE && completo.grupo.prioridad > grupoPorEscala.prioridad)
-        completo.grupo else grupoPorEscala
+    val gana = completo.grupo != GrupoDispensarizacion.PENDIENTE && completo.grupo.prioridad > grupoPorEscala.prioridad
+    val grupo = if (gana) completo.grupo else grupoPorEscala
+    val motivos: List<String> = when {
+        gana -> completo.razones
+        grupo == GrupoDispensarizacion.III -> evaluacion.razones.filter { it.cronica }.map { it.etiqueta }
+        grupo == GrupoDispensarizacion.II -> evaluacion.razones.filter { !it.cronica }.map { it.etiqueta }
+        else -> emptyList()
+    }
     val nivel = when (evaluacion.nivel) {
         0 -> "Sin riesgo obstétrico"
         1 -> "Riesgo 1 · Bajo"
@@ -681,9 +653,9 @@ private fun ResultadoRiesgoObstetrico(
         MensajeEstadoRuralitos(
             titulo = "Grupo ${grupo.codigo} · ${grupo.titulo}",
             descripcion = "$nivel. " + when (grupo) {
-                GrupoDispensarizacion.I -> "No tiene criterios marcados ni detectados."
-                GrupoDispensarizacion.II -> "Tiene factores de riesgo, ninguno es una patología crónica."
-                GrupoDispensarizacion.III -> "Tiene una patología crónica."
+                GrupoDispensarizacion.I -> "No tiene criterios elegidos ni detectados."
+                GrupoDispensarizacion.II -> "Tiene factores de riesgo y nada de un grupo superior."
+                GrupoDispensarizacion.III -> "Tiene una patología crónica o un criterio del Grupo III; no se sigue buscando en otros grupos."
                 else -> "Tiene una discapacidad registrada."
             },
             color = color,
@@ -699,9 +671,9 @@ private fun ResultadoRiesgoObstetrico(
                 modifier = Modifier.testTag("aviso_riesgo_inminente")
             )
         }
-        if (evaluacion.razones.isNotEmpty()) {
+        if (motivos.isNotEmpty()) {
             Text(
-                "Motivos: " + evaluacion.razones.joinToString("; ") { it.etiqueta },
+                "Motivos del Grupo ${grupo.codigo}: " + motivos.joinToString("; "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

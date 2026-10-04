@@ -31,12 +31,12 @@ object ArmadoFamiliograma {
         val texto = Normalizer.normalize(parentesco, Normalizer.Form.NFD)
             .replace(Regex("\\p{M}+"), "").uppercase(Locale.ROOT)
         return when {
-            "JEFE" in texto -> Categoria.JEFE
+            "JEF" in texto -> Categoria.JEFE
             "CONYUGE" in texto || "PAREJA" in texto -> Categoria.CONYUGE
             "HIJO" in texto -> Categoria.HIJO
-            "ABUELO" in texto -> Categoria.ABUELO
-            "NIETO" in texto -> Categoria.NIETO
-            "HERMANO" in texto -> Categoria.HERMANO
+            "ABUEL" in texto -> Categoria.ABUELO
+            "NIET" in texto -> Categoria.NIETO
+            "HERMAN" in texto -> Categoria.HERMANO
             "PADRE" in texto || "MADRE" in texto -> Categoria.PADRE
             else -> Categoria.OTRO
         }

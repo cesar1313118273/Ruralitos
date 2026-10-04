@@ -26,7 +26,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Formulario de la persona (factores por edad, secciones que se quitan o se ocultan), actores comunitarios y embarazada. */
+/** Formulario de la persona (factores que se escriben, grupo real, rol familiar), botones flotantes y embarazada. */
 @RunWith(AndroidJUnit4::class)
 class FactoresRiesgoUiTest {
     @get:Rule
@@ -61,7 +61,7 @@ class FactoresRiesgoUiTest {
         rule.setContent {
             RuralitosTheme { MiembrosFamiliaScreen(fichaId = fichaId, usuarioId = 7L, onContinuar = {}, onSalir = {}) }
         }
-        esperar { hayTexto("integrante(s) registrado(s)") }
+        esperar { existe("boton_agregar_integrante") && hayEditar() }
     }
 
     private fun abrirSeccion(titulo: String) {
@@ -69,65 +69,79 @@ class FactoresRiesgoUiTest {
         rule.waitForIdle()
     }
 
+    /** Escribe en el cuadro de factores y elige la sugerencia. */
+    private fun elegir(prefijo: String, escrito: String, codigo: String) {
+        rule.onNodeWithTag("${prefijo}_buscar").performScrollTo().performTextInput(escrito)
+        esperar { existe("${prefijo}_sugerencia_$codigo") }
+        rule.onNodeWithTag("${prefijo}_sugerencia_$codigo").performScrollTo().performClick()
+        esperar { existe("${prefijo}_$codigo") }
+    }
+
     // ---------- formulario de la persona ----------
 
     @Test
-    fun elFormularioQuitaEstrategiasYActoresYMuestraLosFactoresDeSuEdad() {
+    fun elFormularioQuitaEstrategiasYActoresYMuestraElRolFamiliar() {
         mostrarMiembros(ids.getValue("c1"))
-        // «RAMÓN NIÑO» (14 meses) es la tercera tarjeta
-        botonEditar(2).performScrollTo().performClick()
+        botonEditar(2).performScrollTo().performClick() // RAMÓN NIÑO, 14 meses
         esperar { hayTexto("4. Factores de riesgo según la edad") }
 
         assertFalse("Estrategias Nacionales ya no se llena a mano", hayTexto("Estrategias Nacionales"))
-        assertFalse("Actores comunitarios pasó al botón verde", hayTexto("7. Actores comunitarios"))
+        assertFalse("Actores comunitarios pasó a los botones flotantes", hayTexto("7. Actores comunitarios"))
         assertFalse("Alertas epidemiológicas está oculta sin tuberculosis ni VIH", hayTexto("Alertas Epidemiológicas"))
         assertTrue(hayTexto("7. Otros riesgos prioritarios"))
+        assertTrue("el campo se llama Rol familiar", hayTexto("Rol familiar"))
+        assertFalse(hayTexto("Parentesco con el jefe de familia"))
+        // el rol es un menú desplegable con una opción por cada rol
+        rule.onAllNodes(hasText("Jefe de familia"))[0].performScrollTo().performClick()
+        esperar { hayTexto("Jefa de familia") }
+        assertTrue("cada rol es una opción", hayTexto("Hija") && hayTexto("Madre") && hayTexto("Padre") && hayTexto("Abuela"))
+        rule.onAllNodes(hasText("Hijo"))[0].performClick()
 
         abrirSeccion("4. Factores de riesgo según la edad")
-        esperar { existe("factor_PESO_BAJO") }
+        esperar { existe("factor_buscar") }
         rule.onNodeWithTag("banda_factores").assertTextEquals("0 a 23 meses")
-        assertFalse("un factor de adultos mayores no aparece", existe("factor_RIESGO_CAIDA"))
-        rule.onNodeWithTag("factor_PESO_BAJO").performScrollTo().performClick()
-        rule.onNodeWithTag("resumen_factores").assertExists()
-        assertTrue(hayTexto("Grupo II · con factores de riesgo"))
+        elegir("factor", "peso al", "PESO_BAJO")
+        esperar { hayTexto("Grupo II") }
 
         rule.onNodeWithText("Guardar cambios del integrante").performClick()
         esperar { miembros(ids.getValue("c1")).first { it.apellidosNombres == "RAMÓN NIÑO" }.factoresRiesgoEdadJson.contains("PESO_BAJO") }
     }
 
     @Test
-    fun laListaDeUnAdultoMayorEsOtra() {
+    fun conHipertensionElGrupoSigueSiendoIIIAunqueSeEscojanFactores() {
         mostrarMiembros(ids.getValue("c1"))
-        botonEditar(0).performClick() // RAMÓN LUIS, 66 años
+        botonEditar(0).performScrollTo().performClick() // RAMÓN LUIS, 66 años, con hipertensión
         esperar { hayTexto("4. Factores de riesgo según la edad") }
         abrirSeccion("4. Factores de riesgo según la edad")
-        esperar { existe("factor_RIESGO_CAIDA") }
+        esperar { existe("factor_buscar") }
         rule.onNodeWithTag("banda_factores").assertTextEquals("65 años o más")
-        assertTrue(existe("factor_FRAGILIDAD"))
-        assertFalse(existe("factor_PESO_BAJO"))
+        elegir("factor", "caida", "RIESGO_CAIDA")
+        rule.onNodeWithTag("resumen_factores").performScrollTo()
+        assertTrue("el cuadro dice el grupo real", hayTexto("Grupo III"))
+        assertFalse("y no el Grupo II", hayTexto("Grupo II ·"))
+        assertTrue(hayTexto("ya cumple uno superior"))
     }
 
     @Test
-    fun consumoYViolenciaSeMarcanEnLaListaYAlimentanLosDatosDeSiempre() {
-        mostrarMiembros(ids.getValue("c1"))
-        botonEditar(1).performClick() // RAMÓN SOFÍA, 63 años
+    fun elConsumoProblematicoSeEscribeYLlevaAlGrupoIII() {
+        mostrarMiembros(ids.getValue("c3"))
+        botonEditar(0).performScrollTo().performClick() // PÉREZ JUAN, 40 años
         esperar { hayTexto("4. Factores de riesgo según la edad") }
         abrirSeccion("4. Factores de riesgo según la edad")
-        esperar { existe("factor_CONSUMO") }
-        rule.onNodeWithTag("factor_CONSUMO").performScrollTo().performClick()
-        rule.onNodeWithTag("factor_VIOLENCIA").performScrollTo().performClick()
+        esperar { existe("factor_buscar") }
+        rule.onNodeWithTag("factor_buscar").performScrollTo().performTextInput("alcohol")
+        esperar { existe("factor_sugerencia_CONSUMO_ALCOHOL") }
+        assertTrue("la opción dice a qué grupo pertenece", hayTexto("Grupo III"))
+        rule.onNodeWithTag("factor_sugerencia_CONSUMO_ALCOHOL").performScrollTo().performClick()
         rule.onNodeWithText("Guardar cambios del integrante").performClick()
-        esperar { miembros(ids.getValue("c1")).first { it.apellidosNombres == "RAMÓN SOFÍA" }.consumoAlcoholDrogas == true }
-        val sofia = miembros(ids.getValue("c1")).first { it.apellidosNombres == "RAMÓN SOFÍA" }
-        assertEquals(true, sofia.victimaViolencia)
-        // la diabetes que traía de antes se conserva: no se pierde al quitar la pregunta manual
-        assertEquals(true, sofia.diabetesMellitus)
+        esperar { miembros(ids.getValue("c3")).any { it.consumoAlcoholDrogas == true } }
+        assertTrue(miembros(ids.getValue("c3")).first { it.consumoAlcoholDrogas == true }.factoresRiesgoEdadJson.contains("CONSUMO_ALCOHOL"))
     }
 
     @Test
     fun alElegirUnDiagnosticoDeTuberculosisApareceLaSeccionDeAlertas() {
         mostrarMiembros(ids.getValue("c1"))
-        botonEditar(0).performClick()
+        botonEditar(0).performScrollTo().performClick()
         esperar { hayTexto("3. Seguimiento preventivo") }
         assertFalse(hayTexto("6. Alertas Epidemiológicas"))
         abrirSeccion("3. Seguimiento preventivo")
@@ -138,7 +152,19 @@ class FactoresRiesgoUiTest {
         esperar { hayTexto("6. Alertas Epidemiológicas") }
     }
 
-    // ---------- actores comunitarios ----------
+    // ---------- botones flotantes ----------
+
+    @Test
+    fun laListaTieneDosBotonesFlotantesYNoElCuadroContadorNiElBotonGrande() {
+        mostrarMiembros(ids.getValue("c1"))
+        assertTrue(existe("boton_agregar_integrante"))
+        assertTrue(existe("boton_actores_comunitarios"))
+        assertFalse("el cuadro contador se quitó", hayTexto("integrante(s) registrado(s)"))
+        assertTrue("el botón grande se quitó", rule.onAllNodes(hasText("Agregar un integrante familiar")).fetchSemanticsNodes().isEmpty())
+        assertTrue("el botón verde no lleva texto", rule.onAllNodes(hasText("Actores comunitarios")).fetchSemanticsNodes().isEmpty())
+        rule.onNodeWithTag("boton_agregar_integrante").performClick()
+        esperar { hayTexto("Agregar integrante") }
+    }
 
     @Test
     fun elBotonVerdeAsignaUnActorComunitarioYMuestraSuIcono() {
@@ -167,37 +193,46 @@ class FactoresRiesgoUiTest {
     }
 
     @Test
-    fun laEmbarazadaVeLaListaYUnCuadroQueDiceSuGrupo() {
+    fun laEmbarazadaEscribeSusCriteriosYUnCuadroDiceSuGrupoReal() {
         mostrarSalud(ids.getValue("c2"))
         esperar { hayEditar() }
         botonEditar(0).performClick() // TORRES LUCÍA, 24 años
-        esperar { hayTexto("5. Riesgo 1 · Bajo") }
+        esperar { hayTexto("5. Riesgo obstétrico") }
         assertFalse("los 4 botones de riesgo ya no existen", hayTexto("Muy alto"))
+        assertTrue(hayTexto("Rol familiar"))
 
         rule.onNodeWithTag("resultado_obstetrico").performScrollTo()
         assertTrue("sin criterios: Grupo I", hayTexto("Grupo I"))
 
-        abrirSeccion("5. Riesgo 1 · Bajo")
-        esperar { existe("criterio_CONTROL_INSUFICIENTE") }
-        rule.onNodeWithTag("criterio_CONTROL_INSUFICIENTE").performScrollTo().performClick()
+        elegir("criterio", "control", "CONTROL_INSUFICIENTE")
         esperar { hayTexto("Grupo II") }
         assertTrue(hayTexto("Riesgo 1 · Bajo."))
 
-        abrirSeccion("7. Riesgo 3 · Inminente")
-        esperar { existe("criterio_HEMORRAGIA_VAGINAL") }
-        rule.onNodeWithTag("criterio_HEMORRAGIA_VAGINAL").performScrollTo().performClick()
+        elegir("criterio", "hemorragia", "HEMORRAGIA_VAGINAL")
         esperar { existe("aviso_riesgo_inminente") }
         assertTrue("no es una patología crónica: sigue en Grupo II", hayTexto("Grupo II"))
 
-        abrirSeccion("6. Riesgo 2 · Alto")
-        esperar { existe("criterio_EPILEPSIA") }
-        rule.onNodeWithTag("criterio_EPILEPSIA").performScrollTo().performClick()
+        elegir("criterio", "epilepsia", "EPILEPSIA")
         esperar { hayTexto("Grupo III") }
+        assertTrue("solo se muestran los motivos del grupo en que quedó", hayTexto("Motivos del Grupo III"))
 
         rule.onNodeWithText("Guardar cambios del embarazo").performClick()
         esperar {
             runBlocking { database.sincronizacionDao().embarazadas(ids.getValue("c2")) }
                 .any { it.riesgoObstetrico == "MUY_ALTO" && it.factoresObstetricosJson.contains("EPILEPSIA") }
         }
+    }
+
+    @Test
+    fun enLaEmbarazadaElConsumoProblematicoDiceGrupoIII() {
+        mostrarSalud(ids.getValue("c2"))
+        esperar { hayEditar() }
+        botonEditar(0).performClick()
+        esperar { hayTexto("5. Riesgo obstétrico") }
+        rule.onNodeWithTag("criterio_buscar").performScrollTo().performTextInput("alcohol")
+        esperar { existe("criterio_sugerencia_CONSUMO_ALCOHOL") }
+        assertTrue(hayTexto("Grupo III"))
+        rule.onNodeWithTag("criterio_sugerencia_CONSUMO_ALCOHOL").performScrollTo().performClick()
+        esperar { hayTexto("Motivos del Grupo III") }
     }
 }

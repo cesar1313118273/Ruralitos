@@ -48,8 +48,8 @@ class FactoresRiesgoTest {
         // la violencia está en todas las edades; el consumo, desde los 10 años
         GrupoEdadRiesgo.entries.filter { it != GrupoEdadRiesgo.EMBARAZADA && it != GrupoEdadRiesgo.EMBARAZADA_ADOLESCENTE }
             .forEach { assertTrue(it.name, FactoresRiesgoEdad.disponibles(it).any { f -> f.codigo == FactoresRiesgoEdad.VIOLENCIA }) }
-        assertFalse(FactoresRiesgoEdad.disponibles(GrupoEdadRiesgo.DOS_NUEVE).any { it.codigo == FactoresRiesgoEdad.CONSUMO })
-        assertTrue(FactoresRiesgoEdad.disponibles(GrupoEdadRiesgo.ADOLESCENTE).any { it.codigo == FactoresRiesgoEdad.CONSUMO })
+        assertFalse(FactoresRiesgoEdad.disponibles(GrupoEdadRiesgo.DOS_NUEVE).any { it.codigo == FactoresRiesgoEdad.CONSUMO_ALCOHOL })
+        assertTrue(FactoresRiesgoEdad.disponibles(GrupoEdadRiesgo.ADOLESCENTE).any { it.codigo == FactoresRiesgoEdad.CONSUMO_ALCOHOL })
     }
 
     @Test
@@ -73,10 +73,10 @@ class FactoresRiesgoTest {
 
     @Test
     fun consumoYViolenciaSeLeenDeLaLista() {
-        val m = persona(factores = setOf(FactoresRiesgoEdad.CONSUMO, FactoresRiesgoEdad.VIOLENCIA))
+        val m = persona(factores = setOf(FactoresRiesgoEdad.CONSUMO_ALCOHOL, FactoresRiesgoEdad.VIOLENCIA))
         assertTrue(FactoresRiesgoEdad.hayConsumo(m))
         assertTrue(FactoresRiesgoEdad.hayViolencia(m))
-        assertFalse(FactoresRiesgoEdad.hayConsumo(persona(nacimiento = "10/10/2018", factores = setOf(FactoresRiesgoEdad.CONSUMO))))
+        assertFalse(FactoresRiesgoEdad.hayConsumo(persona(nacimiento = "10/10/2018", factores = setOf(FactoresRiesgoEdad.CONSUMO_ALCOHOL))))
     }
 
     @Test
@@ -220,7 +220,7 @@ class FactoresRiesgoTest {
         val ev = evaluar(embarazo(), m)
         val codigos = ev.razones.map { it.codigo }
         assertTrue("ANALFABETISMO" in codigos)
-        assertTrue("ALCOHOLISMO" in codigos)
+        assertTrue("CONSUMO_ALCOHOL" in codigos)
         assertTrue("OBESIDAD" in codigos)
         // una embarazada con hipertensión registrada es Grupo III por la definición del grupo
         val hta = persona(nacimiento = "10/10/1996", hipertension = true)
@@ -234,5 +234,108 @@ class FactoresRiesgoTest {
         assertEquals(9, FactoresObstetricos.riesgo3.size)
         assertEquals(FactoresObstetricos.todos.size, FactoresObstetricos.todos.map { it.codigo }.toSet().size)
         assertTrue(FactoresObstetricos.todos.none { it.codigo.any { c -> c.isLowerCase() } })
+    }
+
+    // ---------- del grupo más alto al más bajo ----------
+
+    @Test
+    fun conHipertensionLosFactoresNoMuevenAlGrupoII() {
+        // 35 años con hipertensión (diagnóstico I10) y un factor de riesgo elegido: sigue en Grupo III
+        val m = persona(factores = setOf("SEDENTARISMO"), hipertension = true, diagnosticosJson = "[{\"codigo\":\"I10.X\",\"descripcion\":\"HTA\"}]")
+        val r = DispensarizacionAutomatica.clasificar(m)
+        assertEquals(GrupoDispensarizacion.III, r.grupo)
+        assertFalse("no se mezclan los motivos del Grupo II", r.razones.any { it.contains("sedentarismo") })
+    }
+
+    @Test
+    fun elConsumoProblematicoYElRiesgoSuicidaSonGrupoIIINoGrupoII() {
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(persona(factores = setOf("CONSUMO_ALCOHOL"))).grupo)
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(persona(factores = setOf("CONSUMO_DROGAS"))).grupo)
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(persona(factores = setOf("RIESGO_SUICIDA"))).grupo)
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(persona(factores = setOf("INTENTO_AUTOLITICO"))).grupo)
+        // el tabaquismo sigue siendo un factor del Grupo II
+        assertEquals(GrupoDispensarizacion.II, DispensarizacionAutomatica.clasificar(persona(factores = setOf("TABAQUISMO"))).grupo)
+    }
+
+    @Test
+    fun losCodigosDeLaPrimeraVersionSiguenValiendoComoGrupoIII() {
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(persona(factores = setOf("CONSUMO"))).grupo)
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(persona(factores = setOf("INTENTO_SUICIDA"))).grupo)
+    }
+
+    @Test
+    fun elConsumoYElRiesgoSuicidaNoSalenEnNinoPequenos() {
+        val nino = persona(nacimiento = "10/10/2018", factores = setOf("CONSUMO_ALCOHOL", "RIESGO_SUICIDA"))
+        assertEquals(GrupoDispensarizacion.I, DispensarizacionAutomatica.clasificar(nino).grupo)
+    }
+
+    @Test
+    fun soloLosDiagnosticosDelGrupoIIIcuentan() {
+        listOf("I10.X", "E11.9", "A15.0", "B20.1", "F32.9", "F10.2", "G40.9", "C50.9", "J45.9", "N18.9", "X70", "Z91.5", "M05.9", "Q90.9")
+            .forEach { assertTrue(it, EstrategiasDesdeCie10.esGrupoIII(it)) }
+        listOf("J00", "A09", "S72.0", "N39.0", "K35.8", "R05", "H66.9", "O60.0", "Z00.0", "L02.9", "B34.9")
+            .forEach { assertFalse(it, EstrategiasDesdeCie10.esGrupoIII(it)) }
+    }
+
+    @Test
+    fun unDiagnosticoAgudoNoLlevaAlGrupoIII() {
+        val gripe = persona(diagnosticosJson = "[{\"codigo\":\"J00\",\"descripcion\":\"RESFRIADO\"}]")
+        assertEquals(GrupoDispensarizacion.I, DispensarizacionAutomatica.clasificar(gripe).grupo)
+        val epilepsia = persona(diagnosticosJson = "[{\"codigo\":\"G40.9\",\"descripcion\":\"EPILEPSIA\"}]")
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(epilepsia).grupo)
+    }
+
+    @Test
+    fun laDiscapacidadSigueMandandoAlGrupoIV() {
+        val m = persona(factores = setOf("CONSUMO_ALCOHOL"), hipertension = true).copy(discapacidadFisica = true)
+        assertEquals(GrupoDispensarizacion.IV, DispensarizacionAutomatica.clasificar(m).grupo)
+    }
+
+    // ---------- escribir y elegir ----------
+
+    @Test
+    fun alEscribirSeSugierenLasOpcionesSinImportarTildesNiMayusculas() {
+        val adulto = GrupoEdadRiesgo.ADULTO
+        assertEquals(listOf("SEDENTARISMO"), FactoresRiesgoEdad.sugerencias(adulto, "sedent", emptySet()).map { it.codigo })
+        assertTrue(FactoresRiesgoEdad.sugerencias(adulto, "CONSUMO", emptySet()).map { it.codigo }.containsAll(listOf("CONSUMO_ALCOHOL", "CONSUMO_DROGAS")))
+        assertEquals(listOf("RIESGO_CAIDA"), FactoresRiesgoEdad.sugerencias(GrupoEdadRiesgo.ADULTO_MAYOR, "caida", emptySet()).map { it.codigo })
+        assertTrue("lo ya elegido no se vuelve a ofrecer", FactoresRiesgoEdad.sugerencias(adulto, "sedent", setOf("SEDENTARISMO")).isEmpty())
+        assertTrue(FactoresRiesgoEdad.sugerencias(adulto, "", emptySet()).isEmpty())
+        assertTrue(FactoresRiesgoEdad.sugerencias(adulto, "zzzz", emptySet()).isEmpty())
+        assertTrue(FactoresObstetricos.sugerencias("anemia", emptySet()).any { it.codigo == "ANEMIA" })
+    }
+
+    @Test
+    fun enLaEmbarazadaElConsumoProblematicoEsGrupoIII() {
+        val m = persona(nacimiento = "10/10/1996")
+        val e = embarazo(factores = setOf("CONSUMO_DROGAS"))
+        assertEquals(GrupoDispensarizacion.III, DispensarizacionAutomatica.clasificar(m, e).grupo)
+        // y si la persona ya lo tiene marcado en su lista, se detecta sola
+        val conLista = persona(nacimiento = "10/10/1996", factores = setOf("CONSUMO_ALCOHOL"))
+        assertTrue(evaluar(embarazo(), conLista).razones.any { it.codigo == "CONSUMO_ALCOHOL" && it.automatica })
+    }
+
+    // ---------- rol familiar ----------
+
+    @Test
+    fun cadaRolEsUnaOpcionSeparada() {
+        val roles = RolFamiliar.opciones.map { it.first }
+        listOf("JEFE DE FAMILIA", "JEFA DE FAMILIA", "HIJO", "HIJA", "PADRE", "MADRE").forEach { assertTrue(it, it in roles) }
+        assertFalse(roles.any { it.contains("/A") && !it.startsWith("CÓNYUGE") })
+    }
+
+    @Test
+    fun losRolesAntiguosSePasanALasOpcionesNuevasSegunElSexo() {
+        assertEquals("JEFE DE FAMILIA", RolFamiliar.normalizar("JEFE/A DE FAMILIA", "H"))
+        assertEquals("JEFA DE FAMILIA", RolFamiliar.normalizar("JEFE/A DE FAMILIA", "M"))
+        assertEquals("HIJA", RolFamiliar.normalizar("HIJO/A", "M"))
+        assertEquals("PADRE", RolFamiliar.normalizar("PADRE/MADRE", "H"))
+        assertEquals("HIJO", RolFamiliar.normalizar("HIJO", "M"))
+        assertEquals("", RolFamiliar.normalizar("", "H"))
+        assertTrue(RolFamiliar.esJefe("JEFA DE FAMILIA") && RolFamiliar.esJefe("JEFE DE FAMILIA") && RolFamiliar.esJefe("JEFE/A DE FAMILIA"))
+        assertFalse(RolFamiliar.esJefe("HIJA"))
+        assertEquals("M", RolFamiliar.sexoDelRol("JEFA DE FAMILIA"))
+        assertEquals("H", RolFamiliar.sexoDelRol("PADRE"))
+        assertEquals(null, RolFamiliar.sexoDelRol("OTRO FAMILIAR"))
     }
 }

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.ruralitos.app.data.familiograma.AlmacenFamiliograma
 import com.ruralitos.app.data.familiograma.aIntegranteFamiliograma
 import com.ruralitos.app.data.local.database.RuralitosDatabase
+import com.ruralitos.app.domain.RolFamiliar
 import com.ruralitos.app.domain.SaludoProfesional
 import com.ruralitos.app.domain.familiograma.ArmadoFamiliograma
 import com.ruralitos.app.domain.familiograma.Familiograma
@@ -113,7 +114,7 @@ fun FamiliogramaScreen(
     }
 
     val integrantes = miembros.map { it.aIntegranteFamiliograma() }
-    val jefe = miembros.firstOrNull { it.parentesco.startsWith("JEFE") }
+    val jefe = miembros.firstOrNull { RolFamiliar.esJefe(it.parentesco) }
     val subtituloEditor = jefe?.let {
         val apellido = it.apellidosNombres.trim().split(Regex("\\s+")).firstOrNull().orEmpty()
         if (apellido.isBlank()) null else "Familia ${apellido.lowercase().replaceFirstChar { c -> c.uppercase() }}"

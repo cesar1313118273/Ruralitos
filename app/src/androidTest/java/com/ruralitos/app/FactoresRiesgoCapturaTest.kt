@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ruralitos.app.data.local.database.RuralitosDatabase
@@ -51,7 +52,7 @@ class FactoresRiesgoCapturaTest {
 
         // 1. lista de integrantes con el botón verde
         rule.setContent { RuralitosTheme { MiembrosFamiliaScreen(fichaId = ids.getValue("c1"), usuarioId = 7L, onContinuar = {}, onSalir = {}) } }
-        rule.waitUntil(20_000) { hayTexto("integrante(s) registrado(s)") }
+        rule.waitUntil(20_000) { hay("boton_agregar_integrante") }
         foto(1)
         rule.onNodeWithTag("boton_actores_comunitarios").performClick()
         rule.waitUntil(10_000) { hay("lista_actores") }
@@ -62,8 +63,11 @@ class FactoresRiesgoCapturaTest {
         rule.onAllNodes(hasText("Editar"))[0].performClick()
         rule.waitUntil(20_000) { hayTexto("4. Factores de riesgo según la edad") }
         rule.onNodeWithText("4. Factores de riesgo según la edad").performScrollTo().performClick()
-        rule.waitUntil(10_000) { hay("factor_RIESGO_CAIDA") }
-        rule.onNodeWithTag("factor_FRAGILIDAD").performScrollTo().performClick()
+        rule.waitUntil(10_000) { hay("factor_buscar") }
+        rule.onNodeWithTag("factor_buscar").performScrollTo().performTextInput("c")
+        rule.waitUntil(10_000) { hay("factor_sugerencia_RIESGO_CAIDA") }
+        foto(6)
+        rule.onNodeWithTag("factor_sugerencia_RIESGO_CAIDA").performScrollTo().performClick()
         rule.onNodeWithTag("resumen_factores").performScrollTo()
         foto(3)
     }
@@ -76,13 +80,29 @@ class FactoresRiesgoCapturaTest {
         rule.waitUntil(20_000) { hayTexto("Embarazos registrados") }
         rule.waitUntil(20_000) { rule.onAllNodes(hasText("Editar")).fetchSemanticsNodes().isNotEmpty() }
         rule.onAllNodes(hasText("Editar"))[0].performClick()
-        rule.waitUntil(20_000) { hayTexto("5. Riesgo 1 · Bajo") }
-        rule.onNodeWithText("5. Riesgo 1 · Bajo").performScrollTo().performClick()
-        rule.waitUntil(10_000) { hay("criterio_CONTROL_INSUFICIENTE") }
-        rule.onNodeWithTag("criterio_ANALFABETISMO").performScrollTo().performClick()
-        rule.onNodeWithTag("criterio_CONTROL_INSUFICIENTE").performScrollTo().performClick()
+        rule.waitUntil(20_000) { hayTexto("5. Riesgo obstétrico") }
+        rule.waitUntil(10_000) { hay("criterio_buscar") }
+        rule.onNodeWithTag("criterio_buscar").performScrollTo().performTextInput("control")
+        rule.waitUntil(10_000) { hay("criterio_sugerencia_CONTROL_INSUFICIENTE") }
+        rule.onNodeWithTag("criterio_sugerencia_CONTROL_INSUFICIENTE").performScrollTo().performClick()
+        rule.onNodeWithTag("criterio_buscar").performScrollTo().performTextInput("alcohol")
+        rule.waitUntil(10_000) { hay("criterio_sugerencia_CONSUMO_ALCOHOL") }
         foto(4)
         rule.onNodeWithTag("resultado_obstetrico").performScrollTo()
         foto(5)
+    }
+
+    @Test
+    fun dejaElFormularioNuevoParaFotografiarlo() {
+        if (InstrumentationRegistry.getArguments().getString("dejarAbierto") != "1") return
+        val ids = runBlocking { DatosMapaParlante.sembrar(database) }
+        rule.setContent { RuralitosTheme { MiembrosFamiliaScreen(fichaId = ids.getValue("c1"), usuarioId = 7L, onContinuar = {}, onSalir = {}, mostrarAvance = true) } }
+        rule.waitUntil(20_000) { hay("boton_agregar_integrante") }
+        rule.onNodeWithTag("boton_agregar_integrante").performClick()
+        rule.waitUntil(10_000) { hayTexto("Agregar integrante") }
+        rule.onNodeWithText("2. Características personales").performScrollTo()
+        foto(7)
+        rule.onNodeWithText("5. Discapacidad").performScrollTo()
+        foto(8)
     }
 }
