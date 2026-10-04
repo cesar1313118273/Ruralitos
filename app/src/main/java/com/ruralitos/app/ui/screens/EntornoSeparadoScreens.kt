@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.ui.platform.testTag
+import com.ruralitos.app.ui.components.BotonFlotanteRedondo
+import com.ruralitos.app.ui.components.PilaBotonesFlotantes
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -426,6 +429,7 @@ fun ContaminacionAmbientalScreen(
         return
     }
 
+    Box(Modifier.fillMaxSize()) {
     PantallaRuralitos(
         titulo = "Contaminación ambiental",
         descripcion = "Registra la fecha, el tipo de contaminación y su posible causante.",
@@ -441,20 +445,6 @@ fun ContaminacionAmbientalScreen(
 
         }
     ) {
-        SeccionFormularioRuralitos(
-            titulo = "Informes identificados",
-            descripcion = "${items.size} registro(s). Cada dato se exporta por separado en la hoja 4."
-        ) {
-            BotonPrincipalRuralitos(
-                texto = "Registrar contaminación",
-                descripcion = "Agregar fecha, descripción y causante",
-                color = NaranjaClinico,
-                onClick = {
-                    editando = null
-                    mostrarFormulario = true
-                }
-            )
-        }
         items.forEach { item ->
             TarjetaRegistroRuralitos(
                 titulo = item.fechaInforme,
@@ -485,6 +475,18 @@ fun ContaminacionAmbientalScreen(
             )
         }
     }
+    PilaBotonesFlotantes {
+        BotonFlotanteRedondo(
+            descripcion = "Registrar contaminación",
+            color = NaranjaClinico,
+            etiquetaPrueba = "boton_agregar_contaminacion",
+            onClick = {
+                editando = null
+                mostrarFormulario = true
+            }
+        )
+    }
+    }
 }
 
 @Composable
@@ -504,6 +506,7 @@ fun LugaresTratamientoScreen(
     var texto by remember { mutableStateOf("") }
     var editando by remember { mutableStateOf<LugarTratamientoEntity?>(null) }
     var eliminar by remember { mutableStateOf<LugarTratamientoEntity?>(null) }
+    var mostrandoVentana by remember { mutableStateOf(false) }
 
     eliminar?.let { seleccionado ->
         AlertDialog(
@@ -529,6 +532,7 @@ fun LugaresTratamientoScreen(
         )
     }
 
+    Box(Modifier.fillMaxSize()) {
     PantallaRuralitos(
         titulo = "Lugar o persona para la atención",
         descripcion = "Registra centros de salud, lugares alternativos o personas de confianza a quienes acude la familia.",
@@ -544,88 +548,11 @@ fun LugaresTratamientoScreen(
 
         }
     ) {
-        SeccionFormularioRuralitos(
-            titulo = if (editando == null) "Agregar lugar o persona" else "Editar registro seleccionado",
-            descripcion = "Anota dónde o con quién se atiende la familia cuando alguien se enferma: un centro de salud, un hospital, un médico particular, un curandero o una persona de confianza. Puedes registrar hasta 4."
-        ) {
-            OutlinedTextField(
-                value = texto,
-                onValueChange = { texto = it },
-                label = { Text("Centro, lugar o persona") },
-                supportingText = { Text("Escribe una descripción clara y reconocible") },
-                minLines = 3,
-                modifier = Modifier.fillMaxWidth()
-            )
-            BotonPrincipalRuralitos(
-                texto = when {
-                    editando != null -> "Guardar cambios del registro"
-                    lugares.size >= 4 -> "Límite de 4 registros alcanzado"
-                    else -> "Guardar nuevo lugar o persona"
-                },
-                descripcion = if (lugares.size >= 4 && editando == null) {
-                    "Edita o elimina un registro para poder agregar otro"
-                } else {
-                    "Guardar en el siguiente renglón disponible de la hoja 4"
-                },
-                color = if (editando == null) CianRuralitos else AzulClinico,
-                enabled = texto.isNotBlank() && (editando != null || lugares.size < 4),
-                onClick = {
-                    if (texto.isNotBlank()) {
-                        val actual = editando
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                database.withTransaction {
-                                    if (actual == null) {
-                                        check(lugares.size < 4) { "La ficha ya tiene cuatro lugares de atención." }
-                                        database.fichaContenidoDao().guardarLugarTratamiento(
-                                            LugarTratamientoEntity(
-                                                fichaId = fichaId,
-                                                descripcion = texto.trim()
-                                            )
-                                        )
-                                    } else {
-                                        database.fichaContenidoDao().actualizarLugarTratamiento(
-                                            actual.copy(descripcion = texto.trim())
-                                        )
-                                    }
-                                    database.fichaFamiliarDao().marcarPendiente(fichaId)
-                                }
-                            }
-                            texto = ""
-                            editando = null
-                        }
-                    }
-                },
-                modifier = Modifier.padding(top = 11.dp)
-            )
-            if (editando != null) {
-                BotonSecundarioRuralitos(
-                    texto = "Cancelar edición",
-                    descripcion = "Mantener el registro como estaba",
-                    onClick = {
-                        editando = null
-                        texto = ""
-                    },
-                    modifier = Modifier.padding(top = 9.dp)
-                )
-            }
-        }
         if (lugares.isEmpty()) {
             RuralitosEmptyState(
                 titulo = "Sin red de atención registrada",
-                descripcion = "Agrega un centro, lugar o persona de confianza.",
+                descripcion = "Toca el botón + para agregar un centro, lugar o persona de confianza.",
                 ilustracion = R.drawable.ruralitos_icono_red
-            )
-        } else {
-            MensajeEstadoRuralitos(
-                titulo = "${lugares.size} lugar(es) o persona(s)",
-                descripcion = if (lugares.size >= 4) {
-                    "Ya registraste los 4 lugares permitidos. Puedes editar o eliminar uno."
-                } else {
-                    "Puedes editar cada registro o agregar ${4 - lugares.size} más."
-                },
-                color = AzulClinico,
-                simbolo = lugares.size.toString()
             )
         }
         lugares.forEachIndexed { index, item ->
@@ -637,10 +564,89 @@ fun LugaresTratamientoScreen(
                 onEditar = {
                     editando = item
                     texto = item.descripcion
+                    mostrandoVentana = true
                 },
                 onEliminar = { eliminar = item }
             )
         }
+    }
+    PilaBotonesFlotantes {
+        BotonFlotanteRedondo(
+            descripcion = "Agregar lugar o persona para la atención",
+            color = CianRuralitos,
+            etiquetaPrueba = "boton_agregar_lugar",
+            onClick = {
+                if (lugares.size >= 4) {
+                    Toast.makeText(
+                        context,
+                        "Ya registraste los 4 lugares permitidos. Edita o elimina uno para agregar otro.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    editando = null
+                    texto = ""
+                    mostrandoVentana = true
+                }
+            }
+        )
+    }
+    }
+
+    if (mostrandoVentana) {
+        AlertDialog(
+            onDismissRequest = { mostrandoVentana = false; editando = null; texto = "" },
+            title = { Text(if (editando == null) "Agregar lugar o persona" else "Editar lugar o persona") },
+            text = {
+                Column {
+                    Text(
+                        "Anota dónde o con quién se atiende la familia cuando alguien se enferma: un centro de salud, un hospital, un médico particular, un curandero o una persona de confianza. Puedes registrar hasta 4.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = texto,
+                        onValueChange = { texto = it },
+                        label = { Text("Centro, lugar o persona") },
+                        supportingText = { Text("Escribe una descripción clara y reconocible") },
+                        minLines = 3,
+                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp).testTag("texto_lugar")
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    modifier = Modifier.testTag("guardar_lugar"),
+                    enabled = texto.isNotBlank() && (editando != null || lugares.size < 4),
+                    onClick = {
+                        val actual = editando
+                        val descripcion = texto.trim()
+                        mostrandoVentana = false
+                        editando = null
+                        texto = ""
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                database.withTransaction {
+                                    if (actual == null) {
+                                        check(lugares.size < 4) { "La ficha ya tiene cuatro lugares de atención." }
+                                        database.fichaContenidoDao().guardarLugarTratamiento(
+                                            LugarTratamientoEntity(fichaId = fichaId, descripcion = descripcion)
+                                        )
+                                    } else {
+                                        database.fichaContenidoDao().actualizarLugarTratamiento(
+                                            actual.copy(descripcion = descripcion)
+                                        )
+                                    }
+                                    database.fichaFamiliarDao().marcarPendiente(fichaId)
+                                }
+                            }
+                        }
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { mostrandoVentana = false; editando = null; texto = "" }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

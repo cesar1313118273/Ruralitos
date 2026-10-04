@@ -6,9 +6,9 @@ import org.junit.Test
 class NavegacionFichaTest {
     @Test
     fun `crear ficha avanza y regresa entre secciones sin salir al inicio`() {
-        assertEquals("saludFamiliar", NavegacionFicha.avanzar("miembros", false))
+        assertEquals("riesgos", NavegacionFicha.avanzar("miembros", false))
         assertEquals("ubicacion", NavegacionFicha.regresar("miembros", false, false))
-        assertEquals("miembros", NavegacionFicha.regresar("saludFamiliar", false, false))
+        assertEquals("miembros", NavegacionFicha.regresar("riesgos", false, false))
         assertEquals("tratamiento", NavegacionFicha.regresar("revisionFicha", false, false))
     }
 
@@ -20,7 +20,7 @@ class NavegacionFichaTest {
 
     @Test
     fun `editar ficha continua a siguiente seccion y regresar vuelve al panel`() {
-        assertEquals("saludFamiliar", NavegacionFicha.avanzar("miembros", false))
+        assertEquals("riesgos", NavegacionFicha.avanzar("miembros", false))
         assertEquals("menuFicha", NavegacionFicha.regresar("miembros", true, false))
         assertEquals("revisionFicha", NavegacionFicha.avanzar("tratamiento", false))
     }

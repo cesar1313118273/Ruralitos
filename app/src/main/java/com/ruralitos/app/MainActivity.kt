@@ -78,7 +78,7 @@ import com.ruralitos.app.ui.screens.BuscarUnidadOperativaScreen
 import com.ruralitos.app.data.local.entity.EstablecimientoSaludEntity
 import com.ruralitos.app.ui.screens.UbicacionFamiliaScreen
 import com.ruralitos.app.ui.screens.MiembrosFamiliaScreen
-import com.ruralitos.app.ui.screens.SaludFamiliarScreen
+import com.ruralitos.app.data.local.entity.EmbarazadaEntity
 import com.ruralitos.app.ui.screens.RiesgoFamiliarScreen
 import com.ruralitos.app.ui.screens.GestionRiesgoScreen
 import com.ruralitos.app.ui.screens.ContaminacionAmbientalScreen
@@ -354,7 +354,7 @@ fun RuralitosApp() {
     }
 
     // Crea la ficha (con todo lo capturado antes) en el momento de guardar al jefe o jefa.
-    suspend fun crearFichaConJefe(miembro: MiembroFamiliaEntity, telefono: String): Boolean {
+    suspend fun crearFichaConJefe(miembro: MiembroFamiliaEntity, telefono: String, embarazo: EmbarazadaEntity?): Boolean {
         val sala = salaSeleccionada ?: return false
         val eais = eaisSeleccionado ?: return false
         val territorio = territorioSeleccionado ?: return false
@@ -414,6 +414,7 @@ fun RuralitosApp() {
                         )
                     )
                     database.fichaContenidoDao().guardarMiembro(miembro.copy(fichaId = id))
+                    if (embarazo != null) database.fichaContenidoDao().guardarEmbarazada(embarazo.copy(fichaId = id))
                     registrarEvento(database, id, numeroAsignado, usuario, "FICHA_CREADA")
                     if (ubicacion != null) {
                         registrarEvento(database, id, numeroAsignado, usuario, "UBICACION_REGISTRADA")
@@ -1434,8 +1435,6 @@ fun RuralitosApp() {
                                     "datos" -> "miembros"
                                     "ubicacion" -> "editarUbicacion"
                                     "miembros" -> "miembros"
-                                    "salud" -> "saludFamiliar"
-                                    "dispensarizacion" -> "dispensarizacionFicha"
                                     "riesgos" -> "riesgos"
                                     "gestion" -> "gestionRiesgo"
                                     "familiograma" -> "familiograma"
@@ -1715,21 +1714,6 @@ fun RuralitosApp() {
                     }
                 }
 
-                "saludFamiliar" -> {
-                    val fichaId = fichaIdActual
-                    if (fichaId != null) {
-                        SaludFamiliarScreen(
-                            fichaId = fichaId,
-                            onContinuar = { avanzarFicha("saludFamiliar") },
-                            onSalir = { regresarFicha("saludFamiliar") },
-                            textoRegresar = NavegacionFicha.textoRegresar(modoEdicion, desdeRevision),
-                            descripcionRegresar = NavegacionFicha.descripcionRegresar(modoEdicion, desdeRevision)
-                        )
-                    } else {
-                        pantallaActual = "inicio"
-                    }
-                }
-
                 "riesgos" -> {
                     val fichaId = fichaIdActual
                     if (fichaId != null) {
@@ -1754,6 +1738,7 @@ fun RuralitosApp() {
                             responsableActual = usuarioActual?.nombres.orEmpty(),
                             onContinuar = { avanzarFicha("gestionRiesgo") },
                             onSalir = { regresarFicha("gestionRiesgo") },
+                            modoEdicion = modoEdicion,
                             textoRegresar = NavegacionFicha.textoRegresar(modoEdicion, desdeRevision),
                             descripcionRegresar = NavegacionFicha.descripcionRegresar(modoEdicion, desdeRevision)
                         )
@@ -1834,8 +1819,6 @@ fun RuralitosApp() {
                                         "datos" -> "miembros"
                                         "ubicacion" -> "editarUbicacion"
                                         "miembros" -> "miembros"
-                                        "salud" -> "saludFamiliar"
-                                        "dispensarizacion" -> "dispensarizacionFicha"
                                         "riesgos" -> "riesgos"
                                         "gestion" -> "gestionRiesgo"
                                         "familiograma" -> "familiograma"

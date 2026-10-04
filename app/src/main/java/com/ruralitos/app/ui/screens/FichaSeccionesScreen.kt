@@ -93,7 +93,7 @@ fun FichaSeccionesScreen(
             "1. Información del hogar",
             "Identificación, dirección y personas que integran la familia.",
             listOf(
-                SeccionFicha("ubicacion", "1", "Dirección y vivienda", "Sector, barrio, referencias y número de casa. El GPS está en Croquis.", CianRuralitos),
+                SeccionFicha("ubicacion", "1", "Dirección y vivienda", "Sector, barrio, referencias y número de casa. El GPS está en Ubicación de vivienda.", CianRuralitos),
                 SeccionFicha("miembros", "2", "Integrantes de la familia", "Registra al jefe o jefa del hogar y a cada miembro; la cédula y el teléfono del jefe identifican la ficha.", MoradoClinico)
             )
         ),
@@ -101,20 +101,18 @@ fun FichaSeccionesScreen(
             "2. Salud y evaluación familiar",
             "Registro clínico, calificación de riesgos y compromisos de seguimiento.",
             listOf(
-                SeccionFicha("salud", "3", "Embarazo y mortalidad", "Registra embarazadas y antecedentes de mortalidad familiar.", NaranjaClinico),
-                SeccionFicha("dispensarizacion", "🩺", "Registro general", "Grupos, indicadores y Excel de esta familia.", AzulClinico),
-                SeccionFicha("riesgos", "4", "Calificación del riesgo familiar", "Escoge descripciones claras; Ruralitos calcula la puntuación numérica.", RojoClinico),
-                SeccionFicha("gestion", "5", "Plan y seguimiento del riesgo", "Compromisos, evaluación del cumplimiento y observaciones.", AzulClinico)
+                SeccionFicha("riesgos", "3", "Calificación del riesgo familiar", "Escoge descripciones claras; Ruralitos calcula la puntuación numérica.", RojoClinico),
+                SeccionFicha("gestion", "4", "Plan y seguimiento del riesgo", "Compromisos, evaluación del cumplimiento y observaciones.", AzulClinico)
             )
         ),
         GrupoFicha(
             "3. Evidencias y entorno",
             "Imágenes, ubicación exacta y condiciones ambientales de la familia.",
             listOf(
-                SeccionFicha("familiograma", "6", "Imagen del familiograma", "Dibújalo en la app con los integrantes de la ficha o sube una foto. Aparecerá en Excel y PDF.", CianRuralitos),
-                SeccionFicha("croquis", "7", "Croquis, GPS y mapa", "Obtén latitud, longitud y altitud; mueve el punto y guarda el croquis.", AzulClinico),
-                SeccionFicha("contaminacion", "8", "Contaminación ambiental", "Fecha, tipo, descripción y causante de la contaminación.", NaranjaClinico),
-                SeccionFicha("tratamiento", "9", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", CianRuralitos)
+                SeccionFicha("familiograma", "5", "Imagen del familiograma", "Dibújalo en la app con los integrantes de la ficha o sube una foto. Aparecerá en Excel y PDF.", CianRuralitos),
+                SeccionFicha("croquis", "6", "Ubicación de vivienda", "Obtén latitud, longitud y altitud; mueve el punto y guarda el croquis.", AzulClinico),
+                SeccionFicha("contaminacion", "7", "Contaminación ambiental", "Fecha, tipo, descripción y causante de la contaminación.", NaranjaClinico),
+                SeccionFicha("tratamiento", "8", "Lugar de atención o persona", "Indica dónde o con quién recibe atención la familia.", CianRuralitos)
             )
         ),
         GrupoFicha(

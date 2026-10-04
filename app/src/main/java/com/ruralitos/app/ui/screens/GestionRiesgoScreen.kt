@@ -3,6 +3,7 @@ package com.ruralitos.app.ui.screens
 import android.widget.Toast
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,12 +31,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.GestionRiesgoEntity
+import com.ruralitos.app.ui.components.BotonAccionRuralitos
+import com.ruralitos.app.ui.components.BotonFlotanteRedondo
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.PilaBotonesFlotantes
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.EncabezadoRuralitos
 import com.ruralitos.app.ui.components.PantallaListaRuralitos
@@ -63,7 +68,9 @@ fun GestionRiesgoScreen(
     onContinuar: () -> Unit,
     onSalir: () -> Unit,
     textoRegresar: String = "Volver al panel de la ficha",
-    descripcionRegresar: String = "Conservar los datos y salir de esta sección"
+    descripcionRegresar: String = "Conservar los datos y salir de esta sección",
+    /** Solo al editar una ficha ya creada se puede evaluar el cumplimiento de cada seguimiento. */
+    modoEdicion: Boolean = false
 ) {
     val context = LocalContext.current
     val database = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
@@ -74,6 +81,26 @@ fun GestionRiesgoScreen(
     var mostrandoFormulario by remember { mutableStateOf(false) }
     var editando by remember { mutableStateOf<GestionRiesgoEntity?>(null) }
     var eliminar by remember { mutableStateOf<GestionRiesgoEntity?>(null) }
+    var evaluando by remember { mutableStateOf<GestionRiesgoEntity?>(null) }
+
+    evaluando?.let { seleccionado ->
+        EvaluacionCumplimientoScreen(
+            item = seleccionado,
+            onGuardar = { evaluado ->
+                scope.launch {
+                    runCatching {
+                        withContext(Dispatchers.IO) { database.fichaContenidoDao().actualizarGestionRiesgo(evaluado) }
+                    }.onSuccess {
+                        evaluando = null
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo guardar la evaluación.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onCancelar = { evaluando = null }
+        )
+        return
+    }
 
     if (mostrandoFormulario) {
         FormularioGestionRiesgoScreen(
@@ -127,11 +154,13 @@ fun GestionRiesgoScreen(
         )
     }
 
+    Box(Modifier.fillMaxSize()) {
     PantallaListaRuralitos(
         titulo = "Plan y seguimiento del riesgo",
-        descripcion = "Registra los compromisos de la familia y del equipo de salud, luego evalúa su cumplimiento.",
-        paso = 5,
-        totalPasos = 9,
+        descripcion = "Registra los compromisos de la familia y del equipo de salud" +
+            if (modoEdicion) ", luego evalúa su cumplimiento." else ".",
+        paso = 4,
+        totalPasos = 8,
         etiquetaPaso = "Salud y evaluación",
         onVolver = onSalir,
         barraAccion = {
@@ -144,22 +173,11 @@ fun GestionRiesgoScreen(
 
         }
     ) {
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Agregar nuevo seguimiento",
-                descripcion = "Crear compromisos y programar su evaluación",
-                color = CianRuralitos,
-                onClick = {
-                    editando = null
-                    mostrandoFormulario = true
-                }
-            )
-        }
         if (seguimientos.isEmpty()) {
             item {
                 MensajeEstadoRuralitos(
                     titulo = "Aún no hay seguimientos",
-                    descripcion = "Agrega el primer plan de acción para esta familia.",
+                    descripcion = "Toca el botón + para agregar el primer plan de acción de esta familia.",
                     color = AzulClinico,
                     simbolo = "+"
                 )
@@ -179,11 +197,13 @@ fun GestionRiesgoScreen(
                 },
                 onEliminar = { eliminar = item }
             ) {
-                Text(
-                    "Estado: ${nombreCumplimiento(item.cumplimiento)}",
-                    color = color,
-                    fontWeight = FontWeight.SemiBold
-                )
+                if (modoEdicion) {
+                    Text(
+                        "Estado: ${nombreCumplimiento(item.cumplimiento)}",
+                        color = color,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
                 if (item.compromisoFamilia.isNotBlank()) {
                     Text(
                         "Familia: ${item.compromisoFamilia}",
@@ -191,15 +211,116 @@ fun GestionRiesgoScreen(
                         modifier = Modifier.padding(top = 4.dp)
                     )
                 }
-                if (item.fechaEvaluacion.isNotBlank()) {
+                if (modoEdicion && item.fechaEvaluacion.isNotBlank()) {
                     Text(
                         "Evaluación: ${item.fechaEvaluacion}",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 3.dp)
                     )
                 }
+                if (modoEdicion) {
+                    BotonAccionRuralitos(
+                        texto = "Evaluar cumplimiento",
+                        color = NaranjaClinico,
+                        onClick = { evaluando = item },
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("evaluar_${item.id}")
+                    )
+                }
             }
         }
+    }
+    PilaBotonesFlotantes {
+        BotonFlotanteRedondo(
+            descripcion = "Agregar nuevo seguimiento",
+            color = CianRuralitos,
+            etiquetaPrueba = "boton_agregar_seguimiento",
+            onClick = {
+                editando = null
+                mostrandoFormulario = true
+            }
+        )
+    }
+    }
+}
+
+/** Ventana aparte para evaluar el cumplimiento de un seguimiento ya creado (solo al editar la ficha). */
+@Composable
+private fun EvaluacionCumplimientoScreen(
+    item: GestionRiesgoEntity,
+    onGuardar: (GestionRiesgoEntity) -> Unit,
+    onCancelar: () -> Unit
+) {
+    val hoy = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date()) }
+    var fechaEvaluacion by remember { mutableStateOf(item.fechaEvaluacion.ifBlank { hoy }) }
+    var cumplimiento by remember { mutableStateOf(item.cumplimiento) }
+    var observaciones by remember { mutableStateOf(item.causasIncumplimientoObservaciones) }
+    var calendario by remember { mutableStateOf(false) }
+
+    PantallaRuralitos(
+        titulo = "Evaluar cumplimiento",
+        descripcion = "Seguimiento ${item.numero ?: ""} · análisis del ${item.fechaAnalisis}",
+        subtitulo = "Plan de acción familiar",
+        onVolver = onCancelar,
+        barraAccion = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar evaluación",
+                descripcion = "Registrar el resultado y regresar a la lista",
+                color = CianRuralitos,
+                modifier = Modifier.testTag("guardar_evaluacion"),
+                onClick = {
+                    onGuardar(
+                        item.copy(
+                            fechaEvaluacion = fechaEvaluacion,
+                            cumplimiento = cumplimiento,
+                            causasIncumplimientoObservaciones = observaciones.trim()
+                        )
+                    )
+                }
+            )
+        }
+    ) {
+        SeccionFormularioRuralitos(
+            titulo = "Evaluación del cumplimiento",
+            descripcion = "Selecciona la fecha y el estado actual del acuerdo."
+        ) {
+            CampoFecha(fechaEvaluacion, "Fecha de evaluación") { calendario = true }
+            Text(
+                "Resultado del seguimiento",
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)
+            )
+            Row(
+                Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                listOf("PENDIENTE", "SI_CUMPLE", "NO_CUMPLE", "PARCIAL").forEach { opcion ->
+                    val color = colorCumplimiento(opcion)
+                    FilterChip(
+                        selected = cumplimiento == opcion,
+                        onClick = { cumplimiento = opcion },
+                        label = { Text(nombreCumplimiento(opcion), fontWeight = FontWeight.SemiBold) },
+                        modifier = Modifier.heightIn(min = 50.dp).testTag("resultado_$opcion"),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = color,
+                            selectedLabelColor = Color.White
+                        )
+                    )
+                }
+            }
+        }
+        SeccionFormularioRuralitos(
+            titulo = "Causas de incumplimiento y observaciones",
+            descripcion = "Explica causas de incumplimiento, avances parciales o información relevante."
+        ) {
+            CampoLargoGestion(observaciones, { observaciones = it }, "Causas de incumplimiento y observaciones")
+        }
+    }
+
+    if (calendario) {
+        SelectorFechaDialog(
+            onFechaSeleccionada = { fechaEvaluacion = it; calendario = false },
+            onCerrar = { calendario = false }
+        )
     }
 }
 
@@ -217,8 +338,6 @@ private fun FormularioGestionRiesgoScreen(
     var numero by remember { mutableStateOf((item?.numero ?: numeroSugerido).toString()) }
     var compromisoFamilia by remember { mutableStateOf(item?.compromisoFamilia.orEmpty()) }
     var compromisoEquipo by remember { mutableStateOf(item?.compromisoEquipoSalud.orEmpty()) }
-    var fechaEvaluacion by remember { mutableStateOf(item?.fechaEvaluacion.orEmpty()) }
-    var cumplimiento by remember { mutableStateOf(item?.cumplimiento ?: "PENDIENTE") }
     var observaciones by remember { mutableStateOf(item?.causasIncumplimientoObservaciones.orEmpty()) }
     val responsable = item?.responsable?.ifBlank { responsableActual } ?: responsableActual
     var calendario by remember { mutableStateOf<String?>(null) }
@@ -226,7 +345,7 @@ private fun FormularioGestionRiesgoScreen(
 
     PantallaRuralitos(
         titulo = if (item == null) "Agregar seguimiento" else "Editar seguimiento",
-        descripcion = "Completa el plan en cuatro bloques: control, compromisos, evaluación y observaciones.",
+        descripcion = "Completa el plan en tres bloques: control, compromisos y observaciones.",
         subtitulo = "Plan de acción familiar",
         onVolver = onCancelar,
         barraAccion = {
@@ -246,8 +365,8 @@ private fun FormularioGestionRiesgoScreen(
                                 numero = numero.toIntOrNull(),
                                 compromisoFamilia = compromisoFamilia.trim(),
                                 compromisoEquipoSalud = compromisoEquipo.trim(),
-                                fechaEvaluacion = fechaEvaluacion,
-                                cumplimiento = cumplimiento,
+                                fechaEvaluacion = item?.fechaEvaluacion.orEmpty(),
+                                cumplimiento = item?.cumplimiento ?: "PENDIENTE",
                                 causasIncumplimientoObservaciones = observaciones.trim(),
                                 responsable = responsable.trim()
                             )
@@ -296,47 +415,13 @@ private fun FormularioGestionRiesgoScreen(
             )
         }
         SeccionFormularioRuralitos(
-            titulo = "3. Evaluación del cumplimiento",
-            descripcion = "Selecciona la fecha y el estado actual del acuerdo."
-        ) {
-            CampoFecha(fechaEvaluacion, "Fecha de evaluación") { calendario = "evaluacion" }
-            Text(
-                "Resultado del seguimiento",
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.padding(top = 14.dp, bottom = 6.dp)
-            )
-            Row(
-                Modifier.horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                listOf("PENDIENTE", "SI_CUMPLE", "NO_CUMPLE", "PARCIAL").forEach { opcion ->
-                    val color = colorCumplimiento(opcion)
-                    FilterChip(
-                        selected = cumplimiento == opcion,
-                        onClick = { cumplimiento = opcion },
-                        label = {
-                            Text(
-                                nombreCumplimiento(opcion),
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        },
-                        modifier = Modifier.heightIn(min = 50.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = color,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-            }
-        }
-        SeccionFormularioRuralitos(
-            titulo = "4. Observaciones",
-            descripcion = "Explica causas de incumplimiento, avances parciales o información relevante."
+            titulo = "3. Observaciones",
+            descripcion = "Notas o información relevante del plan."
         ) {
             CampoLargoGestion(
                 observaciones,
                 { observaciones = it },
-                "Causas de incumplimiento y observaciones"
+                "Observaciones"
             )
         }
         error?.let {
@@ -352,7 +437,7 @@ private fun FormularioGestionRiesgoScreen(
     if (calendario != null) {
         SelectorFechaDialog(
             onFechaSeleccionada = { fecha ->
-                if (calendario == "analisis") fechaAnalisis = fecha else fechaEvaluacion = fecha
+                fechaAnalisis = fecha
                 calendario = null
             },
             onCerrar = { calendario = null }

@@ -55,9 +55,9 @@ fun UbicacionFamiliaScreen(
 
     PantallaRuralitos(
         titulo = "Dirección y vivienda",
-        descripcion = "Completa cómo llegar al hogar. La latitud, longitud y altitud se obtienen únicamente en la sección Croquis, donde puedes mover el punto del mapa.",
+        descripcion = "Completa cómo llegar al hogar. La latitud, longitud y altitud se obtienen únicamente en la sección Ubicación de vivienda, donde puedes mover el punto del mapa.",
         paso = 1,
-        totalPasos = 9,
+        totalPasos = 8,
         etiquetaPaso = "Información del hogar",
         onVolver = onRegresar,
         barraAccion = {

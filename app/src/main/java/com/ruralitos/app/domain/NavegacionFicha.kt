@@ -7,8 +7,7 @@ package com.ruralitos.app.domain
 object NavegacionFicha {
     private val siguiente = mapOf(
         "ubicacion" to "miembros",
-        "miembros" to "saludFamiliar",
-        "saludFamiliar" to "riesgos",
+        "miembros" to "riesgos",
         "riesgos" to "gestionRiesgo",
         "gestionRiesgo" to "familiograma",
         "familiograma" to "croquisMapa",
@@ -20,8 +19,7 @@ object NavegacionFicha {
     private val anterior = mapOf(
         "ubicacion" to "menuFicha",
         "miembros" to "ubicacion",
-        "saludFamiliar" to "miembros",
-        "riesgos" to "saludFamiliar",
+        "riesgos" to "miembros",
         "gestionRiesgo" to "riesgos",
         "familiograma" to "gestionRiesgo",
         "croquisMapa" to "familiograma",

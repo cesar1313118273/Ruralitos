@@ -274,8 +274,6 @@ fun RevisionFinalFichaScreen(
             }
             // Apartados que no bloquean la finalización pero se pueden revisar aquí.
             listOf(
-                "salud" to "Embarazo y mortalidad",
-                "dispensarizacion" to "Registro general",
                 "gestion" to "Plan y seguimiento del riesgo",
                 "contaminacion" to "Contaminación ambiental",
                 "tratamiento" to "Lugar de atención o persona"

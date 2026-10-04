@@ -51,14 +51,7 @@ fun HistorialFichaScreen(
         titulo = "Historial de cambios",
         descripcion = "Consulta qué se realizó, cuándo ocurrió y qué usuario fue responsable de cada acción.",
         subtitulo = "Trazabilidad de la ficha",
-        barraAccion = {
-                BotonPrincipalRuralitos(
-                    texto = "Regresar al panel de la ficha",
-                    descripcion = "Cerrar el historial sin modificar información",
-                    color = AzulClinico,
-                    onClick = onRegresar
-                )
-        }
+        onVolver = onRegresar
     ) {
         item {
             MensajeEstadoRuralitos(

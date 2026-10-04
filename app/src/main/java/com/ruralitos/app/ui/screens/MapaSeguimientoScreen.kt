@@ -700,7 +700,7 @@ fun MapaSeguimientoVista(
                         shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp
                     ) {
                         Text(
-                            "Aún no hay viviendas con ubicación. Abre una ficha, entra a Croquis y guarda el punto de la vivienda.",
+                            "Aún no hay viviendas con ubicación. Abre una ficha, entra a Ubicación de vivienda y guarda el punto de la vivienda.",
                             Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp
                         )
                     }

@@ -13,7 +13,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.ui.screens.MiembrosFamiliaScreen
-import com.ruralitos.app.ui.screens.SaludFamiliarScreen
 import com.ruralitos.app.ui.theme.RuralitosTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -76,11 +75,13 @@ class FactoresRiesgoCapturaTest {
     fun dejaLaEmbarazadaParaFotografiarla() {
         if (InstrumentationRegistry.getArguments().getString("dejarAbierto") != "1") return
         val ids = runBlocking { DatosMapaParlante.sembrar(database) }
-        rule.setContent { RuralitosTheme { SaludFamiliarScreen(fichaId = ids.getValue("c2"), onContinuar = {}, onSalir = {}) } }
-        rule.waitUntil(20_000) { hayTexto("Embarazos registrados") }
-        rule.waitUntil(20_000) { rule.onAllNodes(hasText("Editar")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onAllNodes(hasText("Editar"))[0].performClick()
-        rule.waitUntil(20_000) { hayTexto("5. Riesgo obstétrico") }
+        rule.setContent { RuralitosTheme { MiembrosFamiliaScreen(fichaId = ids.getValue("c2"), usuarioId = 7L, onContinuar = {}, onSalir = {}) } }
+        rule.waitUntil(20_000) { hay("boton_agregar_integrante") && rule.onAllNodes(hasText("Editar")).fetchSemanticsNodes().isNotEmpty() }
+        val lucia = runBlocking { database.sincronizacionDao().miembros(ids.getValue("c2")) }.indexOfFirst { it.apellidosNombres == "TORRES LUCÍA" }
+        rule.onAllNodes(hasText("Editar"))[lucia].performScrollTo().performClick()
+        rule.waitUntil(20_000) { hayTexto("4.4 Riesgo obstétrico") }
+        foto(9)
+        rule.onNodeWithText("4.4 Riesgo obstétrico").performScrollTo().performClick()
         rule.waitUntil(10_000) { hay("criterio_buscar") }
         rule.onNodeWithTag("criterio_buscar").performScrollTo().performTextInput("control")
         rule.waitUntil(10_000) { hay("criterio_sugerencia_CONTROL_INSUFICIENTE") }

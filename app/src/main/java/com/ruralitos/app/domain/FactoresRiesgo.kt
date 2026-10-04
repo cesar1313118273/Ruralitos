@@ -188,6 +188,17 @@ object EstrategiasDesdeCie10 {
     fun saludMental(codigos: Collection<String>) = cualquiera(codigos, "F\\d\\d.*")
     fun cuidadosPaliativos(codigos: Collection<String>) = cualquiera(codigos, "Z515.*")
 
+    /**
+     * Estado nutricional que dicen los diagnósticos: desnutrición aguda (kwashiorkor, marasmo, proteicocalórica),
+     * desnutrición crónica (retardo del desarrollo por desnutrición) u obesidad. Sin ninguno, sin alteración.
+     */
+    fun estadoNutricional(codigos: Collection<String>): String = when {
+        cualquiera(codigos, "E4[0-4].*", "E46.*") -> DispensarizacionAutomatica.NUTRICION_DESNUTRICION_AGUDA
+        cualquiera(codigos, "E45.*") -> DispensarizacionAutomatica.NUTRICION_DESNUTRICION_CRONICA
+        cualquiera(codigos, "E66.*") -> DispensarizacionAutomatica.NUTRICION_OBESIDAD
+        else -> DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION
+    }
+
     /** Las alertas epidemiológicas solo se piden con tuberculosis o VIH. */
     fun pideAlertasEpidemiologicas(codigos: Collection<String>) = tuberculosis(codigos) || vih(codigos)
 

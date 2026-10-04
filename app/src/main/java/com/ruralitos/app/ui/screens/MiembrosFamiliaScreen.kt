@@ -24,6 +24,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.material3.FloatingActionButton
 import com.ruralitos.app.ui.components.OpcionBusqueda
+import com.ruralitos.app.ui.components.BotonFlotanteRedondo
+import com.ruralitos.app.ui.components.PilaBotonesFlotantes
+import com.ruralitos.app.ui.components.TarjetaFormularioRuralitos
+import com.ruralitos.app.data.local.entity.EmbarazadaEntity
+import com.ruralitos.app.data.local.entity.MortalidadFamiliarEntity
+import com.ruralitos.app.domain.FactoresObstetricos
 import com.ruralitos.app.ui.components.BuscadorDeFactores
 import com.ruralitos.app.domain.RolFamiliar
 import com.ruralitos.app.ui.theme.VerdeSalud
@@ -127,7 +133,7 @@ fun MiembrosFamiliaScreen(
     textoRegresar: String = "Volver al panel de la ficha",
     descripcionRegresar: String = "Conservar los datos y salir de esta sección",
     mostrarAvance: Boolean = false,
-    alCrearFicha: (suspend (MiembroFamiliaEntity, String) -> Boolean)? = null
+    alCrearFicha: (suspend (MiembroFamiliaEntity, String, EmbarazadaEntity?) -> Boolean)? = null
 ) {
     val context = LocalContext.current
     val database = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
@@ -148,6 +154,17 @@ fun MiembrosFamiliaScreen(
     var errorNota by remember { mutableStateOf(false) }
     var eligiendoActor by remember { mutableStateOf(false) }
     var actorEditando by remember { mutableStateOf<MiembroFamiliaEntity?>(null) }
+    val embarazadas by database.fichaContenidoDao()
+        .listarEmbarazadas(fichaId)
+        .collectAsState(initial = emptyList())
+    val mortalidad by database.fichaContenidoDao()
+        .listarMortalidad(fichaId)
+        .collectAsState(initial = emptyList())
+    var mostrandoMortalidad by remember { mutableStateOf(false) }
+    // El embarazo de una persona se reconoce por su nombre, como en las fichas anteriores.
+    fun embarazoDe(persona: MiembroFamiliaEntity?) = persona?.let { p ->
+        embarazadas.firstOrNull { it.apellidosNombres.trim().equals(p.apellidosNombres.trim(), ignoreCase = true) }
+    }
 
     suspend fun guardarNota(contenido: String, sesion: SesionNota) {
         withContext(NonCancellable) {
@@ -260,8 +277,10 @@ fun MiembrosFamiliaScreen(
             miembro = miembroEditando,
             telefonoJefeInicial = fichaActual?.numeroTelefono.orEmpty(),
             sugerirJefe = miembros.none { RolFamiliar.esJefe(it.parentesco) },
+            hayOtroJefe = miembros.any { RolFamiliar.esJefe(it.parentesco) && it.id != (miembroEditando?.id ?: -1L) },
+            embarazoInicial = embarazoDe(miembroEditando),
             mostrarAvance = mostrarAvance,
-            onGuardar = { miembro, telefonoJefe ->
+            onGuardar = { miembro, telefonoJefe, embarazo ->
               if (fichaId == 0L && alCrearFicha != null) {
                 // Borrador: nada se guarda hasta registrar al jefe o jefa de familia.
                 if (!RolFamiliar.esJefe(miembro.parentesco)) {
@@ -272,7 +291,7 @@ fun MiembrosFamiliaScreen(
                     ).show()
                 } else {
                     scope.launch {
-                        val creada = runCatching { alCrearFicha(miembro, telefonoJefe) }.getOrDefault(false)
+                        val creada = runCatching { alCrearFicha(miembro, telefonoJefe, embarazo) }.getOrDefault(false)
                         if (creada) {
                             mostrandoFormulario = false
                             miembroEditando = null
@@ -285,10 +304,22 @@ fun MiembrosFamiliaScreen(
                 scope.launch {
                     runCatching {
                         withContext(Dispatchers.IO) {
+                            val previa = embarazoDe(miembroEditando)
                             if (miembro.id == 0L) {
                                 database.fichaContenidoDao().guardarMiembro(miembro)
                             } else {
                                 database.fichaContenidoDao().actualizarMiembro(miembro)
+                            }
+                            if (embarazo != null) {
+                                val registro = embarazo.copy(
+                                    id = previa?.id ?: 0L,
+                                    fichaId = fichaId,
+                                    syncId = previa?.syncId ?: embarazo.syncId
+                                )
+                                if (registro.id == 0L) database.fichaContenidoDao().guardarEmbarazada(registro)
+                                else database.fichaContenidoDao().actualizarEmbarazada(registro)
+                            } else if (previa != null) {
+                                database.fichaContenidoDao().eliminarEmbarazada(previa)
                             }
                             // El jefe o jefa de familia define la cédula, el nombre y el
                             // teléfono con los que se identifica la ficha.
@@ -392,6 +423,29 @@ fun MiembrosFamiliaScreen(
         )
     }
 
+    if (mostrandoMortalidad) {
+        VentanaMortalidad(
+            fichaId = fichaId,
+            registros = mortalidad,
+            onGuardar = { item ->
+                scope.launch {
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            if (item.id == 0L) database.fichaContenidoDao().guardarMortalidad(item)
+                            else database.fichaContenidoDao().actualizarMortalidad(item)
+                        }
+                    }.onFailure {
+                        Toast.makeText(context, "No se pudo guardar el registro de mortalidad.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            },
+            onEliminar = { item ->
+                scope.launch(Dispatchers.IO) { database.fichaContenidoDao().eliminarMortalidad(item) }
+            },
+            onCerrar = { mostrandoMortalidad = false }
+        )
+    }
+
     miembroEliminar?.let { seleccionado ->
         AlertDialog(
             onDismissRequest = { miembroEliminar = null },
@@ -405,6 +459,7 @@ fun MiembrosFamiliaScreen(
                         miembroEliminar = null
                         scope.launch {
                             withContext(Dispatchers.IO) {
+                                embarazoDe(seleccionado)?.let { database.fichaContenidoDao().eliminarEmbarazada(it) }
                                 database.fichaContenidoDao().eliminarMiembro(seleccionado)
                             }
                         }
@@ -422,7 +477,7 @@ fun MiembrosFamiliaScreen(
         titulo = "Integrantes de la familia",
         descripcion = "Registra a cada persona del hogar. La edad determina automáticamente qué campos aplican en la ficha.",
         paso = 2,
-        totalPasos = 9,
+        totalPasos = 8,
         etiquetaPaso = "Información del hogar",
         onVolver = onSalir,
         barraAccion = {
@@ -495,32 +550,22 @@ fun MiembrosFamiliaScreen(
             }
         }
     }
-    Column(
-        Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 104.dp),
-        horizontalAlignment = Alignment.End,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        FloatingActionButton(
+    PilaBotonesFlotantes {
+        BotonFlotanteRedondo(
+            descripcion = "Agregar un integrante familiar",
+            color = CianRuralitos,
+            etiquetaPrueba = "boton_agregar_integrante",
             onClick = {
                 miembroEditando = null
                 mostrandoFormulario = true
-            },
-            containerColor = CianRuralitos,
-            contentColor = Color.White,
-            modifier = Modifier
-                .size(52.dp)
-                .semantics { contentDescription = "Agregar un integrante familiar" }
-                .testTag("boton_agregar_integrante")
-        ) { Text("+", fontSize = 28.sp, fontWeight = FontWeight.Bold) }
+            }
+        )
         if (miembros.isNotEmpty() && !(fichaId == 0L && alCrearFicha != null)) {
-            FloatingActionButton(
-                onClick = { eligiendoActor = true },
-                containerColor = VerdeSalud,
-                contentColor = Color.White,
-                modifier = Modifier
-                    .size(52.dp)
-                    .semantics { contentDescription = "Actores comunitarios" }
-                    .testTag("boton_actores_comunitarios")
+            BotonFlotanteRedondo(
+                descripcion = "Actores comunitarios",
+                color = VerdeSalud,
+                etiquetaPrueba = "boton_actores_comunitarios",
+                onClick = { eligiendoActor = true }
             ) {
                 Box(Modifier.size(38.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
                     Image(
@@ -532,8 +577,147 @@ fun MiembrosFamiliaScreen(
                 }
             }
         }
+        if (!(fichaId == 0L && alCrearFicha != null)) {
+            BotonFlotanteRedondo(
+                descripcion = "Mortalidad familiar",
+                color = RojoClinico,
+                etiquetaPrueba = "boton_mortalidad",
+                onClick = { mostrandoMortalidad = true }
+            ) { Text("✝", fontSize = 26.sp, fontWeight = FontWeight.Bold) }
+        }
     }
     }
+}
+
+/**
+ * Ventana de mortalidad familiar (últimos cinco años): lista lo registrado y pide los cuatro datos de la ficha.
+ * Vive en Integrantes; ya no existe una sección aparte de embarazo y mortalidad.
+ */
+@Composable
+private fun VentanaMortalidad(
+    fichaId: Long,
+    registros: List<MortalidadFamiliarEntity>,
+    onGuardar: (MortalidadFamiliarEntity) -> Unit,
+    onEliminar: (MortalidadFamiliarEntity) -> Unit,
+    onCerrar: () -> Unit
+) {
+    var editando by remember { mutableStateOf<MortalidadFamiliarEntity?>(null) }
+    var nombre by remember { mutableStateOf("") }
+    var parentesco by remember { mutableStateOf("") }
+    var edad by remember { mutableStateOf("") }
+    var causa by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var porEliminar by remember { mutableStateOf<MortalidadFamiliarEntity?>(null) }
+
+    fun limpiar() {
+        editando = null; nombre = ""; parentesco = ""; edad = ""; causa = ""; error = null
+    }
+
+    porEliminar?.let { seleccionado ->
+        AlertDialog(
+            onDismissRequest = { porEliminar = null },
+            title = { Text("Eliminar registro de mortalidad") },
+            text = { Text("Se eliminará el registro de ${seleccionado.nombre}. Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editando?.id == seleccionado.id) limpiar()
+                    onEliminar(seleccionado)
+                    porEliminar = null
+                }) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
+            },
+            dismissButton = { TextButton(onClick = { porEliminar = null }) { Text("Conservar registro") } }
+        )
+    }
+
+    AlertDialog(
+        onDismissRequest = onCerrar,
+        title = { Text("Mortalidad familiar") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()).testTag("ventana_mortalidad")) {
+                Text(
+                    "Solo fallecimientos de los últimos cinco años. Registra apellidos y nombres, parentesco, edad al fallecer y causa.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                registros.forEach { registro ->
+                    Column(Modifier.fillMaxWidth().padding(top = 10.dp)) {
+                        Text(registro.nombre.ifBlank { "Persona sin nombre" }, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            listOf(registro.parentesco, registro.edadAlFallecer?.let { "$it años" }.orEmpty(), registro.causa)
+                                .filter { it.isNotBlank() }.joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row {
+                            TextButton(onClick = {
+                                editando = registro
+                                nombre = registro.nombre; parentesco = registro.parentesco
+                                edad = registro.edadAlFallecer?.toString().orEmpty(); causa = registro.causa
+                                error = null
+                            }) { Text("Editar") }
+                            TextButton(onClick = { porEliminar = registro }) { Text("Eliminar", color = RojoClinico) }
+                        }
+                    }
+                    HorizontalDivider()
+                }
+                Text(
+                    if (editando == null) "Agregar un fallecimiento" else "Editar fallecimiento",
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 14.dp)
+                )
+                OutlinedTextField(
+                    value = nombre, onValueChange = { nombre = it },
+                    label = { Text("Apellidos y nombres") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("mortalidad_nombre")
+                )
+                OutlinedTextField(
+                    value = parentesco, onValueChange = { parentesco = it },
+                    label = { Text("Parentesco") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("mortalidad_parentesco")
+                )
+                OutlinedTextField(
+                    value = edad, onValueChange = { edad = it.filter(Char::isDigit).take(3) },
+                    label = { Text("Edad al fallecer") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("mortalidad_edad")
+                )
+                OutlinedTextField(
+                    value = causa, onValueChange = { causa = it },
+                    label = { Text("Causa del fallecimiento") },
+                    minLines = 2,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("mortalidad_causa")
+                )
+                error?.let {
+                    Text(it, color = RojoClinico, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp))
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                modifier = Modifier.testTag("guardar_fallecimiento"),
+                onClick = {
+                    if (nombre.isBlank() || parentesco.isBlank() || edad.toIntOrNull() == null || causa.isBlank()) {
+                        error = "Completa apellidos y nombres, parentesco, edad al fallecer y causa."
+                    } else {
+                        onGuardar(
+                            MortalidadFamiliarEntity(
+                                id = editando?.id ?: 0,
+                                fichaId = fichaId,
+                                nombre = nombre.trim(),
+                                parentesco = parentesco.trim(),
+                                edadAlFallecer = edad.toIntOrNull(),
+                                causa = causa.trim(),
+                                syncId = editando?.syncId ?: UUID.randomUUID().toString()
+                            )
+                        )
+                        limpiar()
+                    }
+                }
+            ) { Text(if (editando == null) "Guardar fallecimiento" else "Guardar cambios") }
+        },
+        dismissButton = { TextButton(onClick = onCerrar) { Text("Cerrar") } }
+    )
 }
 
 /** Iconos de los roles comunitarios que tiene una persona. */
@@ -584,8 +768,10 @@ private fun FormularioMiembroScreen(
     miembro: MiembroFamiliaEntity?,
     telefonoJefeInicial: String,
     sugerirJefe: Boolean,
+    hayOtroJefe: Boolean,
+    embarazoInicial: EmbarazadaEntity?,
     mostrarAvance: Boolean = false,
-    onGuardar: (MiembroFamiliaEntity, String) -> Unit,
+    onGuardar: (MiembroFamiliaEntity, String, EmbarazadaEntity?) -> Unit,
     onCancelar: () -> Unit
 ) {
     // Preguntas respondidas por el usuario (solo para la barra de llenado al crear).
@@ -609,7 +795,21 @@ private fun FormularioMiembroScreen(
     var escolaridad by remember { mutableStateOf(miembro?.escolaridad.orEmpty().ifBlank { "SIN" }) }
     var vacunas by remember { mutableStateOf(miembro?.vacunasCompletas ?: false) }
     var saludBucal by remember { mutableStateOf(miembro?.saludBucalAdecuada ?: false) }
-    var estadoNutricional by remember { mutableStateOf(miembro?.estadoNutricional.orEmpty().ifBlank { DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION }) }
+    // Paciente embarazada: al marcarla aparecen los datos del embarazo (antes eran una sección aparte).
+    var embarazada by remember { mutableStateOf(embarazoInicial != null) }
+    var fum by remember { mutableStateOf(embarazoInicial?.fechaUltimaMenstruacion.orEmpty()) }
+    var fpp by remember { mutableStateOf(embarazoInicial?.fechaProbableParto.orEmpty()) }
+    var semanas by remember { mutableStateOf(embarazoInicial?.semanasGestacion?.toString().orEmpty()) }
+    var dtPrimera by remember { mutableStateOf(embarazoInicial?.dosisDtPrimera ?: false) }
+    var dtSegunda by remember { mutableStateOf(embarazoInicial?.dosisDtSegunda ?: false) }
+    var dtRefuerzo by remember { mutableStateOf(embarazoInicial?.dosisDtRefuerzo ?: false) }
+    var gestas by remember { mutableStateOf(embarazoInicial?.gestas?.toString().orEmpty()) }
+    var partos by remember { mutableStateOf(embarazoInicial?.partos?.toString().orEmpty()) }
+    var abortos by remember { mutableStateOf(embarazoInicial?.abortos?.toString().orEmpty()) }
+    var cesareas by remember { mutableStateOf(embarazoInicial?.cesareas?.toString().orEmpty()) }
+    var antecedentesObstetricos by remember { mutableStateOf(embarazoInicial?.antecedentesPatologicosObstetricos.orEmpty()) }
+    var factoresObstetricos by remember { mutableStateOf(FactoresObstetricos.decodificar(embarazoInicial?.factoresObstetricosJson ?: "[]")) }
+    var calendarioEmbarazo by remember { mutableStateOf<String?>(null) }
     var factoresEdad by remember { mutableStateOf(FactoresRiesgoEdad.decodificar(miembro?.factoresRiesgoEdadJson ?: "[]")) }
     val factoresEdadIniciales = remember { FactoresRiesgoEdad.decodificar(miembro?.factoresRiesgoEdadJson ?: "[]") }
     val codigosIniciales = remember { EstrategiasDesdeCie10.codigos(miembro?.comorbilidadesCie10Json ?: "[]") }
@@ -680,9 +880,29 @@ private fun FormularioMiembroScreen(
         }
     }
 
+    fun cambiarEmbarazada(valor: Boolean) {
+        embarazada = valor
+        if (valor) {
+            sexo = "M"
+            if (RolFamiliar.sexoDelRol(parentesco) == "H") {
+                parentesco = if (RolFamiliar.esJefe(parentesco) && !hayOtroJefe) "JEFA DE FAMILIA" else "CÓNYUGE/PAREJA"
+            }
+        }
+    }
+
     // El integrante tal como quedaría con lo que hay en el formulario: se usa para guardarlo y para mostrar su grupo en vivo.
     fun armarMiembro(): MiembroFamiliaEntity {
         val codigosActuales = diagnosticos.map { it.codigo }
+        // El estado nutricional sale de los diagnósticos CIE-10 (E40-E46 desnutrición, E66 obesidad); un dato manual
+        // de versiones anteriores se conserva mientras ningún diagnóstico lo explique.
+        val nutricionAhora = EstrategiasDesdeCie10.estadoNutricional(codigosActuales)
+        val nutricionAntes = EstrategiasDesdeCie10.estadoNutricional(codigosIniciales)
+        val nutricionGuardada = miembro?.estadoNutricional.orEmpty()
+        val estadoNutricional = when {
+            nutricionAhora != DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION -> nutricionAhora
+            nutricionAntes == DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION && nutricionGuardada.isNotBlank() -> nutricionGuardada
+            else -> DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION
+        }
         // Se calculan de los diagnósticos CIE-10; un dato manual de versiones anteriores se conserva
         // mientras no lo explique (o lo desmienta) un diagnóstico.
         fun calculada(ahora: Boolean, antes: Boolean, guardado: Boolean?) = ahora || (guardado == true && !antes)
@@ -694,7 +914,7 @@ private fun FormularioMiembroScreen(
             parentesco = parentesco.trim(),
             fechaNacimiento = fechaNacimiento,
             ocupacion = if (camposPermitidos.ocupacion) ocupacion.trim() else "",
-            sexo = sexo,
+            sexo = if (embarazada) "M" else sexo,
             escolaridad = escolaridad
                 .takeIf { it in camposPermitidos.escolaridades }
                 .orEmpty(),
@@ -748,6 +968,33 @@ private fun FormularioMiembroScreen(
         )
     }
 
+    fun armarEmbarazo(): EmbarazadaEntity? {
+        if (!embarazada) return null
+        val persona = armarMiembro()
+        val evaluacion = FactoresObstetricos.evaluar(
+            factoresObstetricos, persona, gestas.toIntOrNull(), abortos.toIntOrNull(), diagnosticos.map { it.codigo }
+        )
+        return EmbarazadaEntity(
+            id = embarazoInicial?.id ?: 0,
+            fichaId = fichaId,
+            apellidosNombres = nombres.trim(),
+            fechaUltimaMenstruacion = fum,
+            fechaProbableParto = fpp,
+            semanasGestacion = semanas.toIntOrNull(),
+            dosisDtPrimera = dtPrimera,
+            dosisDtSegunda = dtSegunda,
+            dosisDtRefuerzo = dtRefuerzo,
+            gestas = gestas.toIntOrNull(),
+            partos = partos.toIntOrNull(),
+            abortos = abortos.toIntOrNull(),
+            cesareas = cesareas.toIntOrNull(),
+            antecedentesPatologicosObstetricos = antecedentesObstetricos.trim(),
+            riesgoObstetrico = evaluacion.riesgoObstetrico,
+            factoresObstetricosJson = FactoresObstetricos.codificar(factoresObstetricos),
+            syncId = embarazoInicial?.syncId ?: UUID.randomUUID().toString()
+        )
+    }
+
     PantallaRuralitos(
         titulo = if (miembro == null) "Agregar integrante" else "Editar integrante",
         descripcion = "Completa los datos por bloques. Los campos que no corresponden a la edad se bloquearán automáticamente.",
@@ -761,6 +1008,8 @@ private fun FormularioMiembroScreen(
                 onClick = {
                     if (nombres.isBlank() || parentesco.isBlank() || grupoEdad == null || sexo.isBlank()) {
                         error = "Completa apellidos y nombres, parentesco, fecha de nacimiento y sexo."
+                    } else if (RolFamiliar.esJefe(parentesco) && hayOtroJefe) {
+                        error = "Ya hay un jefe o jefa de familia. Elimínalo primero o elige otro rol."
                     } else if (cedula.isNotBlank() && !ValidadorIdentidadEcuador.esDocumentoFamiliarAceptable(cedula)) {
                         error = "La identificación, si se registra, debe contener exactamente 10 o 13 números."
                     } else if (
@@ -778,13 +1027,28 @@ private fun FormularioMiembroScreen(
                         }) {
                         error = "Hay diagnósticos que no pertenecen al catálogo CIE-10. Elimínalos y selecciónalos nuevamente."
                     } else {
-                        onGuardar(armarMiembro(), telefonoJefe.trim())
+                        onGuardar(armarMiembro(), telefonoJefe.trim(), armarEmbarazo())
                     }
                 }
             )
 
         }
     ) {
+        TarjetaFormularioRuralitos(
+            Modifier.clickable { cambiarEmbarazada(!embarazada) }.testTag("casilla_embarazada")
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = embarazada, onCheckedChange = null)
+                Column(Modifier.padding(start = 12.dp)) {
+                    Text("Paciente embarazada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Al marcarla aparecen los datos del embarazo y el riesgo obstétrico.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
         SeccionFormularioRuralitos(
             titulo = "1. Identificación personal",
             desplegable = true,
@@ -796,9 +1060,10 @@ private fun FormularioMiembroScreen(
             CampoTexto(nombres, { nombres = it }, "Apellidos y nombres")
             SeleccionTextoMiembro(
                 "Rol familiar",
-                RolFamiliar.opciones,
+                if (embarazada) RolFamiliar.opcionesMujer else RolFamiliar.opciones,
                 parentesco,
-                MoradoClinico
+                MoradoClinico,
+                bloqueadas = if (hayOtroJefe) setOf("JEFE DE FAMILIA", "JEFA DE FAMILIA") else emptySet()
             ) {
                 parentesco = it
                 RolFamiliar.sexoDelRol(it)?.let { sexoDelRol -> sexo = sexoDelRol }
@@ -842,7 +1107,7 @@ private fun FormularioMiembroScreen(
             abiertaInicial = false,
             descripcion = "Sexo, escolaridad y ocupación según el grupo de edad."
         ) {
-            SeleccionTextoMiembro("Sexo", listOf("H" to "Hombre", "M" to "Mujer"), sexo, MoradoClinico) { sexo = it; marcar("sexo") }
+            SeleccionTextoMiembro("Sexo", listOf("H" to "Hombre", "M" to "Mujer"), if (embarazada) "M" else sexo, MoradoClinico, enabled = !embarazada) { sexo = it; marcar("sexo") }
             if (camposPermitidos.escolaridades.isNotEmpty()) {
                 SeleccionTextoMiembro(
                     "Escolaridad",
@@ -875,9 +1140,9 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "3. Seguimiento preventivo",
             desplegable = true,
-            progreso = avance(true, true, true),
+            progreso = avance(true, true),
             abiertaInicial = false,
-            descripcion = "Vacunas, nutrición y salud bucal. Estos datos alimentan la dispensarización automática."
+            descripcion = "Vacunas, salud bucal y diagnósticos CIE-10. El estado nutricional se toma de los diagnósticos."
         ) {
             SeleccionBooleanMiembro(
                 "Esquema completo de vacunas",
@@ -887,12 +1152,6 @@ private fun FormularioMiembroScreen(
                 "Salud bucal adecuada",
                 saludBucal
             ) { saludBucal = it; marcar("saludBucal") }
-            SeleccionOpcionMiembro(
-                "Estado nutricional evaluado",
-                DispensarizacionAutomatica.opcionesNutricion,
-                estadoNutricional,
-                NaranjaClinico
-            ) { estadoNutricional = it; marcar("nutricion") }
             OutlinedTextField(
                 value = consultaCie10,
                 onValueChange = { consultaCie10 = it },
@@ -970,7 +1229,7 @@ private fun FormularioMiembroScreen(
                 )
             }
             // El grupo real de la persona, con todo lo que hay en la ficha: se revisa del IV al I y se queda en el primero que cumple.
-            val clasificacion = DispensarizacionAutomatica.clasificar(armarMiembro())
+            val clasificacion = DispensarizacionAutomatica.clasificar(armarMiembro(), armarEmbarazo())
             val grupoActual = clasificacion.grupo
             val hayFactoresElegidos = opcionesFactores.any { it.codigo in factoresEdad && !it.grupoIII }
             MensajeEstadoRuralitos(
@@ -989,6 +1248,73 @@ private fun FormularioMiembroScreen(
                 simbolo = grupoActual.codigo,
                 modifier = Modifier.padding(top = 12.dp).testTag("resumen_factores")
             )
+        }
+        if (embarazada) {
+            val persona = armarMiembro()
+            val evaluacion = FactoresObstetricos.evaluar(
+                factoresObstetricos, persona, gestas.toIntOrNull(), abortos.toIntOrNull(), diagnosticos.map { it.codigo }
+            )
+            val detectados = evaluacion.razones.filter { it.automatica }.map { it.codigo }.toSet()
+            SeccionFormularioRuralitos(
+                titulo = "4.1 Gestación",
+                desplegable = true,
+                progreso = avance(fum.isNotBlank(), fpp.isNotBlank(), semanas.isNotBlank()),
+                abiertaInicial = false,
+                descripcion = "Fechas principales y semanas de gestación."
+            ) {
+                CampoFecha(fum, "Fecha de última menstruación") { calendarioEmbarazo = "fum" }
+                CampoFecha(fpp, "Fecha probable del parto") { calendarioEmbarazo = "fpp" }
+                CampoEnteroSalud(semanas, { semanas = it }, "Semanas de gestación")
+            }
+            SeccionFormularioRuralitos(
+                titulo = "4.2 Vacunación dT",
+                desplegable = true,
+                progreso = avance(true, true, true),
+                abiertaInicial = false,
+                descripcion = "Selecciona Sí o No para cada dosis."
+            ) {
+                SeleccionBooleanMiembro("Primera dosis", dtPrimera) { dtPrimera = it }
+                SeleccionBooleanMiembro("Segunda dosis", dtSegunda) { dtSegunda = it }
+                SeleccionBooleanMiembro("Dosis de refuerzo", dtRefuerzo) { dtRefuerzo = it }
+            }
+            SeccionFormularioRuralitos(
+                titulo = "4.3 Antecedentes obstétricos",
+                desplegable = true,
+                progreso = avance(gestas.isNotBlank(), partos.isNotBlank(), abortos.isNotBlank(), cesareas.isNotBlank()),
+                abiertaInicial = false,
+                descripcion = "Número de gestas, partos, abortos, cesáreas y antecedentes clínicos."
+            ) {
+                CampoEnteroSalud(gestas, { gestas = it }, "Gestas")
+                CampoEnteroSalud(partos, { partos = it }, "Partos")
+                CampoEnteroSalud(abortos, { abortos = it }, "Abortos")
+                CampoEnteroSalud(cesareas, { cesareas = it }, "Cesáreas")
+                OutlinedTextField(
+                    value = antecedentesObstetricos,
+                    onValueChange = { antecedentesObstetricos = it },
+                    label = { Text("Antecedentes patológicos obstétricos") },
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                    minLines = 3,
+                )
+            }
+            SeccionFormularioRuralitos(
+                titulo = "4.4 Riesgo obstétrico",
+                desplegable = true,
+                progreso = avance(true),
+                abiertaInicial = false,
+                descripcion = "Escribe y elige los criterios de la escala de riesgo obstétrico (Riesgo 1, 2 y 3). Algunos se detectan solos con los datos de la ficha."
+            ) {
+                BuscadorDeFactores(
+                    titulo = "Escribe un criterio de riesgo obstétrico",
+                    opciones = FactoresObstetricos.todos.map {
+                        OpcionBusqueda(it.codigo, it.etiqueta, "Riesgo ${it.nivel}", grupoIII = it.cronico)
+                    },
+                    elegidos = factoresObstetricos,
+                    onCambio = { factoresObstetricos = it },
+                    prefijoPrueba = "criterio",
+                    automaticos = detectados
+                )
+                armarEmbarazo()?.let { ResultadoRiesgoObstetrico(evaluacion, persona, it) }
+            }
         }
         SeccionFormularioRuralitos(
             titulo = "5. Discapacidad",
@@ -1099,6 +1425,15 @@ private fun FormularioMiembroScreen(
             onCerrar = { mostrarCalendario = false }
         )
     }
+    calendarioEmbarazo?.let { campo ->
+        SelectorFechaDialog(
+            onFechaSeleccionada = {
+                if (campo == "fum") fum = it else fpp = it
+                calendarioEmbarazo = null
+            },
+            onCerrar = { calendarioEmbarazo = null }
+        )
+    }
 }
 
 @Composable
@@ -1107,6 +1442,8 @@ private fun SeleccionTextoMiembro(
     opciones: List<Pair<String, String>>,
     seleccion: String,
     color: Color,
+    enabled: Boolean = true,
+    bloqueadas: Set<String> = emptySet(),
     onSeleccion: (String) -> Unit
 ) {
     SelectorDesplegableMiembro(
@@ -1114,6 +1451,8 @@ private fun SeleccionTextoMiembro(
         opciones = opciones,
         seleccion = seleccion,
         color = color,
+        enabled = enabled,
+        bloqueadas = bloqueadas,
         onSeleccion = onSeleccion
     )
 }
@@ -1159,6 +1498,7 @@ private fun SelectorDesplegableMiembro(
     seleccion: String,
     color: Color,
     enabled: Boolean = true,
+    bloqueadas: Set<String> = emptySet(),
     onSeleccion: (String) -> Unit
 ) {
     var expandido by remember { mutableStateOf(false) }
@@ -1184,8 +1524,10 @@ private fun SelectorDesplegableMiembro(
             onDismissRequest = { expandido = false }
         ) {
             opciones.forEach { (valor, etiqueta) ->
+                val bloqueada = valor in bloqueadas && valor != seleccion
                 ItemMenuRuralitos(
-                    text = { Text("${if (valor == seleccion) "✓ " else ""}$etiqueta") },
+                    text = { Text("${if (valor == seleccion) "✓ " else ""}$etiqueta${if (bloqueada) " (ya registrado)" else ""}") },
+                    enabled = !bloqueada,
                     onClick = {
                         onSeleccion(valor)
                         expandido = false

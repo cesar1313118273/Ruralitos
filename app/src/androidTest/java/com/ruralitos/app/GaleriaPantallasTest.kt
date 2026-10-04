@@ -58,7 +58,6 @@ class GaleriaPantallasTest {
             "03_buscar" -> BuscarFichasScreen({}, {})
             "04_ficha" -> FichaSeccionesScreen(ficha, {}, {}, {}, {})
             "05_miembros" -> MiembrosFamiliaScreen(fichaId, 1, {}, {})
-            "06_salud" -> SaludFamiliarScreen(fichaId, {}, {})
             "07_riesgo" -> RiesgoFamiliarScreen(fichaId, "QA", {}, {})
             "08_agenda" -> AgendaScreen(1, "", {}, {}, {})
             "09_estadisticas" -> EstadisticasScreen({}, {})

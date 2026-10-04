@@ -2,7 +2,15 @@ package com.ruralitos.app.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
+import com.ruralitos.app.ui.components.BotonFlotanteRedondo
+import com.ruralitos.app.ui.components.PilaBotonesFlotantes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -140,11 +149,12 @@ fun RiesgoFamiliarScreen(
         )
     }
 
+    Box(Modifier.fillMaxSize()) {
     PantallaListaRuralitos(
         titulo = "Calificación del riesgo familiar",
         descripcion = "Selecciona descripciones comprensibles. Ruralitos calcula internamente el puntaje y el nivel de riesgo.",
-        paso = 4,
-        totalPasos = 9,
+        paso = 3,
+        totalPasos = 8,
         etiquetaPaso = "Salud y evaluación",
         onVolver = onSalir,
         barraAccion = {
@@ -157,23 +167,11 @@ fun RiesgoFamiliarScreen(
 
         }
     ) {
-        item {
-            BotonPrincipalRuralitos(
-                texto = "Crear nueva calificación",
-                descripcion = "Responder los 18 componentes del instrumento familiar",
-                color = CianRuralitos,
-                onClick = {
-                    editando = null
-                    valoresIniciales = List(18) { -1 }
-                    mostrandoFormulario = true
-                }
-            )
-        }
         if (calificaciones.isEmpty()) {
             item {
                 MensajeEstadoRuralitos(
                     titulo = "No hay calificaciones",
-                    descripcion = "Crea la primera evaluación para determinar el nivel de riesgo de la familia.",
+                    descripcion = "Toca el botón + para crear la primera evaluación y determinar el nivel de riesgo de la familia.",
                     color = AzulClinico,
                     simbolo = "!"
                 )
@@ -213,6 +211,19 @@ fun RiesgoFamiliarScreen(
             }
         }
     }
+    PilaBotonesFlotantes {
+        BotonFlotanteRedondo(
+            descripcion = "Agregar calificación de riesgo",
+            color = CianRuralitos,
+            etiquetaPrueba = "boton_agregar_riesgo",
+            onClick = {
+                editando = null
+                valoresIniciales = List(18) { -1 }
+                mostrandoFormulario = true
+            }
+        )
+    }
+    }
 }
 
 @Composable
@@ -245,14 +256,20 @@ private fun FormularioRiesgoScreen(
     }
     val resultado = RiesgoFamiliar.calcular(valoresCalculables)
 
+    val ultimo = valores.lastIndex
     PantallaRuralitos(
         titulo = if (calificacion == null) "Nueva calificación" else "Editar calificación",
-        descripcion = "Lee cada descripción y marca una sola opción. Los valores numéricos se procesan internamente.",
         subtitulo = "Instrumento de riesgo familiar",
         onVolver = onCancelar,
+        // Ventana fija: solo cambia la pregunta; encabezado, avance, botones y guardar no se mueven.
+        scrollHabilitado = false,
         barraAccion = {
             BotonPrincipalRuralitos(
-                texto = if (seleccionCompleta) "Guardar calificación completa" else "Faltan ${18 - seleccionadas} componentes",
+                texto = if (seleccionCompleta) {
+                    "Guardar · ${nombreNivelRiesgo(resultado.nivel)} · ${resultado.total} puntos"
+                } else {
+                    "Faltan ${18 - seleccionadas} componentes"
+                },
                 descripcion = if (seleccionCompleta) {
                     "Registrar resultado y regresar al historial de evaluaciones"
                 } else {
@@ -260,6 +277,7 @@ private fun FormularioRiesgoScreen(
                 },
                 color = CianRuralitos,
                 enabled = seleccionCompleta,
+                modifier = Modifier.testTag("guardar_calificacion"),
                 onClick = {
                     onGuardar(
                         CalificacionRiesgoEntity(
@@ -277,65 +295,81 @@ private fun FormularioRiesgoScreen(
 
         }
     ) {
-        Text(
-            text = "${indiceActivo + 1} de ${valores.size}",
-            style = MaterialTheme.typography.labelLarge,
-            color = AzulClinico
-        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(
+                text = "${indiceActivo + 1} de ${valores.size}",
+                style = MaterialTheme.typography.labelLarge,
+                color = AzulClinico,
+                modifier = Modifier.testTag("contador_pregunta")
+            )
+            Text(
+                text = "$seleccionadas respondidas",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         LinearProgressIndicator(
             progress = { (indiceActivo + 1).toFloat() / valores.size },
             modifier = Modifier.fillMaxWidth(),
             color = AzulClinico,
             trackColor = BordeClinico
         )
-        PreguntaRiesgo(
-            index = indiceActivo,
-            categoria = when (indiceActivo) {
-                in 0..5 -> "A. Riesgos biológicos"
-                in 6..10 -> "B. Riesgos sanitarios"
-                else -> "C. Riesgos socioeconómicos"
-            },
-            valores = valores
-        )
+        Row(
+            Modifier.fillMaxWidth().clickable { mostrarCalendario = true }.testTag("fecha_responsable"),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Fecha $fecha · ${responsable.ifBlank { "Sin responsable" }}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
+            Text("Cambiar fecha", style = MaterialTheme.typography.labelMedium, color = AzulClinico)
+        }
+        // Zona de la pregunta: ocupa siempre el mismo espacio; si las opciones no caben, se desplaza solo aquí dentro.
+        Box(
+            Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .pointerInput(indiceActivo, ultimo) {
+                    var total = 0f
+                    detectHorizontalDragGestures(
+                        onDragStart = { total = 0f },
+                        onDragEnd = {
+                            if (total < -120f && indiceActivo < ultimo) indiceActivo += 1
+                            else if (total > 120f && indiceActivo > 0) indiceActivo -= 1
+                        },
+                        onHorizontalDrag = { _, delta -> total += delta }
+                    )
+                }
+        ) {
+            Column(Modifier.fillMaxSize().verticalScroll(desplazamiento)) {
+                PreguntaRiesgo(
+                    index = indiceActivo,
+                    categoria = when (indiceActivo) {
+                        in 0..5 -> "A. Riesgos biológicos"
+                        in 6..10 -> "B. Riesgos sanitarios"
+                        else -> "C. Riesgos socioeconómicos"
+                    },
+                    valores = valores
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             BotonSecundarioRuralitos(
                 texto = "Anterior",
                 onClick = { indiceActivo = (indiceActivo - 1).coerceAtLeast(0) },
                 enabled = indiceActivo > 0,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f).testTag("boton_anterior")
             )
             BotonPrincipalRuralitos(
-                texto = if (indiceActivo == valores.lastIndex) "Primera" else "Siguiente",
-                onClick = {
-                    indiceActivo = if (indiceActivo == valores.lastIndex) 0 else indiceActivo + 1
-                },
-                modifier = Modifier.weight(1f),
+                texto = "Siguiente",
+                onClick = { indiceActivo = (indiceActivo + 1).coerceAtMost(ultimo) },
+                enabled = indiceActivo < ultimo,
+                modifier = Modifier.weight(1f).testTag("boton_siguiente"),
                 color = AzulClinico
-            )
-        }
-        SeccionFormularioRuralitos(
-            titulo = "Datos de la evaluación",
-            descripcion = "Fecha y responsable de esta calificación."
-        ) {
-            CampoFecha(fecha, "Fecha de calificación") { mostrarCalendario = true }
-            OutlinedTextField(
-                value = responsable,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Responsable de la cuenta activa") },
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                singleLine = true
-            )
-            MensajeEstadoRuralitos(
-                titulo = "$seleccionadas de 18 componentes respondidos",
-                descripcion = if (seleccionCompleta) {
-                    "Resultado: ${nombreNivelRiesgo(resultado.nivel)} · Puntaje calculado: ${resultado.total}"
-                } else {
-                    "Completa todos los componentes para obtener el resultado final."
-                },
-                color = if (seleccionCompleta) colorNivelRiesgo(resultado.nivel) else AzulClinico,
-                simbolo = if (seleccionCompleta) "✓" else seleccionadas.toString(),
-                modifier = Modifier.padding(top = 10.dp)
             )
         }
     }

@@ -338,4 +338,17 @@ class FactoresRiesgoTest {
         assertEquals("H", RolFamiliar.sexoDelRol("PADRE"))
         assertEquals(null, RolFamiliar.sexoDelRol("OTRO FAMILIAR"))
     }
+
+    @Test
+    fun elEstadoNutricionalSaleDeLosDiagnosticosCie10() {
+        assertEquals("SIN_ALTERACION", EstrategiasDesdeCie10.estadoNutricional(emptyList()))
+        assertEquals("OBESIDAD", EstrategiasDesdeCie10.estadoNutricional(listOf("E66.9")))
+        assertEquals("OBESIDAD", EstrategiasDesdeCie10.estadoNutricional(listOf("E669")))
+        assertEquals("DESNUTRICION_AGUDA", EstrategiasDesdeCie10.estadoNutricional(listOf("E43X")))
+        assertEquals("DESNUTRICION_AGUDA", EstrategiasDesdeCie10.estadoNutricional(listOf("E44.0")))
+        assertEquals("DESNUTRICION_CRONICA", EstrategiasDesdeCie10.estadoNutricional(listOf("E45")))
+        assertEquals("SIN_ALTERACION", EstrategiasDesdeCie10.estadoNutricional(listOf("I10", "E11.9")))
+        // con varios, la desnutrición aguda manda sobre la obesidad
+        assertEquals("DESNUTRICION_AGUDA", EstrategiasDesdeCie10.estadoNutricional(listOf("E66.9", "E41X")))
+    }
 }

@@ -350,7 +350,7 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
                     ) {
                         Text(
                             "Ninguna ficha de ${elegido.nombre} tiene la vivienda ubicada, por eso no se puede colocar el punto medio. " +
-                                "Los totales sí están abajo. Abre una ficha, entra a Croquis y guarda el punto de la vivienda.",
+                                "Los totales sí están abajo. Abre una ficha, entra a Ubicación de vivienda y guarda el punto de la vivienda.",
                             Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp
                         )
                     }
