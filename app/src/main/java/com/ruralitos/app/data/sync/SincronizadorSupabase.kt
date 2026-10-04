@@ -248,6 +248,19 @@ class SincronizadorSupabase(context: Context) {
         ficha: FichaFamiliarEntity,
         json: JSONObject,
         versionBase: Long
+    ): JSONObject = try {
+        guardarCabeceraCon(ficha, json, versionBase)
+    } catch (error: ErrorSupabase) {
+        // Si el servidor aún no tiene la columna de símbolos del croquis (falta aplicar su migración), la ficha
+        // sigue sincronizándose sin ella; los símbolos viajarán cuando la columna exista.
+        if (!error.message.orEmpty().contains("croquis_elementos_json")) throw error
+        guardarCabeceraCon(ficha, JSONObject(json.toString()).also { it.remove("croquis_elementos_json") }, versionBase)
+    }
+
+    private suspend fun guardarCabeceraCon(
+        ficha: FichaFamiliarEntity,
+        json: JSONObject,
+        versionBase: Long
     ): JSONObject {
         var version = versionBase
         if (version == 0L) {
@@ -715,6 +728,7 @@ class SincronizadorSupabase(context: Context) {
         .put("latitud", item.latitud ?: JSONObject.NULL)
         .put("longitud", item.longitud ?: JSONObject.NULL)
         .put("altitud", item.altitud ?: JSONObject.NULL)
+        .put("croquis_elementos_json", item.croquisElementosJson)
         .put("responsable_nombre", item.responsableNombre)
         .put("responsable_codigo", item.responsableCodigo)
         .put("estado", item.estado)

@@ -33,6 +33,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
@@ -80,7 +84,25 @@ import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.data.mapa.GestorMapaCampo
 import com.ruralitos.app.data.mapa.GestorMapaDetalle
 import com.ruralitos.app.domain.DispensarizacionAutomatica
+import com.ruralitos.app.domain.ElementoCroquis
+import com.ruralitos.app.domain.ElementosCroquis
 import com.ruralitos.app.domain.IconosMais
+import com.ruralitos.app.domain.SimboloCroquis
+import com.ruralitos.app.domain.TipoElementoCroquis
+import com.ruralitos.app.ui.components.BotonAccionRuralitos
+import com.ruralitos.app.ui.components.BotonFlotanteRedondo
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos as BotonPrincipalCroquis
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos as BotonSecundarioCroquis
+import com.ruralitos.app.ui.components.DibujoCroquis
+import com.ruralitos.app.ui.components.VentanaRuralitos
+import org.maplibre.android.style.expressions.Expression
+import org.maplibre.android.style.layers.Property
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.SymbolLayer
+import org.maplibre.android.style.sources.GeoJsonSource
+import org.json.JSONArray
+import org.json.JSONObject
+import java.util.UUID
 import com.ruralitos.app.domain.PictogramaDispensarizacion
 import com.ruralitos.app.ui.components.PantallaRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -195,6 +217,15 @@ fun CroquisMapaScreen(
             mensaje = ""
         }
     }
+    // Símbolos y textos del entorno colocados sobre el mapa; se guardan al instante y viajan con la ficha.
+    var elementos by remember(fichaDisponible?.id) {
+        mutableStateOf(ElementosCroquis.decodificar(fichaDisponible?.croquisElementosJson))
+    }
+    var seleccionId by remember { mutableStateOf<String?>(null) }
+    var colocando by remember { mutableStateOf<ElementoCroquis?>(null) }
+    var paletaAbierta by remember { mutableStateOf(false) }
+    var dialogoTexto by remember { mutableStateOf<DialogoTextoCroquis?>(null) }
+    var arrastrandoElemento by remember { mutableStateOf(false) }
     var procesando by remember { mutableStateOf(false) }
     var capturandoMapa by remember { mutableStateOf(false) }
     var capturaVersion by remember { mutableIntStateOf(0) }
@@ -359,10 +390,56 @@ fun CroquisMapaScreen(
         }
     }
 
+    fun guardarElementos(nuevos: List<ElementoCroquis>) {
+        elementos = nuevos
+        val json = ElementosCroquis.codificar(nuevos)
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) { database.fichaFamiliarDao().guardarElementosCroquis(fichaId, json, usuarioId) }
+            }.onFailure { mensaje = "No se pudo guardar el símbolo. Inténtalo de nuevo." }
+        }
+    }
+
+    fun elementoCerca(pantalla: PointF, radioDp: Float): ElementoCroquis? {
+        val vista = mapa ?: return null
+        val radio = radioDp * context.resources.displayMetrics.density
+        return elementos
+            .map { it to vista.projection.toScreenLocation(LatLng(it.latitud, it.longitud)) }
+            .map { (elemento, posicion) -> elemento to hypot(pantalla.x - posicion.x, pantalla.y - posicion.y) }
+            .filter { it.second <= radio }
+            .minByOrNull { it.second }?.first
+    }
+
+    fun colocarEn(punto: LatLng) {
+        val plantilla = colocando ?: return
+        colocando = null
+        if (elementos.size >= ElementosCroquis.MAXIMO) {
+            mensaje = "No caben más de ${ElementosCroquis.MAXIMO} símbolos y textos en el croquis. Elimina alguno."
+            return
+        }
+        val nuevo = plantilla.copy(id = UUID.randomUUID().toString(), latitud = punto.latitude, longitud = punto.longitude)
+        guardarElementos(elementos + nuevo)
+        seleccionId = nuevo.id
+    }
+
     // MapView conserva sus listeners entre recomposiciones; estos estados les entregan
     // siempre las funciones y coordenadas vigentes de la ficha actual.
+    val guardarElementosActual = rememberUpdatedState<(List<ElementoCroquis>) -> Unit> { guardarElementos(it) }
     val moverViviendaActual = rememberUpdatedState<(LatLng) -> Unit> { punto ->
         actualizarUbicacionManual(punto)
+    }
+    val alTocarMapaActual = rememberUpdatedState<(LatLng) -> Unit> { punto ->
+        val pantalla = mapa?.projection?.toScreenLocation(punto)
+        val cerca = if (pantalla != null) elementoCerca(pantalla, 30f) else null
+        when {
+            colocando != null -> colocarEn(punto)
+            cerca != null -> { seleccionId = cerca.id; paletaAbierta = false }
+            seleccionId != null -> seleccionId = null
+            else -> {
+                moverViviendaActual.value(punto)
+                mensaje = "Vivienda movida; sus coordenadas se actualizaron."
+            }
+        }
     }
 
     MapLibre.getInstance(context)
@@ -386,8 +463,7 @@ fun CroquisMapaScreen(
                     }
                 }
                 mapLibre.addOnMapClickListener { punto ->
-                    moverViviendaActual.value(punto)
-                    mensaje = "Vivienda movida; sus coordenadas se actualizaron."
+                    alTocarMapaActual.value(punto)
                     true
                 }
             }
@@ -399,6 +475,10 @@ fun CroquisMapaScreen(
         if (procesando || !ubicacionElegida) return
         procesando = true
         capturandoMapa = true
+        // La captura sale limpia: sin el resaltado del símbolo seleccionado ni la paleta.
+        seleccionId = null
+        colocando = null
+        paletaAbierta = false
         val puntoEnPantalla = mapLibre.projection.toScreenLocation(LatLng(latitud, longitud))
         marcador?.let(mapLibre::removeMarker)
         marcador = null
@@ -433,7 +513,7 @@ fun CroquisMapaScreen(
                     procesando = false
                 }
             }
-        }, 100L)
+        }, 450L)
     }
 
     LaunchedEffect(Unit) {
@@ -576,6 +656,46 @@ fun CroquisMapaScreen(
         onDispose { gestor.unregisterNetworkCallback(observador) }
     }
 
+    // Los símbolos y textos son una capa del propio mapa: salen en la captura y se mueven con él.
+    val imagenesCroquis = remember { mutableSetOf<String>() }
+    LaunchedEffect(elementos, seleccionId, mapa, estiloMapaListo) {
+        val mapLibre = mapa ?: return@LaunchedEffect
+        if (!estiloMapaListo) return@LaunchedEffect
+        val estilo = mapLibre.style?.takeIf { it.isFullyLoaded } ?: return@LaunchedEffect
+        val densidad = context.resources.displayMetrics.density
+        if (estilo.getSource(FUENTE_ELEMENTOS) == null) {
+            imagenesCroquis.clear()
+            estilo.addSource(GeoJsonSource(FUENTE_ELEMENTOS, "{\"type\":\"FeatureCollection\",\"features\":[]}"))
+            estilo.addLayer(
+                SymbolLayer(CAPA_ELEMENTOS, FUENTE_ELEMENTOS).withProperties(
+                    PropertyFactory.iconImage(Expression.get("imagen")),
+                    PropertyFactory.iconAllowOverlap(true),
+                    PropertyFactory.iconIgnorePlacement(true),
+                    PropertyFactory.iconAnchor(Property.ICON_ANCHOR_CENTER)
+                )
+            )
+        }
+        val rasgos = JSONArray()
+        val enUso = mutableSetOf<String>()
+        elementos.forEach { elemento ->
+            val nombre = DibujoCroquis.nombreImagen(elemento, elemento.id == seleccionId)
+            enUso += nombre
+            if (nombre !in imagenesCroquis) {
+                estilo.addImage(nombre, DibujoCroquis.bitmapElemento(densidad, elemento, elemento.id == seleccionId))
+                imagenesCroquis += nombre
+            }
+            rasgos.put(
+                JSONObject().put("type", "Feature")
+                    .put("geometry", JSONObject().put("type", "Point").put("coordinates", JSONArray().put(elemento.longitud).put(elemento.latitud)))
+                    .put("properties", JSONObject().put("imagen", nombre))
+            )
+        }
+        estilo.getSourceAs<GeoJsonSource>(FUENTE_ELEMENTOS)
+            ?.setGeoJson(JSONObject().put("type", "FeatureCollection").put("features", rasgos).toString())
+        (imagenesCroquis - enUso).forEach { estilo.removeImage(it) }
+        imagenesCroquis.retainAll(enUso)
+    }
+
     LaunchedEffect(pictogramasMais, ubicacionElegida, mapa, estiloMapaListo, capturandoMapa) {
         val mapLibre = mapa ?: return@LaunchedEffect
         if (!estiloMapaListo || capturandoMapa) return@LaunchedEffect
@@ -633,7 +753,7 @@ fun CroquisMapaScreen(
 
         SeccionFormularioRuralitos(
             titulo = "1. Ubica la vivienda",
-            descripcion = "Arrastra el punto rojo o toca el mapa para ubicar la vivienda."
+            descripcion = "Arrastra el punto rojo o toca el mapa para ubicar la vivienda. Con + y T agrega símbolos y textos del entorno."
         ) {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
                 val alturaMapa = if (maxWidth >= 700.dp) 600.dp else 520.dp
@@ -655,7 +775,39 @@ fun CroquisMapaScreen(
                                             hypot(evento.x - posicion.x, evento.y - posicion.y) <=
                                                 52f * resources.displayMetrics.density
                                         }
-                                    val viviendaCerca = evento.actionMasked == MotionEvent.ACTION_DOWN && cerca(marcadorActual)
+                                    val densidad = resources.displayMetrics.density
+                                    if (evento.actionMasked == MotionEvent.ACTION_DOWN && mapLibre != null &&
+                                        colocando == null && seleccionId != null) {
+                                        val elegido = elementos.firstOrNull { it.id == seleccionId }
+                                        val posicion = elegido?.let { mapLibre.projection.toScreenLocation(LatLng(it.latitud, it.longitud)) }
+                                        if (posicion != null && hypot(evento.x - posicion.x, evento.y - posicion.y) <= 36f * densidad) {
+                                            arrastrandoElemento = true
+                                            mapaEnUso = true
+                                            mapLibre.uiSettings.setAllGesturesEnabled(false)
+                                            vista.parent?.requestDisallowInterceptTouchEvent(true)
+                                            return@setOnTouchListener true
+                                        }
+                                    }
+                                    if (arrastrandoElemento && mapLibre != null) {
+                                        when (evento.actionMasked) {
+                                            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
+                                                val punto = mapLibre.projection.fromScreenLocation(PointF(evento.x, evento.y))
+                                                val actual = seleccionId
+                                                elementos = elementos.map {
+                                                    if (it.id == actual) it.copy(latitud = punto.latitude, longitud = punto.longitude) else it
+                                                }
+                                            }
+                                        }
+                                        if (evento.actionMasked == MotionEvent.ACTION_UP || evento.actionMasked == MotionEvent.ACTION_CANCEL) {
+                                            arrastrandoElemento = false
+                                            mapaEnUso = false
+                                            mapLibre.uiSettings.setAllGesturesEnabled(true)
+                                            vista.parent?.requestDisallowInterceptTouchEvent(false)
+                                            guardarElementosActual.value(elementos)
+                                        }
+                                        return@setOnTouchListener true
+                                    }
+                                    val viviendaCerca = evento.actionMasked == MotionEvent.ACTION_DOWN && colocando == null && cerca(marcadorActual)
                                     if (viviendaCerca) {
                                         arrastrandoMarcador = true
                                         mapaEnUso = true
@@ -743,6 +895,132 @@ fun CroquisMapaScreen(
                                         fontWeight = FontWeight.SemiBold,
                                         color = AzulClinico
                                     )
+                                }
+                            }
+                        }
+                        Column(
+                            modifier = Modifier.align(Alignment.CenterStart).padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            BotonFlotanteRedondo(
+                                descripcion = "Agregar un símbolo al mapa",
+                                color = CianRuralitos,
+                                etiquetaPrueba = "boton_simbolo",
+                                onClick = {
+                                    colocando = null
+                                    seleccionId = null
+                                    paletaAbierta = !paletaAbierta
+                                }
+                            )
+                            BotonFlotanteRedondo(
+                                descripcion = "Agregar un texto al mapa",
+                                color = AzulClinico,
+                                etiquetaPrueba = "boton_texto_mapa",
+                                onClick = {
+                                    paletaAbierta = false
+                                    seleccionId = null
+                                    dialogoTexto = DialogoTextoCroquis(null, "")
+                                }
+                            ) { Text("T", fontSize = 22.sp, fontWeight = FontWeight.Bold) }
+                        }
+                        colocando?.let { plantilla ->
+                            Surface(
+                                modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp, start = 64.dp, end = 64.dp).testTag("aviso_colocar"),
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xFF27415A)
+                            ) {
+                                Row(Modifier.padding(start = 12.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        "Toca el mapa para colocar: ${plantilla.etiqueta}",
+                                        color = Color.White, fontSize = 12.sp, modifier = Modifier.weight(1f, fill = false)
+                                    )
+                                    TextButton(
+                                        onClick = { colocando = null },
+                                        modifier = Modifier.testTag("cancelar_colocar")
+                                    ) { Text("Cancelar", color = Color.White, fontSize = 12.sp) }
+                                }
+                            }
+                        }
+                        if (paletaAbierta) {
+                            Surface(
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(start = 8.dp, end = 8.dp, bottom = 26.dp).testTag("paleta_simbolos"),
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xF8FFFFFF),
+                                shadowElevation = 3.dp
+                            ) {
+                                val densidad = context.resources.displayMetrics.density
+                                val imagenes = remember(densidad) {
+                                    SimboloCroquis.entries.associateWith { DibujoCroquis.bitmapSimbolo(densidad, it).asImageBitmap() }
+                                }
+                                Column(Modifier.padding(vertical = 8.dp)) {
+                                    Text(
+                                        "Elige un símbolo",
+                                        modifier = Modifier.padding(start = 12.dp, bottom = 4.dp),
+                                        color = AzulClinico, fontWeight = FontWeight.SemiBold, fontSize = 13.sp
+                                    )
+                                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 6.dp)) {
+                                        SimboloCroquis.entries.forEach { simbolo ->
+                                            Column(
+                                                Modifier
+                                                    .width(74.dp)
+                                                    .clickable {
+                                                        colocando = ElementoCroquis(
+                                                            tipo = TipoElementoCroquis.SIMBOLO, codigo = simbolo.codigo,
+                                                            texto = simbolo.etiqueta, latitud = 0.0, longitud = 0.0
+                                                        )
+                                                        paletaAbierta = false
+                                                    }
+                                                    .padding(4.dp)
+                                                    .testTag("simbolo_${simbolo.codigo}"),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Image(
+                                                    bitmap = imagenes.getValue(simbolo), contentDescription = simbolo.etiqueta,
+                                                    modifier = Modifier.size(40.dp), contentScale = ContentScale.Fit
+                                                )
+                                                Text(
+                                                    simbolo.etiqueta, fontSize = 10.sp, color = AzulClinico,
+                                                    textAlign = TextAlign.Center, maxLines = 2
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        val elegido = elementos.firstOrNull { it.id == seleccionId }
+                        if (elegido != null && !paletaAbierta && colocando == null) {
+                            Surface(
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(start = 8.dp, end = 8.dp, bottom = 26.dp).testTag("barra_elemento"),
+                                shape = RoundedCornerShape(14.dp),
+                                color = Color(0xF8FFFFFF),
+                                shadowElevation = 3.dp
+                            ) {
+                                Column(Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    Text(
+                                        "${elegido.etiqueta.ifBlank { "Elemento" }} · arrastra para moverlo",
+                                        color = AzulClinico, fontSize = 12.sp, fontWeight = FontWeight.SemiBold
+                                    )
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        BotonAccionRuralitos(
+                                            texto = "Cambiar texto", color = AzulClinico,
+                                            onClick = { dialogoTexto = DialogoTextoCroquis(elegido.id, elegido.texto) },
+                                            modifier = Modifier.weight(1f).testTag("cambiar_texto_elemento")
+                                        )
+                                        BotonAccionRuralitos(
+                                            texto = "Eliminar", color = RojoClinico,
+                                            onClick = {
+                                                guardarElementos(elementos.filterNot { it.id == elegido.id })
+                                                seleccionId = null
+                                            },
+                                            modifier = Modifier.weight(1f).testTag("eliminar_elemento")
+                                        )
+                                        BotonAccionRuralitos(
+                                            texto = "Listo", color = CianRuralitos,
+                                            onClick = { seleccionId = null },
+                                            modifier = Modifier.weight(1f).testTag("listo_elemento")
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -870,7 +1148,61 @@ fun CroquisMapaScreen(
                 color = NaranjaClinico, fontSize = 12.sp)
         }
     }
+
+    dialogoTexto?.let { dialogo ->
+        var escrito by remember(dialogo) { mutableStateOf(dialogo.texto) }
+        val nuevo = dialogo.elementoId == null
+        val elementoEditado = elementos.firstOrNull { it.id == dialogo.elementoId }
+        val esSimbolo = elementoEditado?.tipo == TipoElementoCroquis.SIMBOLO
+        val limpio = ElementosCroquis.limpiarTexto(escrito)
+        val puedeGuardar = limpio.isNotBlank() || esSimbolo
+        VentanaRuralitos(
+            titulo = if (nuevo) "Texto en el mapa" else if (esSimbolo) "Nombre del símbolo" else "Cambiar texto",
+            subtitulo = "Croquis de la vivienda",
+            simbolo = "T",
+            color = AzulClinico,
+            onCerrar = { dialogoTexto = null },
+            contenido = {
+                Text(
+                    if (nuevo) "Escribe lo que quieres que se lea en el mapa, por ejemplo «Camino al río» o «Tienda de Rosa». Luego tócalo en el mapa donde va."
+                    else "Cambia lo que se lee en el mapa.",
+                    color = Color(0xFF5B7083)
+                )
+                OutlinedTextField(
+                    value = escrito,
+                    onValueChange = { escrito = it.take(ElementosCroquis.MAXIMO_TEXTO) },
+                    label = { Text(if (esSimbolo) "Nombre (si lo dejas vacío se usa el del símbolo)" else "Texto") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth().testTag("texto_croquis")
+                )
+            },
+            acciones = {
+                BotonPrincipalCroquis(
+                    texto = if (nuevo) "Colocar en el mapa" else "Guardar",
+                    color = AzulClinico,
+                    enabled = puedeGuardar,
+                    modifier = Modifier.testTag("guardar_texto_croquis"),
+                    onClick = {
+                        dialogoTexto = null
+                        if (nuevo) {
+                            colocando = ElementoCroquis(
+                                tipo = TipoElementoCroquis.TEXTO, texto = limpio, latitud = 0.0, longitud = 0.0
+                            )
+                        } else {
+                            guardarElementos(elementos.map { if (it.id == dialogo.elementoId) it.copy(texto = limpio) else it })
+                        }
+                    }
+                )
+                BotonSecundarioCroquis(texto = "Cancelar", onClick = { dialogoTexto = null })
+            }
+        )
+    }
 }
+
+private data class DialogoTextoCroquis(val elementoId: String?, val texto: String)
+
+private const val FUENTE_ELEMENTOS = "croquis-elementos"
+private const val CAPA_ELEMENTOS = "croquis-elementos-capa"
 
 @Composable
 internal fun DatoCoordenada(

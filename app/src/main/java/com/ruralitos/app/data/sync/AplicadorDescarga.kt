@@ -518,6 +518,10 @@ internal class AplicadorDescarga(
             latitud = remoto.doubleNullable("latitud"),
             longitud = remoto.doubleNullable("longitud"),
             altitud = remoto.doubleNullable("altitud"),
+            // Si el servidor aún no tiene la columna, se conservan los símbolos que ya hay en este teléfono.
+            croquisElementosJson = if (remoto.has("croquis_elementos_json")) {
+                remoto.texto("croquis_elementos_json").ifBlank { "[]" }
+            } else existente?.croquisElementosJson ?: "[]",
             responsableNombre = remoto.texto("responsable_nombre"),
             responsableCodigo = remoto.texto("responsable_codigo"),
             firmaUri = firmaUri,

@@ -61,6 +61,10 @@ data class FichaFamiliarEntity(
     val longitud: Double? = null,
     val altitud: Double? = null,
 
+    /** Símbolos y textos que se colocan sobre el mapa del croquis (ver ElementosCroquis). */
+    @ColumnInfo(defaultValue = "'[]'")
+    val croquisElementosJson: String = "[]",
+
     @ColumnInfo(defaultValue = "''")
     val responsableNombre: String = "",
     @ColumnInfo(defaultValue = "''")

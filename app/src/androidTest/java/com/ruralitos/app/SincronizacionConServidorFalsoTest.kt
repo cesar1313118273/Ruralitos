@@ -186,6 +186,37 @@ class SincronizacionConServidorFalsoTest {
     }
 
     @Test
+    fun losSimbolosYTextosDelCroquisViajanEnAmbosSentidos() = runBlocking {
+        val (syncId, id) = crearFichaConIntegrante()
+        val json = "[{\"id\":\"a1\",\"tipo\":\"SIMBOLO\",\"codigo\":\"IGLESIA\",\"texto\":\"Iglesia\",\"lat\":-0.22,\"lon\":-78.51}]"
+        database.fichaFamiliarDao().guardarElementosCroquis(id, json)
+        assertEquals(0, sincronizar().errores)
+        assertEquals(json, servidor.fila("fichas_familiares", syncId)!!.getString("croquis_elementos_json"))
+
+        val otro = "[{\"id\":\"b2\",\"tipo\":\"TEXTO\",\"codigo\":\"\",\"texto\":\"Camino al rio\",\"lat\":-0.2,\"lon\":-78.5}]"
+        servidor.modificar("fichas_familiares", syncId) { put("croquis_elementos_json", otro) }
+        assertEquals(0, sincronizar().errores)
+        assertEquals(otro, dao.fichaPorSyncId(syncId)!!.croquisElementosJson)
+    }
+
+    @Test
+    fun sinLaColumnaDeSimbolosEnElServidorLaFichaSigueSincronizandoYLosSimbolosSeConservan() = runBlocking {
+        servidor.columnasInexistentes = setOf("croquis_elementos_json")
+        val (syncId, id) = crearFichaConIntegrante()
+        val json = "[{\"id\":\"a1\",\"tipo\":\"SIMBOLO\",\"codigo\":\"ESCUELA\",\"texto\":\"Escuela\",\"lat\":-0.22,\"lon\":-78.51}]"
+        database.fichaFamiliarDao().guardarElementosCroquis(id, json)
+
+        assertEquals("la falta de la columna no es un error", 0, sincronizar().errores)
+        assertEquals("SINCRONIZADO", dao.fichaPorSyncId(syncId)!!.syncEstado)
+        assertFalse(servidor.fila("fichas_familiares", syncId)!!.has("croquis_elementos_json"))
+        // una descarga completa no borra lo que solo existe en este teléfono
+        MarcasDescarga.borrarTodo(context)
+        servidor.modificar("fichas_familiares", syncId) { put("numero_telefono", "0933333333") }
+        assertEquals(0, sincronizar().errores)
+        assertEquals(json, dao.fichaPorSyncId(syncId)!!.croquisElementosJson)
+    }
+
+    @Test
     fun siOtraPersonaCambioLaFichaMientrasSeEditabaSeMarcaConflictoSinPisarNada() = runBlocking {
         val (syncId, id) = crearFichaConIntegrante()
         sincronizar()

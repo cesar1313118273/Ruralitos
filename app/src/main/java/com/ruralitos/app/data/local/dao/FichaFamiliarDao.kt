@@ -189,6 +189,23 @@ interface FichaFamiliarDao {
         actualizadoEn: Long = System.currentTimeMillis()
     )
 
+    /** Guarda los símbolos y textos del croquis y deja la ficha pendiente de sincronizar. */
+    @Query("""
+        UPDATE fichas_familiares SET
+            croquisElementosJson = :json,
+            actualizadoPorUsuarioId = COALESCE(:usuarioId, actualizadoPorUsuarioId),
+            actualizadoEn = :actualizadoEn,
+            syncEstado = 'PENDIENTE',
+            syncError = ''
+        WHERE id = :fichaId
+    """)
+    suspend fun guardarElementosCroquis(
+        fichaId: Long,
+        json: String,
+        usuarioId: Long? = null,
+        actualizadoEn: Long = System.currentTimeMillis()
+    )
+
     @Query("""
         UPDATE fichas_familiares SET
             actualizadoPorUsuarioId = COALESCE(:usuarioId, actualizadoPorUsuarioId),
