@@ -41,3 +41,19 @@ class PlanCompartidasTest {
         assertEquals(listOf("quitada"), plan.candidatasARetirar)
     }
 }
+
+class PlanTraspasosTest {
+    @Test
+    fun laFichaQueEntregueSeRetiraSiYaNoLaVeoPeroUnaPropiaNo() {
+        val locales = listOf(
+            FichaLocalCompartida("entregada", "", "SINCRONIZADO"),
+            FichaLocalCompartida("mia", "", "SINCRONIZADO"),
+            FichaLocalCompartida("entregadaConCambios", "", "PENDIENTE")
+        )
+        val plan = PlaneadorCompartidas.planear(
+            "o1", locales, emptyList(), emptySet(),
+            traspasadas = setOf("entregada", "entregadaConCambios")
+        )
+        assertEquals(listOf("entregada"), plan.candidatasARetirar)
+    }
+}

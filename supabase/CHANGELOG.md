@@ -1,5 +1,15 @@
 # Changelog de Supabase
 
+## 2026-10-08 — Traspaso de fichas por código
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261008200000_traspaso_de_fichas_por_codigo.sql`).
+- Tipo: cambio compatible; agrega tablas `traspasos`, `traspasos_fichas` y `fichas_traspasadas` (con RLS, solo se escriben con las funciones).
+- `crear_codigo_traspaso(items, horas)`: fija la lista de fichas propias dentro de lo elegido (centro, EAIS, barrio o ficha) y devuelve un código de un solo uso.
+- `aceptar_traspaso(codigo)`: las fichas pasan a ser de quien acepta (misma ficha, sin copias); quien las entregó pierde el acceso que tenía por ser su autor y los accesos que había dado.
+- `listar_fichas_traspasadas()`: para que el teléfono de quien entregó retire sus copias.
+- `traspasar_ficha` (una sola ficha) ahora también deja a quien entrega sin acceso.
+
+
 ## 2026-10-08 — Huella de cambios para sincronizar rápido
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261008100000_huella_de_cambios.sql`).

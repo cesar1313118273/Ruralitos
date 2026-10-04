@@ -181,6 +181,12 @@ data class TerritorioRemoto(
     val activo: Boolean
 )
 
+data class CodigoTraspasoRemoto(
+    val codigo: String,
+    val expiraEn: String,
+    val total: Int
+)
+
 data class CodigoAccesoRemoto(
     val codigo: String,
     val expiraEn: String
@@ -849,6 +855,48 @@ class SupabaseApi(context: Context) {
     suspend fun huellaDeCambios(organizacionId: String): String =
         rpc("huella_de_cambios", JSONObject().put("p_organizacion_id", organizacionId))
             .texto.trim().trim('"').takeIf { it != "null" }.orEmpty()
+
+    /** Código para traspasar a otra persona las fichas que elegí (solo las que yo creé). */
+    suspend fun crearCodigoTraspaso(concesiones: List<ConcesionAcceso>): CodigoTraspasoRemoto {
+        require(concesiones.isNotEmpty()) { "Elige al menos una parte para traspasar." }
+        val items = JSONArray()
+        concesiones.forEach {
+            items.put(
+                JSONObject()
+                    .put("organizacion_id", it.organizacionId)
+                    .put("alcance", it.alcance)
+                    .put("eais_id", it.eaisId ?: JSONObject.NULL)
+                    .put("territorio_id", it.territorioId ?: JSONObject.NULL)
+                    .put("ficha_id", it.fichaId ?: JSONObject.NULL)
+            )
+        }
+        val arreglo = try {
+            rpc("crear_codigo_traspaso", JSONObject().put("p_items", items).put("p_horas_vigencia", 12)).jsonArreglo()
+        } catch (error: ErrorSupabase) {
+            if (error.codigoHttp == 404 || error.message.orEmpty().contains("crear_codigo_traspaso")) {
+                throw ErrorSupabase(
+                    "Traspasar necesita la actualización de Supabase (archivo 20261008200000_traspaso_de_fichas_por_codigo.sql).",
+                    error.codigoHttp
+                )
+            }
+            throw error
+        }
+        if (arreglo.length() == 0) throw ErrorSupabase("Supabase no devolvió el código de traspaso.")
+        return arreglo.getJSONObject(0).let {
+            CodigoTraspasoRemoto(it.getString("codigo"), it.optString("expira_en"), it.optInt("total"))
+        }
+    }
+
+    /** Acepta un código de traspaso: las fichas pasan a ser mías. Devuelve cuántas fichas recibí. */
+    suspend fun aceptarTraspaso(codigo: String): Int =
+        rpc("aceptar_traspaso", JSONObject().put("p_codigo", codigo.trim().uppercase()))
+            .texto.trim().toIntOrNull() ?: 0
+
+    /** Fichas que yo entregué (últimos 60 días): el teléfono retira sus copias si ya no las puede ver. */
+    suspend fun fichasTraspasadas(): List<String> {
+        val filas = rpc("listar_fichas_traspasadas", JSONObject()).jsonArreglo()
+        return (0 until filas.length()).map { filas.getJSONObject(it).getString("ficha_id") }
+    }
 
     /** Traspasa la ficha a otra persona (con la que ya está compartida); quien la creó conserva acceso para editar. */
     suspend fun traspasarFicha(fichaId: String, usuarioId: String) {

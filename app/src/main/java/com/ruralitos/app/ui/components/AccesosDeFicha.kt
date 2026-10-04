@@ -122,7 +122,7 @@ fun AccesosDeFichaRuralitos(
             titulo = "Traspasar la ficha",
             mensaje = "La ficha de ${ficha.nombreApellidoJefeFamilia.ifBlank { "esta familia" }} pasará a ser de ${persona.nombre}: " +
                 "ella decidirá con quién se comparte y será la única que pueda eliminarla. " +
-                "Tú seguirás pudiendo editarla. Las demás personas que la veían por ti dejarán de verla.",
+                "Tú dejarás de tener acceso, a menos que ella te la comparta. Las demás personas que la veían por ti también dejarán de verla.",
             textoConfirmar = "Sí, traspasar",
             confirmarHabilitado = !trabajando,
             onConfirmar = {

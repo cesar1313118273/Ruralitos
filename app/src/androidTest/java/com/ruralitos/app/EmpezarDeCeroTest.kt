@@ -15,7 +15,7 @@ import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.local.entity.ActividadAgendaEntity
 import com.ruralitos.app.data.local.entity.NotaDiariaEntity
 import com.ruralitos.app.data.local.entity.UsuarioEntity
-import com.ruralitos.app.ui.screens.SeguridadRespaldoScreen
+import com.ruralitos.app.ui.screens.SeguridadTraspasoScreen
 import com.ruralitos.app.ui.theme.RuralitosTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -118,7 +118,7 @@ class EmpezarDeCeroTest {
             id = usuarioId, cedula = "0000000007", nombres = "QA", cargo = "Médico", rol = "ADMIN",
             claveHash = "", claveSalt = "", correo = "", telefono = ""
         )
-        rule.setContent { RuralitosTheme { SeguridadRespaldoScreen(usuario = usuario, salaActiva = null, onRestaurado = {}, onRegresar = {}) } }
+        rule.setContent { RuralitosTheme { SeguridadTraspasoScreen(usuario = usuario, salaActiva = null, onRegresar = {}) } }
         // «Eliminar fichas» tiene su propio espacio dentro de Seguridad y respaldo
         rule.waitUntil(15_000) { rule.onAllNodes(hasTestTag("abrir_eliminar")).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("abrir_eliminar").performClick()

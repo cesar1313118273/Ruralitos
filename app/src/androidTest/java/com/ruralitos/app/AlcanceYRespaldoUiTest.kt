@@ -18,7 +18,7 @@ import com.ruralitos.app.domain.CatalogoAlcance
 import com.ruralitos.app.ui.components.EstadoAlcance
 import com.ruralitos.app.ui.components.SelectorAlcanceRuralitos
 import com.ruralitos.app.ui.components.TarjetaCodigoRuralitos
-import com.ruralitos.app.ui.screens.SeguridadRespaldoScreen
+import com.ruralitos.app.ui.screens.SeguridadTraspasoScreen
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.RuralitosTheme
 import org.junit.Assert.assertEquals
@@ -116,22 +116,23 @@ class AlcanceYRespaldoUiTest {
     }
 
     @Test
-    fun seguridadYRespaldoSeparaExportarImportarYEliminar() {
+    fun seguridadYTraspasoSeparaTraspasarYEliminar() {
         val usuario = UsuarioEntity(
             id = 7, cedula = "0000000007", nombres = "QA", cargo = "Médico", rol = "ADMIN",
             claveHash = "", claveSalt = "", correo = "", telefono = ""
         )
-        rule.setContent { RuralitosTheme { SeguridadRespaldoScreen(usuario = usuario, salaActiva = null, onRestaurado = {}, onRegresar = {}) } }
-        rule.waitUntil(15_000) { existe("abrir_exportar") }
-        assertTrue(existe("abrir_importar") && existe("abrir_eliminar"))
-        assertFalse("ya no hay «Protecciones activas»", hay("Protecciones activas"))
+        rule.setContent { RuralitosTheme { SeguridadTraspasoScreen(usuario = usuario, salaActiva = null, onRegresar = {}) } }
+        rule.waitUntil(15_000) { existe("abrir_traspasar") }
+        assertTrue(existe("abrir_eliminar"))
+        assertFalse("ya no hay exportar ni importar", hay("Exportar fichas") || hay("Importar fichas"))
 
-        rule.onNodeWithTag("abrir_exportar").performClick()
-        rule.waitUntil(5_000) { hay("1. Qué exportar") }
-        assertTrue(existe("exportar_nivel_BARRIO") && existe("crear_respaldo"))
-        assertFalse("en Exportar no se ve lo de eliminar", existe("eliminar_todas_fichas"))
+        rule.onNodeWithTag("abrir_traspasar").performClick()
+        rule.waitUntil(5_000) { hay("1. Qué fichas entregas") }
+        assertTrue(existe("traspasar_nivel_BARRIO") && existe("generar_traspaso"))
+        assertFalse("en Traspasar no se ve lo de eliminar", existe("eliminar_todas_fichas"))
 
-        rule.onNodeWithTag("abrir_exportar").let { /* el menú ya no está visible */ }
-        assertFalse(existe("abrir_importar"))
+        rule.onNodeWithTag("subtab_recibir").performClick()
+        rule.waitUntil(5_000) { existe("codigo_traspaso") && existe("aceptar_traspaso") }
+        assertFalse(existe("generar_traspaso"))
     }
 }

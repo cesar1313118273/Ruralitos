@@ -22,7 +22,9 @@ object PlaneadorCompartidas {
         organizacionId: String,
         locales: List<FichaLocalCompartida>,
         filas: List<InfoFichaCompartida>,
-        enBaja: Set<String>
+        enBaja: Set<String>,
+        /** Fichas que esta cuenta entregó con un traspaso: si ya no las ve, se retiran del teléfono. */
+        traspasadas: Set<String> = emptySet()
     ): PlanCompartidas {
         val recibidas = filas.filter { it.recibida }
         val idsLocales = locales.mapTo(mutableSetOf()) { it.syncId }
@@ -31,7 +33,10 @@ object PlaneadorCompartidas {
             .map { it.fichaId }
         val idsRecibidas = recibidas.mapTo(mutableSetOf()) { it.fichaId }
         val candidatas = locales
-            .filter { it.miPermiso.isNotBlank() && it.syncEstado == "SINCRONIZADO" && it.syncId !in idsRecibidas }
+            .filter {
+                it.syncEstado == "SINCRONIZADO" && it.syncId !in idsRecibidas &&
+                    (it.miPermiso.isNotBlank() || it.syncId in traspasadas)
+            }
             .map { it.syncId }
         return PlanCompartidas(faltantes, candidatas)
     }

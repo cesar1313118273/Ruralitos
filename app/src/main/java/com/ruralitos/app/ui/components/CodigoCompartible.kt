@@ -52,7 +52,10 @@ fun mensajeDeCodigo(codigo: String): String =
 fun TarjetaCodigoRuralitos(
     codigo: String,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    /** Texto que se manda por chat; por defecto el de compartir acceso. */
+    mensajeParaEnviar: String = mensajeDeCodigo(codigo),
+    titulo: String = "Código de acceso"
 ) {
     val context = LocalContext.current
     Surface(
@@ -67,7 +70,7 @@ fun TarjetaCodigoRuralitos(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                "Código de acceso",
+                titulo,
                 style = MaterialTheme.typography.labelLarge,
                 color = TextoSecundario
             )
@@ -103,7 +106,7 @@ fun TarjetaCodigoRuralitos(
                 onClick = {
                     val envio = Intent(Intent.ACTION_SEND).apply {
                         type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, mensajeDeCodigo(codigo))
+                        putExtra(Intent.EXTRA_TEXT, mensajeParaEnviar)
                     }
                     runCatching {
                         context.startActivity(Intent.createChooser(envio, "Enviar el código").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -114,3 +117,17 @@ fun TarjetaCodigoRuralitos(
         }
     }
 }
+
+/** Mensaje para pegar en el chat con las instrucciones para recibir un traspaso de fichas. */
+fun mensajeDeTraspaso(codigo: String, total: Int): String =
+    "*Ruralitos*\n" +
+        "Te quiero traspasar ${if (total == 1) "1 ficha familiar" else "$total fichas familiares"}. " +
+        "Pasarán a ser tuyas.\n\n" +
+        "*Tu código de traspaso* (mantén presionado para copiarlo):\n" +
+        "$codigo\n\n" +
+        "*Cómo recibirlas*\n" +
+        "1. Abre Ruralitos e inicia sesión.\n" +
+        "2. Entra a Seguridad y traspaso, luego a Traspasar.\n" +
+        "3. Toca Recibir fichas y pega el código.\n" +
+        "4. Toca Aceptar traspaso.\n\n" +
+        "El código caduca en 12 horas y se usa una sola vez."

@@ -276,7 +276,8 @@ class SincronizadorSupabase(context: Context) {
      */
     private suspend fun ponerAlDiaFichasCompartidas(org: String, filas: List<InfoFichaCompartida>) {
         val locales = dao.fichasDeOrganizacion(org).map { FichaLocalCompartida(it.syncId, it.miPermiso, it.syncEstado) }
-        val plan = PlaneadorCompartidas.planear(org, locales, filas, dao.fichasEnBaja(org).toSet())
+        val traspasadas = runCatching { api.fichasTraspasadas() }.getOrDefault(emptyList()).toSet()
+        val plan = PlaneadorCompartidas.planear(org, locales, filas, dao.fichasEnBaja(org).toSet(), traspasadas)
 
         plan.faltantes.chunked(25).forEach { lote ->
             val cabeceras = api.seleccionar(

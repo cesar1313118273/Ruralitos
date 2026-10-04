@@ -1,6 +1,5 @@
 package com.ruralitos.app.domain
 
-import com.ruralitos.app.data.backup.GestorRespaldoRuralitos
 import com.ruralitos.app.data.local.entity.EaisSalaEntity
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.data.local.entity.SalaEntity
@@ -119,12 +118,5 @@ class AlcanceFichasTest {
         assertFalse(AlcanceFichas.hayElegidos(NivelAlcance.BARRIO, emptySet()))
         assertTrue(AlcanceFichas.hayElegidos(NivelAlcance.CENTRO_ACTIVO, emptySet()))
         assertTrue(AlcanceFichas.concesiones(NivelAlcance.BARRIO, emptySet(), catalogo).isEmpty())
-    }
-
-    @Test
-    fun elFiltroSqlDelRespaldoSoloUsaNumerosPropios() {
-        assertEquals("(f.creadoPorUsuarioId = 7 AND 1 = 1)", GestorRespaldoRuralitos.filtroFichas(7, null, false))
-        assertEquals("(1 = 1 AND f.id IN (3,9))", GestorRespaldoRuralitos.filtroFichas(7, linkedSetOf(3L, 9L), true))
-        assertEquals("(f.creadoPorUsuarioId = 7 AND 1 = 0)", GestorRespaldoRuralitos.filtroFichas(7, emptySet(), false))
     }
 }
