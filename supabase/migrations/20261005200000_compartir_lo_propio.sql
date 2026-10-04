@@ -346,7 +346,6 @@ returns table(
   organizacion_id uuid,
   usuario_id uuid,
   nombres text,
-  apellidos text,
   cargo text,
   correo text,
   permiso text,
@@ -373,7 +372,6 @@ as $function$
     p.organizacion_id,
     p.usuario_id,
     pr.nombres,
-    pr.apellidos,
     pr.cargo,
     pr.correo,
     case when bool_or(p.permiso = 'EDITOR') then 'EDITOR' else 'LECTOR' end,
@@ -383,8 +381,8 @@ as $function$
     (count(*) filter (where p.alcance = 'FICHA'))::integer
   from partes p
   left join public.perfiles pr on pr.id = p.usuario_id
-  group by p.organizacion_id, p.usuario_id, pr.nombres, pr.apellidos, pr.cargo, pr.correo
-  order by pr.nombres nulls last, pr.apellidos nulls last;
+  group by p.organizacion_id, p.usuario_id, pr.nombres, pr.cargo, pr.correo
+  order by pr.nombres nulls last;
 $function$;
 
 -- 6) Quitar el acceso que YO di a una persona (solo lo mio; no toca lo que le dieron otros).
