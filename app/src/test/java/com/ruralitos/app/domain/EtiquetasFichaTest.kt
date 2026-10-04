@@ -76,3 +76,27 @@ class EtiquetasFichaTest {
         assertTrue(texto!!.startsWith("Última modificación de otra persona: Luis, "))
     }
 }
+
+class FiltroOrigenMapaTest {
+    @Test
+    fun porDefectoSeVenMisFichasPrimero() {
+        assertEquals(OrigenFicha.MIAS, OPCIONES_ORIGEN_MAPA.first())
+        assertEquals(listOf(OrigenFicha.MIAS, OrigenFicha.RECIBIDAS, OrigenFicha.TODAS), OPCIONES_ORIGEN_MAPA)
+    }
+
+    @Test
+    fun cadaFiltroAdmiteLoQueLeCorresponde() {
+        assertTrue(OrigenFicha.MIAS.admiteVivienda(""))
+        assertFalse(OrigenFicha.MIAS.admiteVivienda("LECTOR"))
+        assertFalse(OrigenFicha.RECIBIDAS.admiteVivienda(""))
+        assertTrue(OrigenFicha.RECIBIDAS.admiteVivienda("EDITOR"))
+        assertTrue(OrigenFicha.TODAS.admiteVivienda("") && OrigenFicha.TODAS.admiteVivienda("LECTOR"))
+    }
+
+    @Test
+    fun laLineaDiceDeDondeSalenLosDatos() {
+        assertEquals("Datos de tus fichas (23)", textoDatosDe(OrigenFicha.MIAS, 23, 10))
+        assertEquals("Datos de fichas compartidas contigo (10)", textoDatosDe(OrigenFicha.RECIBIDAS, 23, 10))
+        assertEquals("Tus fichas (23) + compartidas contigo (10)", textoDatosDe(OrigenFicha.TODAS, 23, 10))
+    }
+}

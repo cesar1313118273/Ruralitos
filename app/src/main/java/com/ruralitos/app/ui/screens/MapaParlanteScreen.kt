@@ -60,6 +60,11 @@ import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
 import com.ruralitos.app.ui.components.IconoMais
 import com.ruralitos.app.ui.components.LocalClaseAncho
 import com.ruralitos.app.ui.components.TextoAjustado
+import com.ruralitos.app.ui.components.FiltroOrigenFichas
+import com.ruralitos.app.domain.EtiquetasFicha
+import com.ruralitos.app.domain.OrigenFicha
+import com.ruralitos.app.domain.admite
+import com.ruralitos.app.domain.textoDatosDe
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.BordeClinico
@@ -118,11 +123,20 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
     val miembros by remember(db) { db.fichaContenidoDao().listarTodosMiembros() }.collectAsState(initial = null)
     val embarazadas by remember(db) { db.fichaContenidoDao().listarTodasEmbarazadas() }.collectAsState(initial = null)
 
+    // Por defecto se ven mis fichas; las que otra persona me compartió se piden con el filtro.
+    var origen by remember { mutableStateOf(OrigenFicha.MIAS) }
+    val fichasVistas = remember(fichas, origen) { fichas?.filter { origen.admite(it) } }
+    val idsVistos = remember(fichasVistas) { fichasVistas?.mapTo(HashSet()) { it.id } }
+    val miembrosVistos = remember(miembros, idsVistos) { if (miembros != null && idsVistos != null) miembros!!.filter { it.fichaId in idsVistos } else null }
+    val embarazadasVistas = remember(embarazadas, idsVistos) { if (embarazadas != null && idsVistos != null) embarazadas!!.filter { it.fichaId in idsVistos } else null }
+    val totalPropias = remember(fichas) { fichas.orEmpty().count { !EtiquetasFicha.esRecibida(it) } }
+    val totalRecibidas = remember(fichas) { fichas.orEmpty().count { EtiquetasFicha.esRecibida(it) } }
+
     // Clasificar a cada persona es trabajo de CPU: se hace fuera del hilo de la pantalla.
-    val barrios by produceState<List<BarrioParlante>?>(null, fichas, miembros, embarazadas) {
-        val f = fichas
-        val m = miembros
-        val e = embarazadas
+    val barrios by produceState<List<BarrioParlante>?>(null, fichasVistas, miembrosVistos, embarazadasVistas) {
+        val f = fichasVistas
+        val m = miembrosVistos
+        val e = embarazadasVistas
         if (f != null && m != null && e != null) {
             value = withContext(Dispatchers.Default) { MapaParlante.barrios(f, m, e) }
         }
@@ -311,7 +325,12 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
         )
         val selector: @Composable () -> Unit = {
             // Un solo selector: al tocarlo se abre una ventana con todos los barrios para elegir uno.
-            Box(Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp)) {
+            Column(Modifier.fillMaxWidth().background(Color.White)) {
+            FiltroOrigenFichas(
+                origen, textoDatosDe(origen, totalPropias, totalRecibidas), { origen = it; claveElegida = null },
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
+            )
+            Box(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp)) {
                 Surface(
                     onClick = { ventanaBarrios = true }, modifier = Modifier.fillMaxWidth().testTag("selector_barrio"),
                     shape = RoundedCornerShape(12.dp), color = if (elegido != null) Color(0xFFE3F4F7) else Color.White,
@@ -329,6 +348,7 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
                     }
                 }
             }
+            }
         }
         val mapaConControles: @Composable (Modifier) -> Unit = { modificador ->
             Box(modificador) {
@@ -343,7 +363,11 @@ fun MapaParlanteScreen(onRegresar: () -> Unit) {
                         modifier = Modifier.align(Alignment.Center).padding(24.dp),
                         shape = RoundedCornerShape(14.dp), color = Color.White, shadowElevation = 2.dp
                     ) {
-                        Text("Aún no hay fichas con barrio. Crea una ficha y vuelve aquí.", Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp)
+                        Text(
+                            if (origen == OrigenFicha.RECIBIDAS) "Nadie te ha compartido fichas con barrio todavía."
+                            else "Aún no hay fichas con barrio. Crea una ficha y vuelve aquí.",
+                            Modifier.padding(16.dp), color = AzulTexto, fontSize = 14.sp
+                        )
                     }
                 }
                 if (elegido != null && elegido.centro == null) {

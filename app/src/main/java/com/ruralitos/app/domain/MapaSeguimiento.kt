@@ -151,7 +151,7 @@ object MapaSeguimiento {
         puntos.forEachIndexed { i, p ->
             if (i > 0) sb.append(',')
             sb.append("""{"type":"Feature","geometry":{"type":"Point","coordinates":[${p.vivienda.longitud},${p.vivienda.latitud}]},""")
-            sb.append(""""properties":{"id":${p.vivienda.fichaId},"color":"${p.estado.colorHex}","estado":"${p.estado.name}","letra":"${p.estado.letra}"}}""")
+            sb.append(""""properties":{"id":${p.vivienda.fichaId},"color":"${p.estado.colorHex}","estado":"${p.estado.name}","letra":"${p.estado.letra}","compartida":${if (p.vivienda.miPermiso.isBlank()) 0 else 1}}}""")
         }
         return sb.append("]}").toString()
     }

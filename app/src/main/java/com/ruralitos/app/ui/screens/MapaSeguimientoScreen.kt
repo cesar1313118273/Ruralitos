@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -79,6 +80,7 @@ import com.ruralitos.app.domain.MapaSeguimiento
 import com.ruralitos.app.domain.MapaViviendas
 import com.ruralitos.app.domain.PuntoSeguimiento
 import com.ruralitos.app.domain.RecorridoVisitas
+import com.ruralitos.app.domain.admiteVivienda
 import com.ruralitos.app.ui.components.ClaseAncho
 import com.ruralitos.app.ui.components.LocalClaseAncho
 import com.ruralitos.app.ui.components.TextoAjustado
@@ -166,6 +168,8 @@ class EstadoMapaSeguimiento {
     var seleccionadaId by mutableStateOf<Long?>(null)
     /** Vivienda a la que se quiere llegar desde el botón «Cómo llegar» de la ficha (aunque no tenga visita). */
     var destinoId by mutableStateOf<Long?>(null)
+    /** Qué fichas se ven en el mapa: por defecto solo las mías; las compartidas contigo se piden con el filtro. */
+    var origen by mutableStateOf(com.ruralitos.app.domain.OrigenFicha.MIAS)
     /** Pendiente: al abrir el mapa, trazar la ruta hasta [destinoId] desde la ubicación actual. */
     var iniciarRutaAlDestino by mutableStateOf(false)
     var modoRecorrido by mutableStateOf(false)
@@ -214,8 +218,11 @@ fun MapaSeguimientoVista(
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val db = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
-    val viviendas by remember(db, usuarioId) { db.fichaFamiliarDao().observarViviendasMapa(usuarioId, System.currentTimeMillis()) }
+    val viviendasTodas by remember(db, usuarioId) { db.fichaFamiliarDao().observarViviendasMapa(usuarioId, System.currentTimeMillis()) }
         .collectAsState(initial = emptyList())
+    val viviendas = remember(viviendasTodas, estado.origen) { viviendasTodas.filter { estado.origen.admiteVivienda(it.miPermiso) } }
+    val propiasTotal = remember(viviendasTodas) { viviendasTodas.count { it.miPermiso.isBlank() } }
+    val recibidasTotal = viviendasTodas.size - propiasTotal
     val sinUbicacion by remember(db) { db.fichaFamiliarDao().observarSinUbicacion() }
         .collectAsState(initial = emptyList())
 
@@ -251,8 +258,8 @@ fun MapaSeguimientoVista(
         MapaSeguimiento.puntos(viviendas, actividades, estado.estados, estado.desde, hastaFinDeDia, ahora)
     }
     // La vivienda de «Cómo llegar» se muestra aunque no tenga visita agendada.
-    val puntos = remember(puntosConVisita, viviendas, estado.destinoId, ahora) {
-        val destino = viviendas.firstOrNull { it.fichaId == estado.destinoId }
+    val puntos = remember(puntosConVisita, viviendasTodas, estado.destinoId, ahora) {
+        val destino = viviendasTodas.firstOrNull { it.fichaId == estado.destinoId }
         if (destino == null || puntosConVisita.any { it.vivienda.fichaId == destino.fichaId }) puntosConVisita
         else puntosConVisita + MapaSeguimiento.puntoDeDestino(destino, ahora)
     }
@@ -350,8 +357,11 @@ fun MapaSeguimientoVista(
             )
             actual.addLayer(
                 CircleLayer("viv-punto", "viviendas").withFilter(Expression.not(Expression.has("point_count"))).withProperties(
-                    circleColor(Expression.get("color")), circleRadius(10f),
-                    circleStrokeColor("#FFFFFF"), circleStrokeWidth(2.5f)
+                    circleColor(Expression.get("color")),
+                    // Las fichas que otra persona me compartió llevan un anillo morado más grueso.
+                    circleRadius(Expression.switchCase(Expression.eq(Expression.get("compartida"), Expression.literal(1)), Expression.literal(11), Expression.literal(10))),
+                    circleStrokeColor(Expression.switchCase(Expression.eq(Expression.get("compartida"), Expression.literal(1)), Expression.color(android.graphics.Color.parseColor("#7B1FA2")), Expression.color(android.graphics.Color.WHITE))),
+                    circleStrokeWidth(Expression.switchCase(Expression.eq(Expression.get("compartida"), Expression.literal(1)), Expression.literal(4.5f), Expression.literal(2.5f)))
                 )
             )
             actual.addLayer(
@@ -611,8 +621,14 @@ fun MapaSeguimientoVista(
 
     Column(modifier.fillMaxSize().background(Color(0xFFF6F9FB))) {
         val panelBusqueda: @Composable () -> Unit = {
+            Column(Modifier.fillMaxWidth().background(Color.White)) {
+            com.ruralitos.app.ui.components.FiltroOrigenFichas(
+                estado.origen, com.ruralitos.app.domain.textoDatosDe(estado.origen, propiasTotal, recibidasTotal),
+                { estado.origen = it; estado.plan = null },
+                Modifier.padding(start = 12.dp, end = 12.dp, top = 8.dp)
+            )
             Row(
-                Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 12.dp, vertical = 10.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 var abierto by remember { mutableStateOf(false) }
@@ -655,6 +671,7 @@ fun MapaSeguimientoVista(
                         activo = estado.fechasElegidas, modifier = Modifier.testTag("boton_fecha")
                     ) { ventanaFechas = true }
                 }
+            }
             }
         }
         val mapaConControles: @Composable (Modifier) -> Unit = { modificador ->
@@ -726,7 +743,7 @@ fun MapaSeguimientoVista(
                         )
                     }
                 }
-                if (!ancho && estado.plan == null && !estado.modoRecorrido) Leyenda(conteos, Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 8.dp))
+                if (!ancho && estado.plan == null && !estado.modoRecorrido) Leyenda(conteos, Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 8.dp), conCompartidas = recibidasTotal > 0 && estado.origen != com.ruralitos.app.domain.OrigenFicha.MIAS)
                 if (viviendas.isEmpty()) {
                     Surface(
                         modifier = Modifier.align(Alignment.Center).padding(24.dp),
@@ -811,7 +828,7 @@ fun MapaSeguimientoVista(
                         }
                     }
                     item(key = "filtros") { panelBusqueda() }
-                    item(key = "leyenda") { Leyenda(conteos, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), horizontal = true) }
+                    item(key = "leyenda") { Leyenda(conteos, Modifier.padding(horizontal = 12.dp, vertical = 6.dp), horizontal = true, conCompartidas = recibidasTotal > 0 && estado.origen != com.ruralitos.app.domain.OrigenFicha.MIAS) }
                     items(puntos, key = { it.vivienda.fichaId }) { p ->
                         val numero = estado.plan?.paradas?.indexOfFirst { it.vivienda.fichaId == p.vivienda.fichaId }?.takeIf { it >= 0 }?.plus(1)
                         FilaPunto(
@@ -1018,7 +1035,7 @@ private fun BotonMapa(texto: String, descripcion: String, modifier: Modifier = M
 }
 
 @Composable
-private fun Leyenda(conteos: Map<EstadoVisita, Int>, modifier: Modifier = Modifier, horizontal: Boolean = false) {
+private fun Leyenda(conteos: Map<EstadoVisita, Int>, modifier: Modifier = Modifier, horizontal: Boolean = false, conCompartidas: Boolean = false) {
     val contenido: @Composable () -> Unit = {
         EstadoVisita.entries.forEach { e ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = if (horizontal) 10.dp else 0.dp)) {
@@ -1026,6 +1043,12 @@ private fun Leyenda(conteos: Map<EstadoVisita, Int>, modifier: Modifier = Modifi
                     Text(e.letra, color = Color.White, fontSize = 9.sp, fontWeight = FontWeight.Bold)
                 }
                 Text(" ${e.etiqueta} · ${conteos[e] ?: 0}", color = AzulTexto, fontSize = 11.sp)
+            }
+        }
+        if (conCompartidas) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(end = if (horizontal) 10.dp else 0.dp)) {
+                Box(Modifier.size(15.dp).clip(CircleShape).border(3.dp, Color(0xFF7B1FA2), CircleShape))
+                Text(" Compartida contigo", color = AzulTexto, fontSize = 11.sp)
             }
         }
     }
@@ -1090,6 +1113,10 @@ private fun TarjetaVisita(
                     Text("Ficha ${v.numero} · ${v.integrantes} integrante${if (v.integrantes == 1) "" else "s"}", color = GrisTexto, fontSize = 12.sp)
                     val direccion = listOf(v.barrio, if (v.casa.isNotBlank()) "casa ${v.casa}" else "").filter { it.isNotBlank() }.joinToString(", ")
                     if (direccion.isNotBlank()) Text(direccion, color = GrisTexto, fontSize = 12.sp)
+                    if (v.miPermiso.isNotBlank()) {
+                        Spacer(Modifier.height(4.dp))
+                        Etiqueta("Compartida por ${v.autorNombre.ifBlank { "otra persona" }} · ${if (v.miPermiso == "LECTOR") "Solo lectura" else "Puede editar"}", Color(0xFF7B1FA2))
+                    }
                 }
                 Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.clickable(onClick = onCerrar).padding(4.dp))
             }

@@ -48,3 +48,28 @@ object EtiquetasFicha {
         else -> null
     }
 }
+
+/** Opciones del filtro de los mapas: mis fichas (primero), las que me compartieron, o todas juntas. */
+val OPCIONES_ORIGEN_MAPA = listOf(OrigenFicha.MIAS, OrigenFicha.RECIBIDAS, OrigenFicha.TODAS)
+
+/** ¿Esta ficha entra en ese filtro? */
+fun OrigenFicha.admite(ficha: FichaFamiliarEntity): Boolean = when (this) {
+    OrigenFicha.TODAS -> true
+    OrigenFicha.MIAS -> !EtiquetasFicha.esRecibida(ficha)
+    OrigenFicha.RECIBIDAS -> EtiquetasFicha.esRecibida(ficha)
+    OrigenFicha.OTORGADAS -> ficha.compartidaConPersonas > 0
+}
+
+/** Lo mismo para una vivienda del mapa, que solo conoce el permiso con el que la recibí. */
+fun OrigenFicha.admiteVivienda(miPermiso: String): Boolean = when (this) {
+    OrigenFicha.TODAS, OrigenFicha.OTORGADAS -> true
+    OrigenFicha.MIAS -> miPermiso.isBlank()
+    OrigenFicha.RECIBIDAS -> miPermiso.isNotBlank()
+}
+
+/** Línea que dice de dónde salen los números de un mapa: «Datos de tus fichas (23)». */
+fun textoDatosDe(origen: OrigenFicha, propias: Int, recibidas: Int): String = when (origen) {
+    OrigenFicha.MIAS -> "Datos de tus fichas ($propias)"
+    OrigenFicha.RECIBIDAS -> "Datos de fichas compartidas contigo ($recibidas)"
+    else -> "Tus fichas ($propias) + compartidas contigo ($recibidas)"
+}

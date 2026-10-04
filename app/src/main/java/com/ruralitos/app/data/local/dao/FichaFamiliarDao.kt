@@ -32,7 +32,10 @@ data class ViviendaMapaFila(
     val visitasAtrasadas: Int,
     val gestantes: Int = 0,
     val menoresCinco: Int = 0,
-    val adultosMayores: Int = 0
+    val adultosMayores: Int = 0,
+    /** Vacío si la ficha es mía; «LECTOR» o «EDITOR» si otra persona me la compartió (ver [FichaFamiliarEntity.miPermiso]). */
+    val miPermiso: String = "",
+    val autorNombre: String = ""
 )
 
 data class SinUbicacionFila(val fichaId: Long, val jefe: String, val barrio: String, val numero: String)
@@ -390,7 +393,8 @@ interface FichaFamiliarDao {
                (SELECT COUNT(*) FROM miembros_familia m WHERE m.fichaId = f.id
                  AND m.grupoEdad IN ('MENOR 1 AÑO', '1 - 4 AÑOS')) AS menoresCinco,
                (SELECT COUNT(*) FROM miembros_familia m WHERE m.fichaId = f.id
-                 AND m.grupoEdad = '65 AÑOS Y MÁS') AS adultosMayores
+                 AND m.grupoEdad = '65 AÑOS Y MÁS') AS adultosMayores,
+               f.miPermiso AS miPermiso, f.autorNombre AS autorNombre
         FROM fichas_familiares f
         WHERE f.latitud IS NOT NULL AND f.longitud IS NOT NULL AND f.estado != 'ARCHIVADA'
           AND NOT (abs(f.latitud - (-1.8312)) < 0.000001 AND abs(f.longitud - (-78.1834)) < 0.000001)
