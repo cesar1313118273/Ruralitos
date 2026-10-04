@@ -29,7 +29,7 @@
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|keyboard|navigation|density|uiMode|layoutDirection|fontScale"
             android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Ruralitos">
+            android:theme="@style/Theme.Ruralitos.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

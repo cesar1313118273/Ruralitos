@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -22,6 +23,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -156,6 +158,8 @@ val TextoOscuro = Color(0xFF1F2933)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Pantalla de arranque con el logo; después entra la animación de inicio de la app.
+        installSplashScreen()
         super.onCreate(savedInstanceState)
 
         // Los datos de pacientes no deben verse en la vista previa de «aplicaciones recientes» (Android 13 o superior).
@@ -165,7 +169,12 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             RuralitosTheme {
-                RuralitosApp()
+                var animando by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
+                Box(Modifier.fillMaxSize()) {
+                    RuralitosApp()
+                    // Se anima encima mientras la app termina de cargar debajo.
+                    if (animando) com.ruralitos.app.ui.screens.AnimacionInicioRuralitos(onTerminar = { animando = false })
+                }
             }
         }
     }

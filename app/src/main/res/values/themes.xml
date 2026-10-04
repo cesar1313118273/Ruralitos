@@ -7,4 +7,11 @@
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
+
+    <!-- Pantalla de arranque de Android: solo el logo sobre el fondo claro de la app, sin el ícono genérico. -->
+    <style name="Theme.Ruralitos.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#F6F9FB</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo</item>
+        <item name="postSplashScreenTheme">@style/Theme.Ruralitos</item>
+    </style>
 </resources>
