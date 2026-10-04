@@ -19,7 +19,7 @@ create table if not exists public.accesos_autor (
     references public.eais(id, organizacion_id) on delete cascade,
   constraint accesos_autor_territorio_org_fk foreign key (territorio_id, organizacion_id)
     references public.territorios(id, organizacion_id) on delete cascade,
-  constraint accesos_autor_alcance_check check (
+  constraint accesos_autor_alcance_coherente check (
     (alcance = 'SALA' and eais_id is null and territorio_id is null)
     or (alcance = 'EAIS' and eais_id is not null and territorio_id is null)
     or (alcance = 'TERRITORIO' and eais_id is not null and territorio_id is not null)
