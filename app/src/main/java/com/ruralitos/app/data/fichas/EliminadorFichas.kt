@@ -62,7 +62,8 @@ object EliminadorFichas {
             // Las notas de esta cuenta sobre los integrantes se borran con ellos; las de otras cuentas no son nuestras.
             registrosRemotos += database.notaDiariaDao().syncIdsDeFicha(ficha.id, usuarioId).map { "notas_privadas" to it }
 
-            if (ficha.organizacionId.isNotBlank()) {
+            // Una ficha que otra persona me compartió solo se quita de este teléfono: eliminarla de la nube es de su autora.
+            if (ficha.organizacionId.isNotBlank() && !com.ruralitos.app.domain.EtiquetasFicha.esRecibida(ficha)) {
                 val ahora = System.currentTimeMillis()
                 syncDao.guardarEliminaciones(
                     registrosRemotos

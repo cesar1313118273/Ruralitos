@@ -1,5 +1,12 @@
 # Changelog de Supabase
 
+## 2026-10-07 — Solo el autor elimina su ficha
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261007200000_solo_el_autor_elimina_su_ficha.sql`).
+- Tipo: cambio compatible. Trigger `fichas_proteger_baja`: si alguien que no es el autor marca una ficha como eliminada, el cambio se ignora.
+- Motivo: una cuenta que recibió una ficha con permiso de edición subió una baja pendiente y eliminó la ficha original de la nube. La ficha y sus datos se recuperaron.
+
+
 ## 2026-10-07 — Avisos de ediciones ajenas y traspaso de fichas
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261007100000_avisos_y_traspaso_de_fichas.sql`).
