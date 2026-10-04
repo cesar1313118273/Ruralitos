@@ -35,11 +35,11 @@ class TextoAjustadoTest {
 
     @Test
     fun unaPalabraLargaEnUnEspacioChicoSeAchicaEnVezDeCortarse() {
-        rule.setContent { RuralitosTheme { Box(Modifier.width(70.dp)) { TextoAjustado("Confirmadas", tamano = 20.sp) } } }
+        rule.setContent { RuralitosTheme { Box(Modifier.width(70.dp)) { TextoAjustado("Programadas", tamano = 20.sp) } } }
         rule.waitForIdle()
         Thread.sleep(500)
         rule.waitForIdle()
-        val r = resultado("Confirmadas")
+        val r = resultado("Programadas")
         assertFalse("no debe salirse de la línea", r.didOverflowWidth)
         assertTrue("debe haberse achicado", r.layoutInput.style.fontSize.value < 20f)
         assertEquals(1, r.lineCount)

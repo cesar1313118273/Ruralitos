@@ -6,8 +6,8 @@ import java.util.Calendar
 
 /** Estado de una visita tal como lo muestra la agenda, para pintar el mapa con los mismos colores y nombres. */
 enum class EstadoVisita(val etiqueta: String, val colorHex: String, val letra: String) {
-    POR_CONFIRMAR("Por confirmar", "#F7941D", "P"),
-    CONFIRMADA("Confirmada", "#1565C0", "C"),
+    PENDIENTE("Pendiente", "#F7941D", "P"),
+    PROGRAMADA("Programada", "#1565C0", "V"),
     ATRASADA("Atrasada", "#D32F2F", "A"),
     REALIZADA("Realizada", "#0889A0", "R")
 }
@@ -23,8 +23,8 @@ data class PuntoSeguimiento(
 
 /**
  * Mapa de seguimiento: junta las visitas de la agenda con la ubicación de cada vivienda. Las reglas de estado son las
- * de la pestaña Seguimiento: una visita de seguimiento sin confirmar está «por confirmar»; una confirmada o manual cuya
- * hora ya pasó está «atrasada»; las demás están «confirmadas» hasta que se marcan «realizadas».
+ * de la pestaña Seguimiento: una visita de seguimiento sin programar está «pendiente»; una programada o manual cuya
+ * hora ya pasó está «atrasada»; las demás están «programadas» hasta que se marcan «realizadas».
  *
  * El mapa solo se filtra por estado y por un rango de fechas (inicio y fin incluidos, de día completo).
  */
@@ -32,9 +32,9 @@ object MapaSeguimiento {
     fun estado(a: ActividadAgendaEntity, ahora: Long): EstadoVisita? = when {
         a.eliminadoEn != null || a.estado == "CANCELADA" -> null
         a.estado == "COMPLETADA" -> EstadoVisita.REALIZADA
-        a.origen == "SEGUIMIENTO" && !a.fechaEditada -> EstadoVisita.POR_CONFIRMAR
+        a.origen == "SEGUIMIENTO" && !a.fechaEditada -> EstadoVisita.PENDIENTE
         a.fechaHora < ahora -> EstadoVisita.ATRASADA
-        else -> EstadoVisita.CONFIRMADA
+        else -> EstadoVisita.PROGRAMADA
     }
 
     // ---- fechas -------------------------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ object MapaSeguimiento {
     // ---- puntos -------------------------------------------------------------------------------------------------
 
     private val prioridad = mapOf(
-        EstadoVisita.ATRASADA to 0, EstadoVisita.POR_CONFIRMAR to 1, EstadoVisita.CONFIRMADA to 2, EstadoVisita.REALIZADA to 3
+        EstadoVisita.ATRASADA to 0, EstadoVisita.PENDIENTE to 1, EstadoVisita.PROGRAMADA to 2, EstadoVisita.REALIZADA to 3
     )
 
     private fun cumple(a: ActividadAgendaEntity, estados: Set<EstadoVisita>, desde: Long, hasta: Long, ahora: Long): EstadoVisita? {

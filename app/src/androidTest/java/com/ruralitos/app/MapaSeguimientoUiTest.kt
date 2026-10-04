@@ -160,11 +160,11 @@ class MapaSeguimientoUiTest {
     fun elBotonEstadoOfreceLasCuatroOpcionesYSeMarcanVarias() {
         mostrar(ClaseAncho.EXPANDIDA)
         rule.onNodeWithTag("boton_estado").performClick()
-        rule.waitUntil(5_000) { hayTag("estado_POR_CONFIRMAR") }
-        listOf("POR_CONFIRMAR", "CONFIRMADA", "ATRASADA", "REALIZADA").forEach { assertTrue(hayTag("estado_$it")) }
+        rule.waitUntil(5_000) { hayTag("estado_PENDIENTE") }
+        listOf("PENDIENTE", "PROGRAMADA", "ATRASADA", "REALIZADA").forEach { assertTrue(hayTag("estado_$it")) }
 
         // solo realizadas: se quitan las otras tres; el menú sigue abierto
-        listOf("POR_CONFIRMAR", "CONFIRMADA", "ATRASADA").forEach { rule.onNodeWithTag("estado_$it").performClick() }
+        listOf("PENDIENTE", "PROGRAMADA", "ATRASADA").forEach { rule.onNodeWithTag("estado_$it").performClick() }
         rule.waitUntil(5_000) { !hay("PÉREZ LUIS") && !hay("GÓMEZ ANA") && !hay("TORRES JUAN") }
         rule.onNodeWithText("RUIZ MARÍA").assertExists()
         // el último estado marcado no se puede quitar
@@ -247,7 +247,7 @@ class MapaSeguimientoUiTest {
         mostrar(ClaseAncho.EXPANDIDA)
         rule.onNodeWithTag("chip_recorrido").performClick()
         rule.waitUntil(5_000) { hay("Toca las viviendas que vas a visitar") }
-        // «Elegir visibles» deja las visitas por hacer: confirmada, atrasada y por confirmar (la realizada no)
+        // «Elegir visibles» deja las visitas por hacer: programada, atrasada y pendiente (la realizada no)
         rule.onNodeWithTag("recorrido_visibles").performClick()
         rule.waitUntil(5_000) { hay("3 elegidas") }
         rule.onNodeWithTag("recorrido_ordenar").performClick()
@@ -279,7 +279,7 @@ class MapaSeguimientoUiTest {
         // El estado vive fuera de la pantalla: un recorrido hecho antes de abrir una ficha sigue ahí al volver.
         val vivienda = ViviendaMapaFila(1, "A", "1", "F1", "B", "1", -0.2, -78.5, "COMPLETA", "SINCRONIZADO", "", 1, 0)
         val actividad = visita(1, "A", ahora + 3600_000)
-        val punto = PuntoSeguimiento(vivienda, listOf(actividad), EstadoVisita.CONFIRMADA, actividad)
+        val punto = PuntoSeguimiento(vivienda, listOf(actividad), EstadoVisita.PROGRAMADA, actividad)
         estadoMapa.plan = PlanRecorrido(listOf(punto), null, 1.0, null, "pedestrian", false)
         estadoMapa.paradaActual = 0
         estadoMapa.modoRecorrido = true
@@ -292,9 +292,9 @@ class MapaSeguimientoUiTest {
         mostrar(ClaseAncho.COMPACTA)
         // solo «confirmadas»: queda una vivienda a la vista, el mapa se centra en ella y tocar su centro la selecciona
         rule.onNodeWithTag("boton_estado").performClick()
-        rule.waitUntil(5_000) { hayTag("estado_POR_CONFIRMAR") }
-        listOf("POR_CONFIRMAR", "ATRASADA", "REALIZADA").forEach { rule.onNodeWithTag("estado_$it").performClick() }
-        rule.waitUntil(5_000) { estadoMapa.estados == setOf(EstadoVisita.CONFIRMADA) }
+        rule.waitUntil(5_000) { hayTag("estado_PENDIENTE") }
+        listOf("PENDIENTE", "ATRASADA", "REALIZADA").forEach { rule.onNodeWithTag("estado_$it").performClick() }
+        rule.waitUntil(5_000) { estadoMapa.estados == setOf(EstadoVisita.PROGRAMADA) }
 
         val instrumentacion = InstrumentationRegistry.getInstrumentation()
         fun tocar(x: Float, y: Float) {
@@ -305,7 +305,7 @@ class MapaSeguimientoUiTest {
         // un toque fuera del menú lo cierra (abajo, dentro de la ventana de la aplicación)
         val vista = rule.activity.window.decorView
         tocar(vista.width * 0.5f, vista.height * 0.9f)
-        rule.waitUntil(5_000) { !hayTag("estado_POR_CONFIRMAR") }
+        rule.waitUntil(5_000) { !hayTag("estado_PENDIENTE") }
 
         fun buscarMapa(v: android.view.View): org.maplibre.android.maps.MapView? =
             if (v is org.maplibre.android.maps.MapView) v

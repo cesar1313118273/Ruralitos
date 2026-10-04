@@ -155,7 +155,7 @@ class RecordatorioAgendaWorker(context: Context, params: WorkerParameters) : Cor
             Intent(applicationContext, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val titulo = when (fase) {
-            RecordatorioAgenda.CONFIRMAR -> "Agenda por confirmar"
+            RecordatorioAgenda.CONFIRMAR -> "Visita pendiente de programar"
             RecordatorioAgenda.ATRASADA -> "Actividad atrasada"
             RecordatorioAgenda.PREVIO -> "Actividad en tres días"
             else -> "Actividad programada para hoy"

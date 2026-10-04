@@ -194,7 +194,7 @@ object PlanificadorSeguimiento {
         barrio = ficha.barrio,
         fechaHora = proximaFecha(base, grupo),
         tipo = TIPO,
-        nota = "Seguimiento recomendado del grupo ${grupo.codigo}. Confirmar fecha con la familia.",
+        nota = "Seguimiento recomendado del grupo ${grupo.codigo}. Programar la visita con la familia.",
         origen = ORIGEN,
         grupoRiesgo = grupo.codigo,
         fechaBase = base,

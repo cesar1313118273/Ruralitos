@@ -181,7 +181,7 @@ class EstadoMapaSeguimiento {
 
 /**
  * Mapa de seguimiento, dentro de la agenda: las viviendas con visitas como puntos de colores según el estado de la
- * visita (por confirmar, confirmada, atrasada, realizada), con filtros por estado, fecha, barrio y riesgo; una tarjeta
+ * visita (pendiente, programada, atrasada, realizada), con filtros por estado, fecha, barrio y riesgo; una tarjeta
  * para abrir la ficha y ver o cambiar la visita; y el recorrido ordenado con avisos de
  * llegada. Funciona sin internet con los mapas incluidos en la app.
  */

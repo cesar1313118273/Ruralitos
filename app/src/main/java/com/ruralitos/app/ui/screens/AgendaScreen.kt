@@ -316,7 +316,7 @@ fun AgendaScreen(
     }
     val proximas = remember(actividades, ahora) {
         agruparVisitas(actividades.filter {
-            estadoVisible(it, ahora) == "Por confirmar" || estadoVisible(it, ahora) == "Atrasada"
+            estadoVisible(it, ahora) == "Pendiente" || estadoVisible(it, ahora) == "Atrasada"
         }.sortedBy { it.fechaHora })
     }
     val totalPaginasSeguimiento = maxOf(1, (proximas.size + 2) / 3)
@@ -366,7 +366,7 @@ fun AgendaScreen(
                     RecordatorioAgenda.cancelar(context, it.id)
                     RecordatorioAgenda.actualizar(context, it)
                 }
-            }.onFailure { error = "No se pudo confirmar la fecha. Inténtalo nuevamente." }
+            }.onFailure { error = "No se pudo programar la visita. Inténtalo nuevamente." }
         }
         grupoDetalle = null
     }
@@ -392,13 +392,13 @@ fun AgendaScreen(
         val estadoActual = estadoVisible(actividad, ahora)
         val colorActual = colorEstado(actividad, ahora)
         val confirmada = !(actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada)
-        // «Marcar como realizada» solo con la cita confirmada y únicamente el mismo día de la visita.
+        // «Marcar como realizada» solo con la visita programada y únicamente el mismo día de la visita.
         val esDiaDeLaVisita = inicioDia(actividad.fechaHora) == inicioDia(ahora)
         val puedeMarcarRealizada = actividad.estado == "PENDIENTE" && confirmada && esDiaDeLaVisita
         VentanaRuralitos(
             titulo = if (grupo.size > 1) "Visita familiar (${grupo.size})" else actividad.tipo,
             subtitulo = estadoActual,
-            simbolo = when (estadoActual) { "Realizado" -> "✓"; "Atrasada" -> "!"; else -> "◷" },
+            simbolo = when (estadoActual) { "Realizada" -> "✓"; "Atrasada" -> "!"; else -> "◷" },
             color = colorActual,
             onCerrar = { grupoDetalle = null },
             contenido = {
@@ -411,7 +411,7 @@ fun AgendaScreen(
                 if (actividad.estado == "PENDIENTE" && !puedeMarcarRealizada) {
                     Text(
                         when {
-                            !confirmada -> "Primero confirma la fecha con la familia. El día de la visita podrás marcarla como realizada."
+                            !confirmada -> "Primero programa la visita con la familia. El día de la visita podrás marcarla como realizada."
                             actividad.fechaHora < ahora && !esDiaDeLaVisita -> "La fecha ya pasó. Reprograma la visita o elimínala."
                             else -> "Podrás marcarla como realizada el día de la visita."
                         },
@@ -432,9 +432,9 @@ fun AgendaScreen(
                     }
                     if (actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada) {
                         BotonPrincipalRuralitos(
-                            texto = "Confirmar fecha",
+                            texto = "Programar visita",
                             color = agendaAzulPunto,
-                            modifier = Modifier.testTag("confirmar_fecha"),
+                            modifier = Modifier.testTag("programar_visita"),
                             onClick = { confirmarGrupo(grupo) }
                         )
                     }
@@ -509,20 +509,20 @@ fun AgendaScreen(
                 item {
                     ResumenSeguimientos(
                         hoy = delDia.size,
-                        pendientes = actividades.count { estadoVisible(it, ahora) == "Por confirmar" },
-                        confirmadas = actividades.count {
-                            it.origen == "SEGUIMIENTO" && estadoVisible(it, ahora) == "Programado"
+                        pendientes = actividades.count { estadoVisible(it, ahora) == "Pendiente" },
+                        programadas = actividades.count {
+                            it.origen == "SEGUIMIENTO" && estadoVisible(it, ahora) == "Programada"
                         }
                     )
                 }
                 item {
                     EncabezadoActividades(
-                        titulo = "Por confirmar y atrasadas",
+                        titulo = "Pendientes y atrasadas",
                         fecha = formato(hoy, "EEE d 'de' MMMM 'de' yyyy")
                     )
                 }
                 if (proximas.isEmpty()) {
-                    item { MensajeAgendaVacia("No hay visitas por confirmar ni atrasadas.") }
+                    item { MensajeAgendaVacia("No hay visitas pendientes ni atrasadas.") }
                 } else {
                     items(proximas.drop(paginaSeguimientoActual * 3).take(3),
                         key = { "proxima_" + it.first().id }) { grupo ->
@@ -638,13 +638,13 @@ private fun PestanasAgenda(seleccionada: Int, onSeleccionar: (Int) -> Unit) {
 }
 
 @Composable
-private fun ResumenSeguimientos(hoy: Int, pendientes: Int, confirmadas: Int) {
+private fun ResumenSeguimientos(hoy: Int, pendientes: Int, programadas: Int) {
     Row(Modifier.fillMaxWidth().padding(horizontal = 18.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         listOf(
             Triple("Hoy", hoy, agendaAzulPunto),
             Triple("Pendientes", pendientes, agendaNaranja),
-            Triple("Confirmadas", confirmadas, agendaVerdeEstado)
+            Triple("Programadas", programadas, agendaVerdeEstado)
         ).forEachIndexed { indice, dato ->
             Surface(
                 modifier = Modifier.weight(1f).heightIn(min = 91.dp),
@@ -812,17 +812,17 @@ private fun CalendarioAgenda(
 }
 
 private fun estadoVisible(actividad: ActividadAgendaEntity, ahora: Long = System.currentTimeMillis()): String = when {
-    actividad.estado == "COMPLETADA" -> "Realizado"
+    actividad.estado == "COMPLETADA" -> "Realizada"
     actividad.estado == "CANCELADA" -> "Cancelada"
-    actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada -> "Por confirmar"
+    actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada -> "Pendiente"
     actividad.fechaHora < ahora -> "Atrasada"
-    else -> "Programado"
+    else -> "Programada"
 }
 
 private fun colorEstado(actividad: ActividadAgendaEntity, ahora: Long = System.currentTimeMillis()): Color =
     when (estadoVisible(actividad, ahora)) {
-    "Realizado" -> agendaVerdeEstado
-    "Por confirmar" -> agendaNaranja
+    "Realizada" -> agendaVerdeEstado
+    "Pendiente" -> agendaNaranja
     "Atrasada" -> agendaRojoAtraso
     else -> agendaAzulPunto
 }
@@ -844,8 +844,8 @@ private fun TarjetaActividadAgenda(
     }
     val estado = estadoVisible(actividad, ahora)
     val fondoEstado = when (estado) {
-        "Realizado" -> Color(0xFFE1F5E9)
-        "Por confirmar" -> Color(0xFFFFEFDE)
+        "Realizada" -> Color(0xFFE1F5E9)
+        "Pendiente" -> Color(0xFFFFEFDE)
         "Atrasada" -> Color(0xFFFFEBEC)
         else -> Color(0xFFE8EFFA)
     }
@@ -1016,6 +1016,12 @@ private fun FormularioAgenda(
                     else original?.persona?.takeIf { it.isNotBlank() } ?: "Actividad general",
                 icono = R.drawable.ruralitos_icono_red,
                 onClick = { elegirPersona = true }
+            )
+            val sinPersona = if (personaModificada) persona == null else original?.persona.isNullOrBlank()
+            Text(
+                if (sinPersona) "Una actividad general no aparece en el mapa de visitas. Elige un paciente o familia cuya vivienda tenga ubicación."
+                else "Aparecerá en el mapa de visitas el día programado, si la vivienda tiene ubicación.",
+                color = agendaSecundario, fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp)
             )
         }
 

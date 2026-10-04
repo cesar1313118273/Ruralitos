@@ -37,10 +37,10 @@ class MapaSeguimientoTest {
     @Test
     fun elEstadoSigueLasReglasDeLaAgenda() {
         assertEquals(EstadoVisita.REALIZADA, MapaSeguimiento.estado(visita(1, 1, ahora - dia, estado = "COMPLETADA"), ahora))
-        assertEquals(EstadoVisita.POR_CONFIRMAR, MapaSeguimiento.estado(visita(2, 1, ahora - dia, origen = "SEGUIMIENTO"), ahora))
-        assertEquals(EstadoVisita.CONFIRMADA, MapaSeguimiento.estado(visita(3, 1, ahora + dia, origen = "SEGUIMIENTO", editada = true), ahora))
+        assertEquals(EstadoVisita.PENDIENTE, MapaSeguimiento.estado(visita(2, 1, ahora - dia, origen = "SEGUIMIENTO"), ahora))
+        assertEquals(EstadoVisita.PROGRAMADA, MapaSeguimiento.estado(visita(3, 1, ahora + dia, origen = "SEGUIMIENTO", editada = true), ahora))
         assertEquals(EstadoVisita.ATRASADA, MapaSeguimiento.estado(visita(4, 1, ahora - hora), ahora))
-        assertEquals(EstadoVisita.CONFIRMADA, MapaSeguimiento.estado(visita(5, 1, ahora + hora), ahora))
+        assertEquals(EstadoVisita.PROGRAMADA, MapaSeguimiento.estado(visita(5, 1, ahora + hora), ahora))
         assertNull(MapaSeguimiento.estado(visita(6, 1, ahora, estado = "CANCELADA"), ahora))
         assertNull(MapaSeguimiento.estado(visita(7, 1, ahora, eliminada = 5L), ahora))
     }
@@ -50,16 +50,16 @@ class MapaSeguimientoTest {
         val v = (1L..4L).map(::vivienda)
         val a = listOf(
             visita(1, 1, ahora + dia),                                    // confirmada
-            visita(2, 2, ahora - dia, origen = "SEGUIMIENTO"),            // por confirmar
+            visita(2, 2, ahora - dia, origen = "SEGUIMIENTO"),            // pendiente
             visita(3, 3, ahora - dia),                                    // atrasada
             visita(4, 4, ahora - 2 * dia, estado = "COMPLETADA")          // realizada
         )
         assertEquals(listOf(1L, 2L, 3L, 4L), ids(v, a))
-        assertEquals(listOf(1L), ids(v, a, setOf(EstadoVisita.CONFIRMADA)))
-        assertEquals(listOf(2L), ids(v, a, setOf(EstadoVisita.POR_CONFIRMAR)))
+        assertEquals(listOf(1L), ids(v, a, setOf(EstadoVisita.PROGRAMADA)))
+        assertEquals(listOf(2L), ids(v, a, setOf(EstadoVisita.PENDIENTE)))
         assertEquals(listOf(3L), ids(v, a, setOf(EstadoVisita.ATRASADA)))
         assertEquals("los atendidos son las fichas con visita realizada", listOf(4L), ids(v, a, setOf(EstadoVisita.REALIZADA)))
-        assertEquals("se pueden marcar varios", listOf(2L, 3L), ids(v, a, setOf(EstadoVisita.POR_CONFIRMAR, EstadoVisita.ATRASADA)))
+        assertEquals("se pueden marcar varios", listOf(2L, 3L), ids(v, a, setOf(EstadoVisita.PENDIENTE, EstadoVisita.ATRASADA)))
         assertEquals("sin ninguno marcado no hay nada", emptyList<Long>(), ids(v, a, emptySet()))
     }
 
@@ -119,10 +119,10 @@ class MapaSeguimientoTest {
         val v = (1L..3L).map(::vivienda)
         val a = listOf(visita(1, 1, ahora + hora), visita(2, 2, ahora + 3 * dia), visita(3, 3, ahora + hora, estado = "COMPLETADA"))
         val c = MapaSeguimiento.conteos(v, a, hoyDesde, hoyHasta, ahora)
-        assertEquals(1, c.getValue(EstadoVisita.CONFIRMADA))
+        assertEquals(1, c.getValue(EstadoVisita.PROGRAMADA))
         assertEquals(1, c.getValue(EstadoVisita.REALIZADA))
         assertEquals(0, c.getValue(EstadoVisita.ATRASADA))
-        assertEquals(0, c.getValue(EstadoVisita.POR_CONFIRMAR))
+        assertEquals(0, c.getValue(EstadoVisita.PENDIENTE))
     }
 
     @Test

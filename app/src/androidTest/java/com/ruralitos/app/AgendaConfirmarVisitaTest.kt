@@ -107,7 +107,7 @@ class AgendaConfirmarVisitaTest {
     private val conUbicacion get() = listOf("c1", "c2", "c3", "e1").map { ids.getValue(it) }
 
     @Test
-    fun elDiaDeLaVisitaConfirmadaSeMarcaRealizadaDesdeLaAgenda() {
+    fun elDiaDeLaVisitaProgramadaSeMarcaRealizadaDesdeLaAgenda() {
         // el evento ya corre con la pantalla abierta: se crea el plan y luego se deja una visita confirmada para hoy
         rule.setContent {
             RuralitosTheme { AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, pestanaInicial = 1) }
@@ -124,7 +124,7 @@ class AgendaConfirmarVisitaTest {
     }
 
     @Test
-    fun elDiaDeLaVisitaConfirmadaSeMarcaRealizadaDesdeElMapa() {
+    fun elDiaDeLaVisitaProgramadaSeMarcaRealizadaDesdeElMapa() {
         rule.setContent {
             RuralitosTheme { AgendaScreen(usuarioId = usuario, organizacionId = "", onRegresar = {}, onAbrirFicha = {}) }
         }
@@ -152,7 +152,7 @@ class AgendaConfirmarVisitaTest {
             rule.onNodeWithTag("ver_visita_mapa").performClick()
             esperar { rule.onAllNodes(androidx.compose.ui.test.hasContentDescription("Cerrar")).fetchSemanticsNodes().isNotEmpty() }
             assertTrue(motivo, !existe("marcar_realizada"))
-            assertEquals("el botón de confirmar fecha $motivo", confirmarFecha, existe("confirmar_fecha"))
+            assertEquals("el botón de programar visita $motivo", confirmarFecha, existe("programar_visita"))
             rule.onNode(androidx.compose.ui.test.hasContentDescription("Cerrar")).performClick()
             rule.waitForIdle()
         }
