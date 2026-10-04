@@ -42,7 +42,7 @@ fun mensajeDeCodigo(codigo: String): String =
         "2. Entra a Mis Salas, luego a Compartir acceso.\n" +
         "3. Toca la sección Ingresar un código y pega el código.\n" +
         "4. Toca Verificar y agregar acceso.\n\n" +
-        "El código caduca en 24 horas y se usa una sola vez."
+        "El código caduca en 12 horas y se usa una sola vez."
 
 /**
  * El código recién creado, grande y seleccionable, con un botón para copiarlo y otro para mandarlo por chat
@@ -83,7 +83,7 @@ fun TarjetaCodigoRuralitos(
                 )
             }
             Text(
-                "Caduca en 24 horas y se usa una sola vez.",
+                "Caduca en 12 horas y se usa una sola vez.",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextoSecundario,
                 textAlign = TextAlign.Center
