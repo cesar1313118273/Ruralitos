@@ -167,6 +167,8 @@ class MainActivity : ComponentActivity() {
         if (android.os.Build.VERSION.SDK_INT >= 33) setRecentsScreenshotEnabled(false)
 
         runCatching { SupabaseApi(this).procesarCallback(intent?.data) }
+        // Un respaldo tocado en WhatsApp u otra app («Abrir con Ruralitos» o «Compartir»); al recrear la actividad no se repite.
+        if (savedInstanceState == null) com.ruralitos.app.data.backup.RespaldoEntrante.recibir(this, intent)
 
         setContent {
             RuralitosTheme {
@@ -185,6 +187,7 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        com.ruralitos.app.data.backup.RespaldoEntrante.recibir(this, intent)
         if (runCatching { SupabaseApi(this).procesarCallback(intent.data) }.getOrDefault(false)) {
             recreate()
         }
@@ -313,6 +316,25 @@ fun RuralitosApp() {
         ) {
             mostrarSolicitudAvisos = true
         }
+    }
+    // Un respaldo que llegó desde otra aplicación: se ofrece importarlo en cuanto la persona esté dentro de su cuenta.
+    val respaldoRecibido = com.ruralitos.app.data.backup.RespaldoEntrante.pendiente
+    var importarRecibido by remember { mutableStateOf(false) }
+    if (respaldoRecibido != null && estadoAcceso == "autenticado" && usuarioActual != null && !importarRecibido) {
+        VentanaConfirmarRuralitos(
+            titulo = "Llegó un respaldo de fichas",
+            mensaje = "Recibiste «${com.ruralitos.app.data.backup.RespaldoEntrante.nombre}». ¿Quieres importarlo ahora? " +
+                "Te pediremos la contraseña con la que lo cifró quien te lo envió.",
+            textoConfirmar = "Importar ahora",
+            textoCancelar = "Más tarde",
+            peligro = false,
+            cerrarAlTocarFuera = false,
+            onConfirmar = {
+                importarRecibido = true
+                pantallaActual = "seguridad"
+            },
+            onCancelar = { com.ruralitos.app.data.backup.RespaldoEntrante.descartar(context) }
+        )
     }
     if (mostrarSolicitudAvisos && estadoAcceso == "autenticado") {
         VentanaConfirmarRuralitos(
@@ -1077,6 +1099,12 @@ fun RuralitosApp() {
                                     ProgramadorSincronizacion.ejecutarAhora(context)
                                 }
                                 com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("${resultado.fichasImportadas} ficha(s) importadas.")
+                            },
+                            archivoEntrante = com.ruralitos.app.data.backup.RespaldoEntrante.pendiente.takeIf { importarRecibido },
+                            nombreArchivoEntrante = com.ruralitos.app.data.backup.RespaldoEntrante.nombre,
+                            onTerminarEntrante = {
+                                com.ruralitos.app.data.backup.RespaldoEntrante.descartar(context)
+                                importarRecibido = false
                             },
                             onRegresar = { pantallaActual = "inicio" }
                         )

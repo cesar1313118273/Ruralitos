@@ -66,13 +66,18 @@ object GestorRespaldoRuralitos {
         context: Context,
         destino: Uri,
         clave: String,
-        usuario: UsuarioEntity
+        usuario: UsuarioEntity,
+        /** Solo estas fichas (por su id local). Sin esto se exportan todas las que el usuario puede exportar. */
+        fichaIds: Set<Long>? = null,
+        /** Un administrador puede exportar también fichas que hicieron otras personas de su Sala. */
+        incluirDeOtros: Boolean = false
     ): ResultadoRespaldo = withContext(Dispatchers.IO) {
         val database = RuralitosDatabase.obtenerBaseDatos(context)
         val sqlite = database.openHelper.writableDatabase
         sqlite.query("PRAGMA wal_checkpoint(FULL)").close()
-        val fichas = contarFichasDelUsuario(sqlite, usuario.id)
-        val archivos = recopilarArchivos(context, sqlite, usuario.id)
+        val filtro = filtroFichas(usuario.id, fichaIds, incluirDeOtros)
+        val fichas = contarFichas(sqlite, filtro)
+        val archivos = recopilarArchivos(context, sqlite, filtro)
         var incluidos = 0
         var omitidos = 0
         val manifiesto = mutableListOf<JSONObject>()
@@ -93,7 +98,7 @@ object GestorRespaldoRuralitos {
                 )
                 tablas.forEach { tabla ->
                     zip.putNextEntry(ZipEntry("data/$tabla.jsonl"))
-                    sqlite.query(consultaExportacion(tabla), arrayOf(usuario.id)).use { cursor ->
+                    sqlite.query(consultaExportacion(tabla, filtro)).use { cursor ->
                         while (cursor.moveToNext()) {
                             zip.write(
                                 cursorAJson(cursor, camposNoPortables[tabla].orEmpty())
@@ -319,14 +324,13 @@ object GestorRespaldoRuralitos {
     private fun recopilarArchivos(
         context: Context,
         sqlite: SupportSQLiteDatabase,
-        usuarioId: Long
+        filtro: String
     ): List<ArchivoPortable> {
         val resultado = mutableListOf<ArchivoPortable>()
         sqlite.query(
-            "SELECT id, firmaUri FROM fichas_familiares " +
-                "WHERE firmaUri IS NOT NULL AND firmaUri <> '' " +
-                "AND creadoPorUsuarioId = ?",
-            arrayOf(usuarioId)
+            "SELECT f.id, f.firmaUri FROM fichas_familiares f " +
+                "WHERE f.firmaUri IS NOT NULL AND f.firmaUri <> '' " +
+                "AND $filtro"
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(0)
@@ -340,8 +344,7 @@ object GestorRespaldoRuralitos {
         sqlite.query(
             "SELECT a.id, a.uri FROM adjuntos_ficha a " +
                 "JOIN fichas_familiares f ON f.id = a.fichaId " +
-                "WHERE a.uri <> '' AND f.creadoPorUsuarioId = ?",
-            arrayOf(usuarioId)
+                "WHERE a.uri <> '' AND $filtro"
         ).use { cursor ->
             while (cursor.moveToNext()) {
                 val id = cursor.getLong(0)
@@ -474,28 +477,39 @@ object GestorRespaldoRuralitos {
         return id
     }
 
-    private fun contarFichasDelUsuario(
+    private fun contarFichas(
         sqlite: SupportSQLiteDatabase,
-        usuarioId: Long
-    ): Int = sqlite.query(
-        "SELECT COUNT(*) FROM fichas_familiares WHERE creadoPorUsuarioId = ?",
-        arrayOf(usuarioId)
-    ).use { cursor ->
+        filtro: String
+    ): Int = sqlite.query("SELECT COUNT(*) FROM fichas_familiares f WHERE $filtro").use { cursor ->
         if (cursor.moveToFirst()) cursor.getInt(0) else 0
     }
 
-    private fun consultaExportacion(tabla: String): String = when (tabla) {
+    /**
+     * Condición SQL sobre `fichas_familiares f` con las fichas que entran al respaldo: las del usuario (o todas si
+     * [incluirDeOtros]) y, si se dan, solo las de [fichaIds]. Todo son números propios, no texto del usuario.
+     */
+    internal fun filtroFichas(usuarioId: Long, fichaIds: Set<Long>?, incluirDeOtros: Boolean): String {
+        val propias = if (incluirDeOtros) "1 = 1" else "f.creadoPorUsuarioId = $usuarioId"
+        val elegidas = when {
+            fichaIds == null -> "1 = 1"
+            fichaIds.isEmpty() -> "1 = 0"
+            else -> "f.id IN (${fichaIds.joinToString(",")})"
+        }
+        return "($propias AND $elegidas)"
+    }
+
+    private fun consultaExportacion(tabla: String, filtro: String): String = when (tabla) {
         "fichas_familiares" ->
-            "SELECT f.* FROM fichas_familiares f WHERE f.creadoPorUsuarioId = ? ORDER BY f.id"
+            "SELECT f.* FROM fichas_familiares f WHERE $filtro ORDER BY f.id"
         "valores_riesgo" ->
             "SELECT v.* FROM valores_riesgo v " +
                 "JOIN calificaciones_riesgo c ON c.id = v.calificacionId " +
                 "JOIN fichas_familiares f ON f.id = c.fichaId " +
-                "WHERE f.creadoPorUsuarioId = ? ORDER BY v.id"
+                "WHERE $filtro ORDER BY v.id"
         else -> {
             require(tabla in tablas && tabla != "fichas_familiares")
             "SELECT t.* FROM $tabla t JOIN fichas_familiares f ON f.id = t.fichaId " +
-                "WHERE f.creadoPorUsuarioId = ? ORDER BY t.id"
+                "WHERE $filtro ORDER BY t.id"
         }
     }
 

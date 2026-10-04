@@ -15,6 +15,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import android.view.MotionEvent
+import android.view.View
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -402,11 +403,21 @@ fun CroquisMapaScreen(
 
     fun elementoCerca(pantalla: PointF, radioDp: Float): ElementoCroquis? {
         val vista = mapa ?: return null
-        val radio = radioDp * context.resources.displayMetrics.density
+        val densidad = context.resources.displayMetrics.density
+        val radio = radioDp * densidad
         return elementos
-            .map { it to vista.projection.toScreenLocation(LatLng(it.latitud, it.longitud)) }
-            .map { (elemento, posicion) -> elemento to hypot(pantalla.x - posicion.x, pantalla.y - posicion.y) }
-            .filter { it.second <= radio }
+            .mapNotNull { elemento ->
+                val posicion = vista.projection.toScreenLocation(LatLng(elemento.latitud, elemento.longitud))
+                val dx = kotlin.math.abs(pantalla.x - posicion.x)
+                val dy = kotlin.math.abs(pantalla.y - posicion.y)
+                // Un texto ocupa un rectángulo ancho; un símbolo, un círculo.
+                val medioAncho = if (elemento.tipo == TipoElementoCroquis.TEXTO) {
+                    (minOf(elemento.etiqueta.length, 26) * 4.5f + 14f) * densidad
+                } else radio
+                val dentro = if (elemento.tipo == TipoElementoCroquis.TEXTO) dx <= medioAncho && dy <= radio
+                else hypot(dx, dy) <= radio
+                if (dentro) elemento to hypot(dx, dy) else null
+            }
             .minByOrNull { it.second }?.first
     }
 
@@ -666,14 +677,21 @@ fun CroquisMapaScreen(
         if (estilo.getSource(FUENTE_ELEMENTOS) == null) {
             imagenesCroquis.clear()
             estilo.addSource(GeoJsonSource(FUENTE_ELEMENTOS, "{\"type\":\"FeatureCollection\",\"features\":[]}"))
-            estilo.addLayer(
-                SymbolLayer(CAPA_ELEMENTOS, FUENTE_ELEMENTOS).withProperties(
-                    PropertyFactory.iconImage(Expression.get("imagen")),
-                    PropertyFactory.iconAllowOverlap(true),
-                    PropertyFactory.iconIgnorePlacement(true),
-                    PropertyFactory.iconAnchor(Property.ICON_ANCHOR_CENTER)
-                )
+            val capaSimbolos = SymbolLayer(CAPA_ELEMENTOS, FUENTE_ELEMENTOS).withProperties(
+                PropertyFactory.iconImage(Expression.get("imagen")),
+                PropertyFactory.iconAllowOverlap(true),
+                PropertyFactory.iconIgnorePlacement(true),
+                PropertyFactory.iconAnchor(Property.ICON_ANCHOR_CENTER)
             )
+            // El señalizador rojo de la vivienda es una anotación de MapLibre: su capa debe quedar siempre por encima.
+            val capaAnotaciones = estilo.layers.firstOrNull { it.id.startsWith("com.mapbox.annotations.points") }?.id
+                ?: estilo.layers.lastOrNull { it.id.startsWith("com.mapbox.annotations") }?.id
+            if (capaAnotaciones != null) {
+                runCatching { estilo.addLayerBelow(capaSimbolos, capaAnotaciones) }
+                    .onFailure { estilo.addLayer(capaSimbolos) }
+            } else {
+                estilo.addLayer(capaSimbolos)
+            }
         }
         val rasgos = JSONArray()
         val enUso = mutableSetOf<String>()
@@ -713,6 +731,92 @@ fun CroquisMapaScreen(
             )
         }
     }
+
+    // El mapa conserva su oyente de toques desde que se crea; este estado le entrega siempre la versión vigente,
+    // con la lista de elementos, la selección y el mapa de ahora (si no, el arrastre se quedaba con datos viejos).
+    var candidatoArrastre by remember { mutableStateOf<String?>(null) }
+    var inicioToque by remember { mutableStateOf(PointF(0f, 0f)) }
+    val manejarToque = rememberUpdatedState<(View, MotionEvent) -> Boolean>(manejar@{ vista, evento ->
+        val mapLibre = mapa ?: return@manejar false
+        val densidad = vista.resources.displayMetrics.density
+        val accion = evento.actionMasked
+        fun tomarMapa() {
+            mapaEnUso = true
+            mapLibre.uiSettings.setAllGesturesEnabled(false)
+            vista.parent?.requestDisallowInterceptTouchEvent(true)
+        }
+        fun soltarMapa() {
+            mapaEnUso = false
+            mapLibre.uiSettings.setAllGesturesEnabled(true)
+            vista.parent?.requestDisallowInterceptTouchEvent(false)
+        }
+        fun puntoDelToque() = mapLibre.projection.fromScreenLocation(PointF(evento.x, evento.y))
+
+        // Un símbolo o texto en manos del usuario: un toque corto lo selecciona; si se mueve, se arrastra.
+        val idCandidato = candidatoArrastre
+        if (idCandidato != null) {
+            if (accion == MotionEvent.ACTION_MOVE && !arrastrandoElemento &&
+                hypot(evento.x - inicioToque.x, evento.y - inicioToque.y) > 10f * densidad
+            ) {
+                arrastrandoElemento = true
+                seleccionId = idCandidato
+                paletaAbierta = false
+            }
+            if (arrastrandoElemento && (accion == MotionEvent.ACTION_MOVE || accion == MotionEvent.ACTION_UP)) {
+                val punto = puntoDelToque()
+                elementos = elementos.map {
+                    if (it.id == idCandidato) it.copy(latitud = punto.latitude, longitud = punto.longitude) else it
+                }
+            }
+            if (accion == MotionEvent.ACTION_UP || accion == MotionEvent.ACTION_CANCEL) {
+                if (arrastrandoElemento) guardarElementosActual.value(elementos)
+                else if (accion == MotionEvent.ACTION_UP) { seleccionId = idCandidato; paletaAbierta = false }
+                candidatoArrastre = null
+                arrastrandoElemento = false
+                soltarMapa()
+            }
+            return@manejar true
+        }
+
+        if (accion == MotionEvent.ACTION_DOWN && colocando == null && !arrastrandoMarcador) {
+            val marcadorPantalla = marcador?.let { mapLibre.projection.toScreenLocation(it.position) }
+            val distanciaMarcador = marcadorPantalla?.let { hypot(evento.x - it.x, evento.y - it.y) } ?: Float.MAX_VALUE
+            val tocado = elementoCerca(PointF(evento.x, evento.y), 34f)
+            val distanciaElemento = tocado?.let {
+                mapLibre.projection.toScreenLocation(LatLng(it.latitud, it.longitud))
+                    .let { p -> hypot(evento.x - p.x, evento.y - p.y) }
+            } ?: Float.MAX_VALUE
+            if (distanciaMarcador <= 52f * densidad && distanciaMarcador <= distanciaElemento) {
+                arrastrandoMarcador = true
+                tomarMapa()
+                return@manejar true
+            }
+            if (tocado != null) {
+                candidatoArrastre = tocado.id
+                inicioToque = PointF(evento.x, evento.y)
+                tomarMapa()
+                return@manejar true
+            }
+        }
+
+        if (arrastrandoMarcador) {
+            when (accion) {
+                MotionEvent.ACTION_MOVE -> moverViviendaActual.value(puntoDelToque())
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    if (accion == MotionEvent.ACTION_UP) moverViviendaActual.value(puntoDelToque())
+                    arrastrandoMarcador = false
+                    soltarMapa()
+                    mensaje = "Vivienda ajustada; sus coordenadas se actualizaron."
+                }
+            }
+            return@manejar true
+        }
+
+        val interactuando = accion != MotionEvent.ACTION_UP && accion != MotionEvent.ACTION_CANCEL
+        mapaEnUso = interactuando
+        vista.parent?.requestDisallowInterceptTouchEvent(interactuando)
+        false
+    })
 
     PantallaRuralitos(
         titulo = "Ubicación de vivienda",
@@ -767,88 +871,7 @@ fun CroquisMapaScreen(
                         AndroidView(
                             factory = {
                                 mapView.apply {
-                                setOnTouchListener { vista, evento ->
-                                    val mapLibre = mapa
-                                    val marcadorActual = marcador
-                                    fun cerca(actual: Marker?): Boolean = mapLibre != null && actual != null &&
-                                        mapLibre.projection.toScreenLocation(actual.position).let { posicion ->
-                                            hypot(evento.x - posicion.x, evento.y - posicion.y) <=
-                                                52f * resources.displayMetrics.density
-                                        }
-                                    val densidad = resources.displayMetrics.density
-                                    if (evento.actionMasked == MotionEvent.ACTION_DOWN && mapLibre != null &&
-                                        colocando == null && seleccionId != null) {
-                                        val elegido = elementos.firstOrNull { it.id == seleccionId }
-                                        val posicion = elegido?.let { mapLibre.projection.toScreenLocation(LatLng(it.latitud, it.longitud)) }
-                                        if (posicion != null && hypot(evento.x - posicion.x, evento.y - posicion.y) <= 36f * densidad) {
-                                            arrastrandoElemento = true
-                                            mapaEnUso = true
-                                            mapLibre.uiSettings.setAllGesturesEnabled(false)
-                                            vista.parent?.requestDisallowInterceptTouchEvent(true)
-                                            return@setOnTouchListener true
-                                        }
-                                    }
-                                    if (arrastrandoElemento && mapLibre != null) {
-                                        when (evento.actionMasked) {
-                                            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> {
-                                                val punto = mapLibre.projection.fromScreenLocation(PointF(evento.x, evento.y))
-                                                val actual = seleccionId
-                                                elementos = elementos.map {
-                                                    if (it.id == actual) it.copy(latitud = punto.latitude, longitud = punto.longitude) else it
-                                                }
-                                            }
-                                        }
-                                        if (evento.actionMasked == MotionEvent.ACTION_UP || evento.actionMasked == MotionEvent.ACTION_CANCEL) {
-                                            arrastrandoElemento = false
-                                            mapaEnUso = false
-                                            mapLibre.uiSettings.setAllGesturesEnabled(true)
-                                            vista.parent?.requestDisallowInterceptTouchEvent(false)
-                                            guardarElementosActual.value(elementos)
-                                        }
-                                        return@setOnTouchListener true
-                                    }
-                                    val viviendaCerca = evento.actionMasked == MotionEvent.ACTION_DOWN && colocando == null && cerca(marcadorActual)
-                                    if (viviendaCerca) {
-                                        arrastrandoMarcador = true
-                                        mapaEnUso = true
-                                        mapLibre!!.uiSettings.setAllGesturesEnabled(false)
-                                        vista.parent?.requestDisallowInterceptTouchEvent(true)
-                                        return@setOnTouchListener true
-                                    }
-
-                                    if (arrastrandoMarcador && mapLibre != null) {
-                                        when (evento.actionMasked) {
-                                            MotionEvent.ACTION_MOVE -> {
-                                                val punto = mapLibre.projection.fromScreenLocation(
-                                                    PointF(evento.x, evento.y)
-                                                )
-                                                moverViviendaActual.value(punto)
-                                            }
-                                            MotionEvent.ACTION_UP,
-                                            MotionEvent.ACTION_CANCEL -> {
-                                                if (evento.actionMasked == MotionEvent.ACTION_UP) {
-                                                    val punto = mapLibre.projection.fromScreenLocation(
-                                                        PointF(evento.x, evento.y)
-                                                    )
-                                                    moverViviendaActual.value(punto)
-                                                }
-                                                arrastrandoMarcador = false
-                                                mapaEnUso = false
-                                                mapLibre.uiSettings.setAllGesturesEnabled(true)
-                                                vista.parent?.requestDisallowInterceptTouchEvent(false)
-                                                mensaje = "Vivienda ajustada; sus coordenadas se actualizaron."
-                                            }
-                                        }
-                                        return@setOnTouchListener true
-                                    }
-
-                                    val interactuando =
-                                        evento.actionMasked != MotionEvent.ACTION_UP &&
-                                            evento.actionMasked != MotionEvent.ACTION_CANCEL
-                                    mapaEnUso = interactuando
-                                    vista.parent?.requestDisallowInterceptTouchEvent(interactuando)
-                                    false
-                                }
+                                setOnTouchListener { vista, evento -> manejarToque.value(vista, evento) }
                                 }
                             },
                             modifier = Modifier.fillMaxSize()

@@ -119,18 +119,19 @@ class EmpezarDeCeroTest {
             claveHash = "", claveSalt = "", correo = "", telefono = ""
         )
         rule.setContent { RuralitosTheme { SeguridadRespaldoScreen(usuario = usuario, salaActiva = null, onRestaurado = {}, onRegresar = {}) } }
-        rule.waitUntil(15_000) { rule.onAllNodes(hasTestTag("eliminar_todas_fichas")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onNodeWithTag("eliminar_todas_fichas").performScrollTo().performClick()
-        rule.waitUntil(5_000) { rule.onAllNodes(hasTestTag("confirmar_borrado_total")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onAllNodes(hasText("Se eliminarán las 5 ficha(s)", substring = true)).fetchSemanticsNodes().let { assertEquals(1, it.size) }
+        // «Eliminar fichas» tiene su propio espacio dentro de Seguridad y respaldo
+        rule.waitUntil(15_000) { rule.onAllNodes(hasTestTag("abrir_eliminar")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithTag("abrir_eliminar").performClick()
+        rule.waitUntil(5_000) { rule.onAllNodes(hasTestTag("eliminar_todas_fichas")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onAllNodes(hasText("5 fichas guardadas", substring = true)).fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
 
         // sin la palabra no se borra nada
-        rule.onNodeWithTag("confirmar_borrado_total").performClick()
+        rule.onNodeWithTag("eliminar_todas_fichas").performScrollTo().performClick()
         rule.waitUntil(5_000) { rule.onAllNodes(hasText("Escribe la palabra ELIMINAR", substring = true)).fetchSemanticsNodes().isNotEmpty() }
         assertEquals(5, contar("fichas_familiares"))
 
         rule.onNodeWithTag("texto_confirmar_borrado").performTextInput("ELIMINAR")
-        rule.onNodeWithTag("confirmar_borrado_total").performClick()
+        rule.onNodeWithTag("eliminar_todas_fichas").performScrollTo().performClick()
         rule.waitUntil(15_000) { contar("fichas_familiares") == 0 }
         rule.waitUntil(10_000) { rule.onAllNodes(hasText("Se eliminaron 5 ficha(s)", substring = true)).fetchSemanticsNodes().isNotEmpty() }
     }

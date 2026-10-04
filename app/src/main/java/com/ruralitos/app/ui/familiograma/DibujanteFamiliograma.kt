@@ -10,6 +10,9 @@ import com.ruralitos.app.domain.SaludoProfesional
 import com.ruralitos.app.domain.familiograma.Aborto
 import com.ruralitos.app.domain.familiograma.AbreviaturasPatologia
 import com.ruralitos.app.domain.familiograma.Ancla
+import com.ruralitos.app.domain.familiograma.BloqueEtiqueta
+import com.ruralitos.app.domain.familiograma.ColocacionEtiquetas
+import com.ruralitos.app.domain.familiograma.TipoEtiqueta
 import com.ruralitos.app.domain.familiograma.COLOR_TINTA
 import com.ruralitos.app.domain.familiograma.Entorno
 import com.ruralitos.app.domain.familiograma.Familiograma
@@ -32,6 +35,8 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
+
+private const val ALTO_LINEA_SIGLAS = 15f
 
 internal const val COLOR_CIAN = 0xFF0889A0.toInt()
 internal const val COLOR_CIAN_OSCURO = 0xFF066B7E.toInt()
@@ -112,7 +117,8 @@ class DibujanteFamiliograma {
         doc.filiaciones.forEach { dibujarFiliacion(c, doc, it) }
         doc.abortos.forEach { dibujarAborto(c, doc, it) }
         doc.entornos.forEach { dibujarEntorno(c, it) }
-        doc.personas.forEach { dibujarPersona(c, doc, it) }
+        val etiquetas = etiquetasDe(doc)
+        doc.personas.forEach { dibujarPersona(c, doc, it, etiquetas) }
         doc.textos.forEach { t ->
             val lineas = t.texto.split('\n')
             lineas.forEachIndexed { i, linea -> c.drawText(linea, t.x, t.y + i * 18f, textoLibre) }
@@ -229,7 +235,12 @@ class DibujanteFamiliograma {
         }
     }
 
-    private fun dibujarPersona(c: Canvas, doc: Familiograma, p: Persona) {
+    private fun dibujarPersona(
+        c: Canvas,
+        doc: Familiograma,
+        p: Persona,
+        etiquetas: Map<Pair<String, TipoEtiqueta>, Caja>
+    ) {
         val m = MEDIA_PERSONA
         if (p.sexo == SexoPersona.HOMBRE) {
             c.drawRect(p.x - m, p.y - m, p.x + m, p.y + m, relleno)
@@ -259,16 +270,45 @@ class DibujanteFamiliograma {
             }
             c.drawPath(flecha, relleno2)
         }
-        var y = p.y + m + 16f
-        val codigos = p.patologias.map { AbreviaturasPatologia.codigoDe(doc, it) }.distinct()
-        codigos.chunked(3).forEach { linea ->
-            c.drawText(linea.joinToString(" "), p.x, y, textoCodigo)
-            y += 15f
+        etiquetas[p.id to TipoEtiqueta.SIGLAS]?.let { caja ->
+            lineasDeSiglas(doc, p).forEachIndexed { i, linea ->
+                c.drawText(linea, (caja.izquierda + caja.derecha) / 2f, caja.arriba + 12f + i * ALTO_LINEA_SIGLAS, textoCodigo)
+            }
         }
-        if (doc.mostrarNombres && p.nombre.isNotBlank()) {
-            val corto = SaludoProfesional.nombreCorto("", p.nombre).ifBlank { p.nombre }
-            c.drawText(corto.take(22), p.x, y + 2f, textoNombre)
+        etiquetas[p.id to TipoEtiqueta.NOMBRE]?.let { caja ->
+            c.drawText(nombreCorto(p), (caja.izquierda + caja.derecha) / 2f, caja.arriba + 11f, textoNombre)
         }
+    }
+
+    private fun lineasDeSiglas(doc: Familiograma, p: Persona): List<String> =
+        p.patologias.map { AbreviaturasPatologia.codigoDe(doc, it) }.distinct().chunked(3).map { it.joinToString(" ") }
+
+    private fun nombreCorto(p: Persona): String =
+        SaludoProfesional.nombreCorto("", p.nombre).ifBlank { p.nombre }.take(22)
+
+    /**
+     * Dónde va el texto de cada persona (siglas de sus patologías y, si se pide, su nombre). Cada texto se coloca en un lado
+     * libre de líneas y figuras, no siempre debajo; se vuelve a calcular cada vez que se mueve algo.
+     */
+    fun etiquetasDe(doc: Familiograma): Map<Pair<String, TipoEtiqueta>, Caja> {
+        val bloques = buildList {
+            doc.personas.forEach { p ->
+                val lineas = lineasDeSiglas(doc, p)
+                if (lineas.isNotEmpty()) {
+                    add(
+                        BloqueEtiqueta(
+                            p.id, TipoEtiqueta.SIGLAS,
+                            lineas.maxOf { textoCodigo.measureText(it) } + 4f,
+                            lineas.size * ALTO_LINEA_SIGLAS
+                        )
+                    )
+                }
+                if (doc.mostrarNombres && p.nombre.isNotBlank()) {
+                    add(BloqueEtiqueta(p.id, TipoEtiqueta.NOMBRE, textoNombre.measureText(nombreCorto(p)) + 4f, 14f))
+                }
+            }
+        }
+        return ColocacionEtiquetas.colocar(doc, bloques)
     }
 
     private fun dibujarEntorno(c: Canvas, e: Entorno) {
@@ -371,24 +411,22 @@ class DibujanteFamiliograma {
         }
     }
 
-    /** Lista de abreviaturas nuevas, en la esquina superior derecha de [region]. */
-    fun dibujarLeyenda(c: Canvas, doc: Familiograma, region: Caja = HojaFamiliograma.caja) {
-        val nuevas = AbreviaturasPatologia.nuevasEnUso(doc)
-        if (nuevas.isEmpty()) return
-        val unidad = HojaFamiliograma.ANCHO / 76f
-        val margen = HojaFamiliograma.ANCHO * 0.02f
-        val ancho = HojaFamiliograma.ANCHO * 0.27f
-        dibujarLista(c, nuevas.map { it.codigo to it.nombre }, region.derecha - margen - ancho, region.arriba + margen, ancho, unidad)
-    }
+    /** Una fila de la leyenda ya medida: su código y su nombre en varias líneas si hace falta. */
+    private class ListaPreparada(
+        val filas: List<Pair<String, android.text.StaticLayout>>,
+        val ancho: Float,
+        val alto: Float,
+        val unidad: Float,
+        val altoTitulo: Float,
+        val espacio: Float,
+        val anchoCodigo: Float,
+        val codigo: Paint,
+        val titulo: Paint,
+        val marco: Paint,
+        val fondo: Paint
+    )
 
-    private fun dibujarLista(
-        c: Canvas,
-        filas: List<Pair<String, String>>,
-        izquierda: Float,
-        arriba: Float,
-        anchoLista: Float,
-        unidad: Float
-    ) {
+    private fun prepararLista(filas: List<Pair<String, String>>, anchoLista: Float, unidad: Float): ListaPreparada {
         val titulo = texto(unidad * 1.05f, COLOR_TINTA, negrita = true).apply { textAlign = Paint.Align.LEFT }
         val codigo = texto(unidad, COLOR_CIAN, negrita = true).apply { textAlign = Paint.Align.LEFT }
         val nombre = android.text.TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -400,26 +438,52 @@ class DibujanteFamiliograma {
         val anchoCodigo = codigo.measureText("WWWW") + unidad * 0.4f
         val anchoNombre = (anchoLista - unidad * 1.6f - anchoCodigo).toInt().coerceAtLeast(40)
         val lineas = filas.take(12).map { (cod, nom) ->
-            Pair(
-                cod,
-                android.text.StaticLayout.Builder.obtain(nom, 0, nom.length, nombre, anchoNombre).build()
-            )
+            Pair(cod, android.text.StaticLayout.Builder.obtain(nom, 0, nom.length, nombre, anchoNombre).build())
         }
         val espacio = unidad * 0.5f
         val altoTitulo = unidad * 2.5f
         val altoFilas = lineas.sumOf { (_, l) -> (maxOf(l.height.toFloat(), unidad * 1.3f) + espacio).toDouble() }.toFloat()
-        val caja = RectF(izquierda, arriba, izquierda + anchoLista, arriba + altoTitulo + altoFilas + unidad * 0.3f)
-        c.drawRoundRect(caja, unidad * 0.8f, unidad * 0.8f, fondo)
-        c.drawRoundRect(caja, unidad * 0.8f, unidad * 0.8f, marco)
-        c.drawText("Abreviaturas nuevas", izquierda + unidad * 0.8f, arriba + unidad * 1.55f, titulo)
-        var y = arriba + altoTitulo
-        lineas.forEach { (cod, layout) ->
-            c.drawText(cod, izquierda + unidad * 0.8f, y - codigo.ascent() + unidad * 0.05f, codigo)
+        return ListaPreparada(lineas, anchoLista, altoTitulo + altoFilas + unidad * 0.3f, unidad, altoTitulo, espacio, anchoCodigo, codigo, titulo, marco, fondo)
+    }
+
+    private fun listaDeLeyenda(doc: Familiograma): ListaPreparada? {
+        val nuevas = AbreviaturasPatologia.nuevasEnUso(doc)
+        if (nuevas.isEmpty()) return null
+        return prepararLista(nuevas.map { it.codigo to it.nombre }, HojaFamiliograma.ANCHO * 0.27f, HojaFamiliograma.ANCHO / 76f)
+    }
+
+    /**
+     * Recuadro de la leyenda de abreviaturas nuevas (o `null` si no hay). Va al lado de todo el familiograma, en un sitio
+     * libre: nunca encima de una figura, una línea o unas siglas. Si no cabe dentro de la hoja, queda fuera, a la derecha.
+     */
+    fun cajaLeyenda(doc: Familiograma): Caja? {
+        val lista = listaDeLeyenda(doc) ?: return null
+        return ColocacionEtiquetas.colocarLeyenda(doc, etiquetasDe(doc).values, lista.ancho, lista.alto)
+    }
+
+    /** Dibuja la leyenda en su sitio libre. */
+    fun dibujarLeyenda(c: Canvas, doc: Familiograma) {
+        val caja = cajaLeyenda(doc) ?: return
+        dibujarLeyendaEn(c, doc, caja)
+    }
+
+    fun dibujarLeyendaEn(c: Canvas, doc: Familiograma, caja: Caja) {
+        val lista = listaDeLeyenda(doc) ?: return
+        val unidad = lista.unidad
+        val izquierda = caja.izquierda
+        val arriba = caja.arriba
+        val marcoCaja = RectF(izquierda, arriba, izquierda + lista.ancho, arriba + lista.alto)
+        c.drawRoundRect(marcoCaja, unidad * 0.8f, unidad * 0.8f, lista.fondo)
+        c.drawRoundRect(marcoCaja, unidad * 0.8f, unidad * 0.8f, lista.marco)
+        c.drawText("Abreviaturas nuevas", izquierda + unidad * 0.8f, arriba + unidad * 1.55f, lista.titulo)
+        var y = arriba + lista.altoTitulo
+        lista.filas.forEach { (cod, layout) ->
+            c.drawText(cod, izquierda + unidad * 0.8f, y - lista.codigo.ascent() + unidad * 0.05f, lista.codigo)
             c.save()
-            c.translate(izquierda + unidad * 0.8f + anchoCodigo, y)
+            c.translate(izquierda + unidad * 0.8f + lista.anchoCodigo, y)
             layout.draw(c)
             c.restore()
-            y += maxOf(layout.height.toFloat(), unidad * 1.3f) + espacio
+            y += maxOf(layout.height.toFloat(), unidad * 1.3f) + lista.espacio
         }
     }
 
@@ -440,6 +504,10 @@ class DibujanteFamiliograma {
         GeometriaFamiliograma.limites(doc)?.let { limites ->
             if (HojaFamiliograma.hayElementosFuera(doc)) region = region.unir(limites.expandir(6f))
         }
+        val leyenda = cajaLeyenda(doc)
+        if (leyenda != null && (leyenda.derecha > region.derecha || leyenda.izquierda < region.izquierda ||
+                leyenda.abajo > region.abajo || leyenda.arriba < region.arriba)
+        ) region = region.unir(leyenda.expandir(6f))
         val escala = min(ancho / region.ancho, alto / region.alto)
         c.save()
         c.translate(
@@ -448,7 +516,7 @@ class DibujanteFamiliograma {
         )
         c.scale(escala, escala)
         dibujar(c, doc)
-        dibujarLeyenda(c, doc, region)
+        if (leyenda != null) dibujarLeyendaEn(c, doc, leyenda)
         c.restore()
         return bitmap
     }

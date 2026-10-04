@@ -43,6 +43,10 @@ object CifradoRespaldo {
         )
     }
 
+    /** Mira solo el encabezado: ¿el archivo parece un respaldo de Ruralitos? No necesita la contraseña. */
+    fun pareceRespaldo(origen: InputStream): Boolean =
+        runCatching { DataInputStream(origen).readUTF() == FIRMA }.getOrDefault(false)
+
     fun abrirEntrada(origen: InputStream, clave: String): InputStream {
         val entrada = DataInputStream(origen)
         require(entrada.readUTF() == FIRMA) { "El archivo no es un respaldo de Ruralitos." }

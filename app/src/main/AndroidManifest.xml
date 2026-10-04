@@ -45,6 +45,44 @@
                     android:host="auth-callback"
                     android:scheme="ruralitos" />
             </intent-filter>
+
+            <!-- Tocar un respaldo recibido (WhatsApp, correo, administrador de archivos…): «Abrir con Ruralitos».
+                 WhatsApp suele declarar los archivos desconocidos como application/octet-stream. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/x-ruralitos" />
+            </intent-filter>
+
+            <!-- Administradores de archivos que sí informan el nombre: cualquier archivo que termine en .ruralitos. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="*/*" />
+                <data android:pathPattern=".*\\.ruralitos" />
+                <data android:pathPattern=".*\\..*\\.ruralitos" />
+                <data android:pathPattern=".*\\..*\\..*\\.ruralitos" />
+            </intent-filter>
+
+            <!-- «Compartir» → Ruralitos, que funciona aunque el tipo del archivo no se reconozca. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="application/octet-stream" />
+                <data android:mimeType="application/x-ruralitos" />
+            </intent-filter>
         </activity>
 
         <provider

@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.Uri
 import com.ruralitos.app.BuildConfig
+import com.ruralitos.app.domain.ConcesionAcceso
 import com.ruralitos.app.data.security.SesionSupabase
 import com.ruralitos.app.data.security.SesionSupabaseCifrada
 import kotlinx.coroutines.Dispatchers
@@ -605,6 +606,56 @@ class SupabaseApi(context: Context) {
             )
         }
     }
+    /**
+     * Un solo código que abre varias partes a la vez: centros, EAIS, barrios o fichas sueltas.
+     * Si es una sola parte de Sala, EAIS o barrio se usa la función de siempre; solo lo demás necesita la actualización
+     * `20261005120000_acceso_por_alcances.sql` en Supabase.
+     */
+    suspend fun crearCodigoAccesoVarios(
+        concesiones: List<ConcesionAcceso>,
+        permiso: String,
+        correo: String = ""
+    ): CodigoAccesoRemoto {
+        require(concesiones.isNotEmpty()) { "Elige al menos una parte para compartir." }
+        concesiones.singleOrNull()?.takeIf { it.alcance != "FICHA" }?.let {
+            return crearCodigoAcceso(it.organizacionId, it.alcance, it.eaisId, it.territorioId, permiso, correo)
+        }
+        val items = JSONArray()
+        concesiones.forEach {
+            items.put(
+                JSONObject()
+                    .put("organizacion_id", it.organizacionId)
+                    .put("alcance", it.alcance)
+                    .put("eais_id", it.eaisId ?: JSONObject.NULL)
+                    .put("territorio_id", it.territorioId ?: JSONObject.NULL)
+                    .put("ficha_id", it.fichaId ?: JSONObject.NULL)
+            )
+        }
+        val arreglo = try {
+            rpc(
+                "crear_codigo_acceso_varios",
+                JSONObject()
+                    .put("p_items", items)
+                    .put("p_permiso", permiso.uppercase())
+                    .put("p_correo", correo.trim().lowercase().ifBlank { JSONObject.NULL })
+                    .put("p_horas_vigencia", 168)
+            ).jsonArreglo()
+        } catch (error: ErrorSupabase) {
+            if (error.codigoHttp == 404 || error.message.orEmpty().contains("crear_codigo_acceso_varios")) {
+                throw ErrorSupabase(
+                    "Compartir varios centros, EAIS, barrios o fichas necesita la actualización de Supabase " +
+                        "(archivo 20261005120000_acceso_por_alcances.sql). Pídele a quien administra la nube que la aplique.",
+                    error.codigoHttp
+                )
+            }
+            throw error
+        }
+        if (arreglo.length() == 0) throw ErrorSupabase("Supabase no devolvió el código de acceso.")
+        return arreglo.getJSONObject(0).let {
+            CodigoAccesoRemoto(codigo = it.getString("codigo"), expiraEn = it.optString("expira_en"))
+        }
+    }
+
     suspend fun actualizarPerfil(perfil: PerfilRemoto) {
         val basico = JSONObject()
             .put("cedula", perfil.cedula)
@@ -704,6 +755,12 @@ class SupabaseApi(context: Context) {
         val accesos = seleccionarPaginado(
             "accesos_sala?organizacion_id=eq.$org&activo=eq.true&select=usuario_id,permiso,alcance"
         )
+        // Las fichas sueltas compartidas viven en otra tabla; si la actualización de Supabase aún no está, se omite.
+        val accesosFicha = runCatching {
+            seleccionarPaginado(
+                "accesos_ficha?organizacion_id=eq.$org&activo=eq.true&select=usuario_id,permiso&order=usuario_id.asc,ficha_id.asc"
+            )
+        }.getOrDefault(emptyList())
         val ids = miembros.map { it.getString("usuario_id") }.distinct()
         val perfiles = ids.chunked(50).flatMap { lote ->
             seleccionar("perfiles?id=in.(${lote.joinToString(",")})&select=id,nombres,apellidos,cargo,correo")
@@ -712,7 +769,8 @@ class SupabaseApi(context: Context) {
         return miembros.map { fila ->
             val usuarioId = fila.getString("usuario_id")
             val perfil = perfiles[usuarioId]
-            val permisos = accesos.filter { it.getString("usuario_id") == usuarioId }
+            val permisosSala = accesos.filter { it.getString("usuario_id") == usuarioId }
+            val permisos = permisosSala + accesosFicha.filter { it.getString("usuario_id") == usuarioId }
             MiembroEquipoRemoto(
                 usuarioId = usuarioId,
                 nombre = listOfNotNull(perfil?.optString("nombres"), perfil?.optString("apellidos"))
@@ -746,6 +804,14 @@ class SupabaseApi(context: Context) {
             cuerpo = JSONObject().put("activo", false), accessToken = token,
             headers = mapOf("Prefer" to "return=minimal")
         )
+        // Las fichas sueltas que se le compartieron también se retiran (si la tabla aún no existe, no hay nada que quitar).
+        runCatching {
+            solicitar(
+                "PATCH", "/rest/v1/accesos_ficha?organizacion_id=eq.$org&usuario_id=eq.$usuario",
+                cuerpo = JSONObject().put("activo", false), accessToken = token,
+                headers = mapOf("Prefer" to "return=minimal")
+            )
+        }
     }
 
     suspend fun rpc(nombre: String, cuerpo: JSONObject): RespuestaHttp =

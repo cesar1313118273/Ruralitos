@@ -54,6 +54,15 @@ import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
 import com.ruralitos.app.ui.components.SubmenuRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
+import com.ruralitos.app.ui.components.SelectorAlcanceRuralitos
+import com.ruralitos.app.ui.components.TarjetaCodigoRuralitos
+import com.ruralitos.app.ui.components.TextoAjustado
+import com.ruralitos.app.ui.components.rememberEstadoAlcance
+import com.ruralitos.app.domain.AlcanceFichas
+import com.ruralitos.app.domain.CatalogoAlcance
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import com.ruralitos.app.ui.theme.AzulClinico
 import com.ruralitos.app.ui.theme.MoradoClinico
 import com.ruralitos.app.ui.theme.NaranjaClinico
@@ -107,7 +116,7 @@ fun SalaScreen(
     var nombreTerritorio by remember { mutableStateOf("") }
     var territorioEditandoId by remember { mutableStateOf<String?>(null) }
     var territorioAEliminar by remember { mutableStateOf<TerritorioSalaEntity?>(null) }
-    var alcance by remember { mutableStateOf("SALA") }
+    val estadoAlcance = rememberEstadoAlcance()
     var permiso by remember { mutableStateOf("EDITOR") }
     var correo by remember { mutableStateOf("") }
     var codigoIngreso by remember { mutableStateOf("") }
@@ -144,6 +153,20 @@ fun SalaScreen(
     val eaisElegido = eais.firstOrNull { it.id == eaisId }
     val territorio = territorios.firstOrNull { it.id == territorioId }
     val puedeAdministrar = sala?.permiso == "ADMINISTRADOR" || sala?.rol == "ADMINISTRADOR"
+    val todasLasFichas by remember(database) { database.fichaFamiliarDao().listarFichas() }
+        .collectAsState(initial = emptyList())
+    val todosLosEais by remember(database) { database.salaDao().observarTodosEais() }
+        .collectAsState(initial = emptyList())
+    val todosLosBarrios by remember(database) { database.salaDao().observarTodosTerritorios() }
+        .collectAsState(initial = emptyList())
+    // Solo se pueden compartir los centros donde esta persona administra.
+    val catalogoCompartir = CatalogoAlcance(
+        salas = salas.filter { it.permiso == "ADMINISTRADOR" || it.rol == "ADMINISTRADOR" },
+        eais = todosLosEais,
+        territorios = todosLosBarrios,
+        fichas = todasLasFichas,
+        salaActivaId = salaId
+    )
 
     fun ejecutar(
         mensajeExito: String = "Información actualizada correctamente.",
@@ -240,7 +263,8 @@ fun SalaScreen(
             .background(Color(0xFFF6F9FB))
     ) {
         Column(
-            modifier = Modifier.fillMaxSize()
+            // Con el teclado abierto la pantalla se acorta y el desplazamiento sigue llegando a todos los campos.
+            modifier = Modifier.fillMaxSize().formularioSeguro()
         ) {
             EncabezadoPantallaRuralitos(
                 titulo = "Mis Salas",
@@ -655,53 +679,21 @@ fun SalaScreen(
                         }
 
                         SeccionSala.ACCESOS -> {
-                            PanelDesplegableSala(
-                                titulo = "Compartir acceso con otro usuario",
-                                descripcion = "El código permite consultar o editar solo el nivel que selecciones.",
-                                simbolo = "↗",
+                            SelectorAlcanceRuralitos(
+                                estado = estadoAlcance,
+                                catalogo = catalogoCompartir,
+                                titulo = "1. Qué quieres compartir",
                                 color = MoradoClinico,
-                                abierto = compartirAbierto,
-                                onCambiar = {
-                                    compartirAbierto = !compartirAbierto
-                                }
+                                soloSincronizadas = true,
+                                prefijoPrueba = "compartir"
+                            )
+
+                            SeccionFormularioRuralitos(
+                                titulo = "2. Qué puede hacer la otra persona",
+                                descripcion = "El código se usa una sola vez y caduca en 7 días."
                             ) {
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    listOf(
-                                        "SALA" to "Centro completo",
-                                        "EAIS" to "Solo EAIS",
-                                        "TERRITORIO" to "Solo barrio"
-                                    ).forEach { (valor, etiqueta) ->
-                                        FilterChip(
-                                            selected = alcance == valor,
-                                            onClick = { alcance = valor },
-                                            enabled = valor == "SALA" ||
-                                                eaisElegido != null &&
-                                                (
-                                                    valor != "TERRITORIO" ||
-                                                    territorio != null
-                                                ),
-                                            label = {
-                                                Text(
-                                                    etiqueta,
-                                                    fontWeight = FontWeight.SemiBold
-                                                )
-                                            },
-                                            colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = MoradoClinico.copy(alpha = 0.14f),
-                                                selectedLabelColor = MoradoClinico
-                                            )
-                                        )
-                                    }
-                                }
-
-                                FlowRow(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(top = 6.dp),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
@@ -712,6 +704,7 @@ fun SalaScreen(
                                         FilterChip(
                                             selected = permiso == valor,
                                             onClick = { permiso = valor },
+                                            modifier = Modifier.testTag("permiso_$valor"),
                                             label = {
                                                 Text(
                                                     etiqueta,
@@ -734,10 +727,21 @@ fun SalaScreen(
                                     },
                                     singleLine = true,
                                     shape = RoundedCornerShape(16.dp),
+                                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(top = 6.dp)
+                                        .testTag("compartir_correo")
                                 )
+
+                                if (!puedeAdministrar) {
+                                    MensajeEstadoRuralitos(
+                                        titulo = "Solo un administrador puede compartir",
+                                        descripcion = "Tu permiso en este centro no permite entregar acceso a otras personas.",
+                                        color = NaranjaClinico,
+                                        simbolo = "!"
+                                    )
+                                }
 
                                 BotonPrincipalRuralitos(
                                     texto = if (procesando) {
@@ -746,35 +750,32 @@ fun SalaScreen(
                                         "Generar código de verificación"
                                     },
                                     onClick = {
-                                        ejecutar {
-                                            val creado =
-                                                supabase.crearCodigoAcceso(
-                                                    organizacionId = salaId,
-                                                    alcance = alcance,
-                                                    eaisId = eaisId.takeIf {
-                                                        alcance != "SALA"
-                                                    },
-                                                    territorioId =
-                                                        territorioId.takeIf {
-                                                            alcance == "TERRITORIO"
-                                                        },
-                                                    permiso = permiso,
-                                                    correo = correo
-                                                )
+                                        val concesiones = AlcanceFichas.concesiones(
+                                            estadoAlcance.nivel, estadoAlcance.elegidos, catalogoCompartir
+                                        )
+                                        if (concesiones.isEmpty()) {
+                                            mensaje = "Elige al menos una opción de la lista."
+                                            return@BotonPrincipalRuralitos
+                                        }
+                                        ejecutar("Código creado correctamente.") {
+                                            val creado = supabase.crearCodigoAccesoVarios(
+                                                concesiones = concesiones,
+                                                permiso = permiso,
+                                                correo = correo
+                                            )
                                             codigoGenerado = creado.codigo
                                         }
                                     },
-                                    enabled = puedeAdministrar && !procesando,
+                                    enabled = puedeAdministrar && !procesando &&
+                                        AlcanceFichas.hayElegidos(estadoAlcance.nivel, estadoAlcance.elegidos),
                                     color = MoradoClinico,
-                                    modifier = Modifier.padding(top = 8.dp)
+                                    modifier = Modifier.padding(top = 8.dp).testTag("generar_codigo")
                                 )
 
                                 if (codigoGenerado.isNotBlank()) {
-                                    MensajeEstadoRuralitos(
-                                        titulo = codigoGenerado,
-                                        descripcion = "Comparte este código con el usuario autorizado. Caduca en 7 días.",
+                                    TarjetaCodigoRuralitos(
+                                        codigo = codigoGenerado,
                                         color = MoradoClinico,
-                                        simbolo = "#",
                                         modifier = Modifier.padding(top = 8.dp)
                                     )
                                 }
@@ -794,7 +795,12 @@ fun SalaScreen(
                                 OutlinedTextField(
                                     value = codigoIngreso,
                                     onValueChange = {
-                                        codigoIngreso = it
+                                        // Si se pega el mensaje completo del chat, se toma solo el código de 16 letras y números.
+                                        val encontrado = if (it.length > 20) {
+                                            Regex("(?<![0-9A-Za-z])[0-9A-Fa-f]{16}(?![0-9A-Za-z])")
+                                                .find(it)?.value
+                                        } else null
+                                        codigoIngreso = (encontrado ?: it)
                                             .uppercase()
                                             .filter(Char::isLetterOrDigit)
                                             .take(32)
@@ -909,15 +915,19 @@ private fun TabsSalaModernas(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = opcion.etiqueta,
+                        TextoAjustado(
+                            texto = opcion.etiqueta,
                             color = if (activa) {
                                 Color.White
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             },
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
+                            tamano = 13.sp,
+                            tamanoMinimo = 9.sp,
+                            maxLineas = 2,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
                 }
