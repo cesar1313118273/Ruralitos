@@ -900,6 +900,29 @@ class SupabaseApi(context: Context) {
         }
     }
 
+    /**
+     * Marca como eliminados varios registros de una tabla en una sola petición. Lo que no existe en el servidor
+     * (nunca llegó a subirse) se da por eliminado; si existe pero el servidor no lo modificó, es un problema de permisos.
+     */
+    suspend fun marcarEliminados(tabla: String, ids: List<String>) {
+        if (ids.isEmpty()) return
+        val lista = ids.joinToString(",") { codificar(it) }
+        val modificados = solicitar(
+            "PATCH",
+            "/rest/v1/$tabla?id=in.($lista)",
+            cuerpo = JSONObject().put("deleted_at", fechaHoraIso()),
+            accessToken = tokenValido(),
+            headers = mapOf("Prefer" to "return=representation")
+        ).jsonArreglo()
+        if (modificados.length() >= ids.size) return
+        val tocados = (0 until modificados.length()).map { modificados.getJSONObject(it).optString("id") }.toSet()
+        val faltantes = ids.filter { it !in tocados }
+        val visibles = seleccionar("$tabla?id=in.(${faltantes.joinToString(",") { codificar(it) }})&select=id")
+        if (visibles.length() > 0) {
+            throw ErrorSupabase("Supabase no permitió eliminar el registro. Revisa los permisos del grupo.")
+        }
+    }
+
     suspend fun subirAdjunto(uri: Uri, rutaStorage: String, mimeType: String): Long =
         withContext(Dispatchers.IO) {
             val token = tokenValido()

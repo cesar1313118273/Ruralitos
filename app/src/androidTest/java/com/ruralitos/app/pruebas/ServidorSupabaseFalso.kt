@@ -34,6 +34,9 @@ class ServidorSupabaseFalso : AutoCloseable {
 
     val url: String get() = "http://localhost:${socket.localPort}"
 
+    /** Imita unos permisos que impiden modificar filas: el PATCH no cambia nada y devuelve una lista vacía. */
+    @Volatile var rechazarModificaciones = false
+
     /** «METODO ruta?consulta» de cada petición recibida, ya decodificada. */
     val peticiones = CopyOnWriteArrayList<String>()
 
@@ -253,7 +256,7 @@ class ServidorSupabaseFalso : AutoCloseable {
                 }
                 if (representacion) json(201, JSONArray(devueltas.map { JSONObject(it.toString()) })) else Triple(201, "application/json", ByteArray(0))
             }
-            "PATCH" -> {
+            "PATCH" -> if (rechazarModificaciones) json(200, JSONArray()) else {
                 val cambios = JSONObject(String(p.cuerpo))
                 val afectadas = filas.filter { f -> filtros.all { cumple(f, it.first, it.second) } }.map { actualizarFila(tabla, it, JSONObject(cambios.toString())) }
                 if (representacion) json(200, JSONArray(afectadas.map { JSONObject(it.toString()) })) else Triple(204, "application/json", ByteArray(0))

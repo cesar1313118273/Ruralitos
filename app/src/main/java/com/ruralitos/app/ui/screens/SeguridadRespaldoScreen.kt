@@ -35,6 +35,9 @@ import com.ruralitos.app.data.backup.ResultadoRestauracion
 import com.ruralitos.app.data.fichas.EliminadorFichas
 import com.ruralitos.app.data.local.database.RuralitosDatabase
 import com.ruralitos.app.data.sync.ProgramadorSincronizacion
+import com.ruralitos.app.data.sync.SincronizadorSupabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import com.ruralitos.app.data.local.entity.SalaEntity
 import com.ruralitos.app.data.local.entity.UsuarioEntity
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
@@ -160,9 +163,23 @@ fun SeguridadRespaldoScreen(
                             runCatching {
                                 EliminadorFichas.eliminarTodas(context, RuralitosDatabase.obtenerBaseDatos(context), usuario.id)
                             }.onSuccess { total ->
-                                ProgramadorSincronizacion.ejecutarAhora(context)
-                                mensaje = "Se eliminaron $total ficha(s). Tu cuenta sigue igual y ya puedes empezar desde cero."
-                                esError = false
+                                // Se borra en la nube ahora mismo; si falta algo (sin internet, sin permiso) sigue anotado.
+                                val pendientes = withContext(Dispatchers.IO) {
+                                    runCatching { SincronizadorSupabase(context).ejecutar() }
+                                    val dao = RuralitosDatabase.obtenerBaseDatos(context).sincronizacionDao()
+                                    dao.contarFichasEnBaja() to dao.contarEliminacionesPendientes()
+                                }
+                                if (pendientes.second > 0) ProgramadorSincronizacion.ejecutarAhora(context)
+                                mensaje = when {
+                                    pendientes.second == 0 ->
+                                        "Se eliminaron $total ficha(s) de este teléfono y de la nube. Tu cuenta sigue igual y ya puedes empezar desde cero."
+                                    pendientes.first == 0 ->
+                                        "Se eliminaron $total ficha(s). En la nube ya no aparecen; aún se están limpiando algunos de sus datos y terminará solo."
+                                    else ->
+                                        "Se eliminaron $total ficha(s) de este teléfono, pero ${pendientes.first} todavía no se pudieron borrar de la nube " +
+                                            "(sin internet o sin permiso). Mientras tanto no volverán a aparecer aquí y se reintentará solo."
+                                }
+                                esError = pendientes.first > 0
                             }.onFailure {
                                 mensaje = "No se pudieron eliminar todas las fichas. Inténtalo de nuevo."
                                 esError = true

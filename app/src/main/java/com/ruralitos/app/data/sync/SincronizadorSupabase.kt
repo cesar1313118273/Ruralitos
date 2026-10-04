@@ -169,13 +169,10 @@ class SincronizadorSupabase(context: Context) {
         var errores = 0
         var reintentables = 0
         var conflictos = 0
-        dao.eliminaciones(organizacionId).forEach { tumba ->
-            runCatching { marcarEliminadoYLimpiar(tumba.tabla, tumba.registroSyncId) }
-                .onSuccess {
-                    dao.eliminarTumba(tumba.id)
-                    eliminadas++
-                }
-                .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
+        procesarEliminaciones(organizacionId).let {
+            eliminadas += it.eliminadas
+            errores += it.errores
+            reintentables += it.reintentables
         }
 
         var subidas = 0
@@ -265,6 +262,77 @@ class SincronizadorSupabase(context: Context) {
             ?: throw ConflictoFichaException(
                 "Otra persona modificó esta ficha mientras la editabas. Elige qué versión conservar."
             )
+    }
+
+    private class ResultadoEliminaciones {
+        var eliminadas = 0
+        var errores = 0
+        var reintentables = 0
+    }
+
+    /**
+     * Manda a la nube lo que el usuario eliminó, en lotes. Primero las fichas (con eso las demás personas y teléfonos
+     * ya dejan de verlas) y después el resto de sus registros, con un tiempo máximo por sincronización: lo que falte
+     * sigue anotado y continúa en la siguiente. Un lote que falla se reintenta uno por uno para aislar el problema.
+     */
+    private suspend fun procesarEliminaciones(organizacionId: String): ResultadoEliminaciones {
+        val resultado = ResultadoEliminaciones()
+        val limite = System.currentTimeMillis() + PRESUPUESTO_BAJAS_MS
+        val tablas = dao.tablasConEliminaciones(organizacionId).sortedBy { if (it == "fichas_familiares") 0 else 1 }
+        for (tabla in tablas) {
+            val esFicha = tabla == "fichas_familiares"
+            var lotesSinExito = 0
+            for (lote in dao.eliminacionesDeTabla(organizacionId, tabla, MAXIMO_BAJAS_POR_TABLA).chunked(TAMANO_LOTE_BAJAS)) {
+                if (!esFicha && (System.currentTimeMillis() > limite || lotesSinExito >= 2)) break
+                val enLote = runCatching { marcarEliminadosYLimpiar(tabla, lote.map { it.registroSyncId }) }
+                if (enLote.isSuccess) {
+                    dao.eliminarTumbas(lote.map { it.id })
+                    resultado.eliminadas += lote.size
+                    lotesSinExito = 0
+                    continue
+                }
+                val falloDeRed = enLote.exceptionOrNull()?.let(::errorSincronizacionReintentable) == true
+                if (falloDeRed) {
+                    resultado.errores++
+                    resultado.reintentables++
+                    return resultado
+                }
+                var algunaListo = false
+                lote.forEach { tumba ->
+                    runCatching { marcarEliminadoYLimpiar(tumba.tabla, tumba.registroSyncId) }
+                        .onSuccess {
+                            dao.eliminarTumba(tumba.id)
+                            resultado.eliminadas++
+                            algunaListo = true
+                        }
+                        .onFailure { error ->
+                            resultado.errores++
+                            if (errorSincronizacionReintentable(error)) resultado.reintentables++
+                        }
+                }
+                lotesSinExito = if (algunaListo) 0 else lotesSinExito + 1
+            }
+        }
+        return resultado
+    }
+
+    private suspend fun marcarEliminadosYLimpiar(tabla: String, ids: List<String>) {
+        val rutas = runCatching { rutasDeAlmacenamientoVarias(tabla, ids) }.getOrDefault(emptyList())
+        api.marcarEliminados(tabla, ids)
+        rutas.forEach { ruta -> runCatching { api.eliminarArchivoAlmacenamiento(ruta) } }
+    }
+
+    private suspend fun rutasDeAlmacenamientoVarias(tabla: String, ids: List<String>): List<String> {
+        val lista = ids.joinToString(",")
+        return when (tabla) {
+            "adjuntos_ficha" -> api.seleccionar("adjuntos_ficha?id=in.($lista)&select=storage_path").rutas()
+            "fichas_familiares" ->
+                api.seleccionar("adjuntos_ficha?ficha_id=in.($lista)&select=storage_path").rutas() +
+                    api.seleccionar("fichas_familiares?id=in.($lista)&select=firma_storage_path")
+                        .let { filas -> (0 until filas.length()).map { filas.getJSONObject(it).texto("firma_storage_path") } }
+                        .filter { it.isNotBlank() }
+            else -> emptyList()
+        }
     }
 
     private suspend fun marcarEliminadoYLimpiar(tabla: String, id: String) {
@@ -468,6 +536,8 @@ class SincronizadorSupabase(context: Context) {
             if (fichaId != null) grupo(fichaId).valores += valor
         }
         grupos.keys.removeAll(bajas)
+        // Lo que el usuario eliminó en este teléfono y la nube aún no confirmó no debe volver a bajar.
+        grupos.keys.removeAll(dao.fichasEnBaja(org).toSet())
 
         // En el modo incremental puede cambiar un dato hijo sin que cambie la cabecera: si la ficha no está en el
         // teléfono hay que pedir también su cabecera.
@@ -756,6 +826,9 @@ class SincronizadorSupabase(context: Context) {
 
     private companion object {
         val bloqueoProceso = Mutex()
+        const val TAMANO_LOTE_BAJAS = 50
+        const val MAXIMO_BAJAS_POR_TABLA = 20_000
+        const val PRESUPUESTO_BAJAS_MS = 4 * 60_000L
         val FORMATOS_ENTRADA = listOf(
             SimpleDateFormat("dd/MM/yyyy", Locale.US).apply { isLenient = false },
             SimpleDateFormat("yyyy-MM-dd", Locale.US).apply { isLenient = false }

@@ -288,4 +288,23 @@ interface SincronizacionDao {
 
     @Query("DELETE FROM eliminaciones_sync WHERE id = :id")
     suspend fun eliminarTumba(id: Long)
+
+    @Query("DELETE FROM eliminaciones_sync WHERE id IN (:ids)")
+    suspend fun eliminarTumbas(ids: List<Long>)
+
+    @Query("SELECT DISTINCT tabla FROM eliminaciones_sync WHERE organizacionId = :organizacionId")
+    suspend fun tablasConEliminaciones(organizacionId: String): List<String>
+
+    @Query("SELECT * FROM eliminaciones_sync WHERE organizacionId = :organizacionId AND tabla = :tabla ORDER BY id LIMIT :limite")
+    suspend fun eliminacionesDeTabla(organizacionId: String, tabla: String, limite: Int): List<EliminacionSyncEntity>
+
+    /** Fichas que el usuario eliminó y que la nube todavía no confirmó: no deben volver a bajar. */
+    @Query("SELECT registroSyncId FROM eliminaciones_sync WHERE organizacionId = :organizacionId AND tabla = 'fichas_familiares'")
+    suspend fun fichasEnBaja(organizacionId: String): List<String>
+
+    @Query("SELECT COUNT(*) FROM eliminaciones_sync WHERE tabla = 'fichas_familiares'")
+    suspend fun contarFichasEnBaja(): Int
+
+    @Query("SELECT COUNT(*) FROM eliminaciones_sync")
+    suspend fun contarEliminacionesPendientes(): Int
 }
