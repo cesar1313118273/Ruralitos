@@ -1313,7 +1313,8 @@ fun RuralitosApp() {
                         database = database,
                         supabase = supabase,
                         onAgregarCentro = { pantallaActual = "agregarSalaUnidad" },
-                        onRegresar = { pantallaActual = "inicio" }
+                        onRegresar = { pantallaActual = "inicio" },
+                        usuarioId = usuarioActual?.id ?: -1L
                     )
                 }
 
@@ -2180,21 +2181,12 @@ fun MenuPrincipal(
                 }
             )
 
-            if (esAdministrador) {
-                TarjetaMenu(
-                    titulo = "Usuarios locales",
-                    descripcion = "Crear o desactivar cuentas del personal de salud",
-                    color = AzulVivo,
-                    onClick = onUsuarios
-                )
-
-                TarjetaMenu(
-                    titulo = "Seguridad y respaldos",
-                    descripcion = "Crear o restaurar una copia cifrada de toda la información",
-                    color = NaranjaVivo,
-                    onClick = onSeguridad
-                )
-            }
+            TarjetaMenu(
+                titulo = "Seguridad y respaldos",
+                descripcion = "Exportar, importar o eliminar tus fichas con archivos cifrados",
+                color = NaranjaVivo,
+                onClick = onSeguridad
+            )
 
             TarjetaMenu(
                 titulo = "Cambiar mi contraseña",

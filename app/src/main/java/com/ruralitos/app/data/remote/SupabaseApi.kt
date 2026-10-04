@@ -54,6 +54,36 @@ data class MiembroEquipoRemoto(
     val alcanceLimitado: Boolean
 )
 
+/** Una persona con la que compartí mis fichas y lo que le compartí. */
+data class AccesoOtorgado(
+    val organizacionId: String,
+    val usuarioId: String,
+    val nombre: String,
+    val cargo: String,
+    val correo: String,
+    val permiso: String,
+    val centros: Int,
+    val eais: Int,
+    val barrios: Int,
+    val fichas: Int
+) {
+    /** «Todo lo mío», «2 barrios y 3 fichas»… */
+    val resumen: String
+        get() {
+            if (centros > 0) return "Todas tus fichas del centro"
+            val partes = buildList {
+                if (eais > 0) add(if (eais == 1) "1 EAIS" else "$eais EAIS")
+                if (barrios > 0) add(if (barrios == 1) "1 barrio" else "$barrios barrios")
+                if (fichas > 0) add(if (fichas == 1) "1 ficha" else "$fichas fichas")
+            }
+            return when (partes.size) {
+                0 -> "Sin fichas"
+                1 -> partes[0]
+                else -> partes.dropLast(1).joinToString(", ") + " y " + partes.last()
+            }
+        }
+}
+
 data class MembresiaRemota(
     val organizacionId: String,
     val rol: String,
@@ -607,9 +637,9 @@ class SupabaseApi(context: Context) {
         }
     }
     /**
-     * Un solo código que abre varias partes a la vez: centros, EAIS, barrios o fichas sueltas.
-     * Si es una sola parte de Sala, EAIS o barrio se usa la función de siempre; solo lo demás necesita la actualización
-     * `20261005120000_acceso_por_alcances.sql` en Supabase.
+     * Un solo código que abre varias partes a la vez: centros, EAIS, barrios o fichas sueltas. Cualquier usuario puede crearlo,
+     * pero solo entrega las fichas que él mismo creó. Necesita las migraciones `20261005120000_acceso_por_alcances.sql` y
+     * `20261005200000_compartir_lo_propio.sql` en Supabase.
      */
     suspend fun crearCodigoAccesoVarios(
         concesiones: List<ConcesionAcceso>,
@@ -617,9 +647,6 @@ class SupabaseApi(context: Context) {
         correo: String = ""
     ): CodigoAccesoRemoto {
         require(concesiones.isNotEmpty()) { "Elige al menos una parte para compartir." }
-        concesiones.singleOrNull()?.takeIf { it.alcance != "FICHA" }?.let {
-            return crearCodigoAcceso(it.organizacionId, it.alcance, it.eaisId, it.territorioId, permiso, correo)
-        }
         val items = JSONArray()
         concesiones.forEach {
             items.put(
@@ -643,8 +670,9 @@ class SupabaseApi(context: Context) {
         } catch (error: ErrorSupabase) {
             if (error.codigoHttp == 404 || error.message.orEmpty().contains("crear_codigo_acceso_varios")) {
                 throw ErrorSupabase(
-                    "Compartir varios centros, EAIS, barrios o fichas necesita la actualización de Supabase " +
-                        "(archivo 20261005120000_acceso_por_alcances.sql). Pídele a quien administra la nube que la aplique.",
+                    "Compartir acceso necesita la actualización de Supabase " +
+                        "(archivos 20261005120000_acceso_por_alcances.sql y 20261005200000_compartir_lo_propio.sql). " +
+                        "Pídele a quien administra la nube que la aplique.",
                     error.codigoHttp
                 )
             }
@@ -654,6 +682,35 @@ class SupabaseApi(context: Context) {
         return arreglo.getJSONObject(0).let {
             CodigoAccesoRemoto(codigo = it.getString("codigo"), expiraEn = it.optString("expira_en"))
         }
+    }
+
+    /** Personas con las que yo compartí mis fichas, con un resumen de lo compartido. */
+    suspend fun listarAccesosOtorgados(): List<AccesoOtorgado> {
+        val filas = rpc("listar_accesos_otorgados", JSONObject()).jsonArreglo()
+        return (0 until filas.length()).map { i ->
+            val f = filas.getJSONObject(i)
+            AccesoOtorgado(
+                organizacionId = f.getString("organizacion_id"),
+                usuarioId = f.getString("usuario_id"),
+                nombre = listOf(f.optString("nombres"), f.optString("apellidos"))
+                    .filter { it.isNotBlank() && it != "null" }.joinToString(" ").ifBlank { "Persona sin nombre" },
+                cargo = f.optString("cargo").takeIf { it != "null" }.orEmpty(),
+                correo = f.optString("correo").takeIf { it != "null" }.orEmpty(),
+                permiso = f.optString("permiso"),
+                centros = f.optInt("n_sala"),
+                eais = f.optInt("n_eais"),
+                barrios = f.optInt("n_barrios"),
+                fichas = f.optInt("n_fichas")
+            )
+        }
+    }
+
+    /** Quita a una persona el acceso que yo le di (lo que le dieron otros no se toca). */
+    suspend fun quitarAccesoCompartido(organizacionId: String, usuarioId: String) {
+        rpc(
+            "quitar_acceso_compartido",
+            JSONObject().put("p_organizacion_id", organizacionId).put("p_usuario_id", usuarioId)
+        )
     }
 
     suspend fun actualizarPerfil(perfil: PerfilRemoto) {

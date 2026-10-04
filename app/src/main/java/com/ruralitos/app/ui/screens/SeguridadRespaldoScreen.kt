@@ -117,9 +117,8 @@ fun SeguridadRespaldoScreen(
     val todosLosBarrios by remember(database) { database.salaDao().observarTodosTerritorios() }
         .collectAsState(initial = emptyList())
 
-    // Se exportan las fichas hechas por esta persona y, si administra la Sala, también las de su equipo.
-    val administraSalas = salas.filter { it.permiso == "ADMINISTRADOR" || it.rol == "ADMINISTRADOR" }.map { it.organizacionId }.toSet()
-    val exportables = fichasGuardadas.filter { it.creadoPorUsuarioId == usuario.id || it.organizacionId in administraSalas }
+    // Todos los usuarios por igual: cada uno exporta las fichas que él mismo creó.
+    val exportables = fichasGuardadas.filter { it.creadoPorUsuarioId == usuario.id }
     val catalogo = CatalogoAlcance(
         salas = salas,
         eais = todosLosEais,
@@ -172,8 +171,7 @@ fun SeguridadRespaldoScreen(
                 runCatching {
                     GestorRespaldoRuralitos.crear(
                         context, uri, clave, usuario,
-                        fichaIds = idsParaExportar,
-                        incluirDeOtros = exportables.any { it.creadoPorUsuarioId != usuario.id }
+                        fichaIds = idsParaExportar
                     )
                 }.onSuccess { resultado ->
                     respaldoCreado = uri

@@ -109,7 +109,7 @@ fun SelectorAlcanceRuralitos(
 
         if (nivel == NivelAlcance.CENTRO_ACTIVO) {
             Text(
-                "Incluye todas las fichas de " +
+                "Incluye todas tus fichas de " +
                     (catalogo.salaActiva?.let { it.nombreCentroSalud.ifBlank { it.nombreSala } } ?: "tu centro de salud") + ".",
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextoSecundario

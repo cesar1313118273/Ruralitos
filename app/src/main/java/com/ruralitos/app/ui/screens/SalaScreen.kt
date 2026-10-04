@@ -44,6 +44,7 @@ import com.ruralitos.app.data.local.entity.EaisSalaEntity
 import com.ruralitos.app.data.local.entity.SalaEntity
 import com.ruralitos.app.data.local.entity.TerritorioSalaEntity
 import com.ruralitos.app.data.remote.SupabaseApi
+import com.ruralitos.app.data.remote.AccesoOtorgado
 import com.ruralitos.app.data.sync.SincronizadorSalas
 import com.ruralitos.app.data.sync.ProgramadorSincronizacion
 import com.ruralitos.app.ui.components.BotonVolverRuralitos
@@ -98,7 +99,9 @@ fun SalaScreen(
     database: RuralitosDatabase,
     supabase: SupabaseApi,
     onAgregarCentro: () -> Unit,
-    onRegresar: () -> Unit
+    onRegresar: () -> Unit,
+    /** Quien usa la app: solo puede compartir las fichas que él mismo creó. */
+    usuarioId: Long = -1L
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -159,12 +162,12 @@ fun SalaScreen(
         .collectAsState(initial = emptyList())
     val todosLosBarrios by remember(database) { database.salaDao().observarTodosTerritorios() }
         .collectAsState(initial = emptyList())
-    // Solo se pueden compartir los centros donde esta persona administra.
+    // Todos los usuarios comparten por igual, pero solo lo suyo: sus propias fichas.
     val catalogoCompartir = CatalogoAlcance(
-        salas = salas.filter { it.permiso == "ADMINISTRADOR" || it.rol == "ADMINISTRADOR" },
+        salas = salas,
         eais = todosLosEais,
         territorios = todosLosBarrios,
-        fichas = todasLasFichas,
+        fichas = todasLasFichas.filter { it.creadoPorUsuarioId == usuarioId },
         salaActivaId = salaId
     )
 
@@ -256,6 +259,43 @@ fun SalaScreen(
     var barriosAbierto by remember { mutableStateOf(false) }
     // Dentro de «Compartir acceso»: 0 = compartir (elegir, permiso y código), 1 = ingresar un código recibido.
     var subAcceso by remember { mutableStateOf(0) }
+    var otorgados by remember { mutableStateOf<List<AccesoOtorgado>>(emptyList()) }
+    var cargandoOtorgados by remember { mutableStateOf(false) }
+    var errorOtorgados by remember { mutableStateOf<String?>(null) }
+    var recargaOtorgados by remember { mutableIntStateOf(0) }
+    var porQuitar by remember { mutableStateOf<AccesoOtorgado?>(null) }
+    LaunchedEffect(seccion, subAcceso, recargaOtorgados) {
+        if (seccion != SeccionSala.ACCESOS || subAcceso != 2) return@LaunchedEffect
+        if (!supabase.hayInternet()) {
+            errorOtorgados = "Necesitas internet para ver y quitar accesos."
+            return@LaunchedEffect
+        }
+        cargandoOtorgados = true
+        errorOtorgados = null
+        runCatching { supabase.listarAccesosOtorgados() }
+            .onSuccess { otorgados = it }
+            .onFailure { errorOtorgados = it.message ?: "No se pudo cargar la lista." }
+        cargandoOtorgados = false
+    }
+    porQuitar?.let { persona ->
+        VentanaConfirmarRuralitos(
+            titulo = "Quitar acceso",
+            mensaje = "${persona.nombre} dejará de ver las fichas que le compartiste. Tus fichas siguen siendo tuyas y, " +
+                "si luego le generas otro código, recuperará el acceso.",
+            textoConfirmar = "Quitar acceso",
+            confirmarHabilitado = !procesando,
+            onConfirmar = {
+                porQuitar = null
+                ejecutar("Se quitó el acceso correctamente.") {
+                    supabase.quitarAccesoCompartido(persona.organizacionId, persona.usuarioId)
+                    recargaOtorgados++
+                }
+            },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { porQuitar = null }
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -680,7 +720,11 @@ fun SalaScreen(
 
                         SeccionSala.ACCESOS -> {
                             SubTabsAcceso(
-                                opciones = listOf("Compartir" to "subtab_compartir", "Ingresar un código" to "subtab_ingresar"),
+                                opciones = listOf(
+                                    "Compartir" to "subtab_compartir",
+                                    "Ingresar un código" to "subtab_ingresar",
+                                    "Compartido con" to "subtab_compartido"
+                                ),
                                 seleccionada = subAcceso,
                                 onSeleccionar = { subAcceso = it; mensaje = null }
                             )
@@ -696,7 +740,7 @@ fun SalaScreen(
 
                             SeccionFormularioRuralitos(
                                 titulo = "2. Qué puede hacer la otra persona",
-                                descripcion = "El código se usa una sola vez y caduca en 7 días."
+                                descripcion = "Se comparten solo las fichas que tú creaste. El código se usa una sola vez y caduca en 7 días."
                             ) {
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
@@ -740,15 +784,6 @@ fun SalaScreen(
                                         .testTag("compartir_correo")
                                 )
 
-                                if (!puedeAdministrar) {
-                                    MensajeEstadoRuralitos(
-                                        titulo = "Solo un administrador puede compartir",
-                                        descripcion = "Tu permiso en este centro no permite entregar acceso a otras personas.",
-                                        color = NaranjaClinico,
-                                        simbolo = "!"
-                                    )
-                                }
-
                                 BotonPrincipalRuralitos(
                                     texto = if (procesando) {
                                         "Generando código…"
@@ -772,7 +807,7 @@ fun SalaScreen(
                                             codigoGenerado = creado.codigo
                                         }
                                     },
-                                    enabled = puedeAdministrar && !procesando &&
+                                    enabled = !procesando &&
                                         AlcanceFichas.hayElegidos(estadoAlcance.nivel, estadoAlcance.elegidos),
                                     color = MoradoClinico,
                                     modifier = Modifier.padding(top = 8.dp).testTag("generar_codigo")
@@ -787,7 +822,7 @@ fun SalaScreen(
                                 }
                             }
 
-                            } else {
+                            } else if (subAcceso == 1) {
                             SeccionFormularioRuralitos(
                                 titulo = "Ingresar con un código",
                                 descripcion = "Únete a una Sala o recibe acceso a un centro, EAIS, barrio o ficha. Pega aquí el código que te enviaron."
@@ -834,6 +869,52 @@ fun SalaScreen(
                                     color = AzulClinico,
                                     modifier = Modifier.padding(top = 8.dp).testTag("verificar_codigo")
                                 )
+                            }
+                            } else {
+                            SeccionFormularioRuralitos(
+                                titulo = "Personas con acceso a tus fichas",
+                                descripcion = "Ellas pueden ver (o editar) las fichas que tú compartiste. Tú decides cuándo quitarles el acceso."
+                            ) {
+                                when {
+                                    cargandoOtorgados -> Text("Cargando…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    errorOtorgados != null -> MensajeEstadoRuralitos(
+                                        titulo = "No se pudo cargar la lista",
+                                        descripcion = errorOtorgados.orEmpty(),
+                                        color = NaranjaClinico,
+                                        simbolo = "!"
+                                    )
+                                    otorgados.isEmpty() -> Text(
+                                        "Todavía no compartiste tus fichas con nadie.",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.testTag("sin_accesos_otorgados")
+                                    )
+                                    else -> otorgados.forEach { persona ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Column(Modifier.weight(1f)) {
+                                                Text(persona.nombre, fontWeight = FontWeight.SemiBold)
+                                                listOf(persona.cargo, persona.correo).filter { it.isNotBlank() }.joinToString(" · ")
+                                                    .takeIf { it.isNotBlank() }?.let {
+                                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                    }
+                                                Text(
+                                                    persona.resumen + " · " + if (persona.permiso == "LECTOR") "Solo lectura" else "Puede editar",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    color = MoradoClinico,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                            }
+                                            TextButton(
+                                                onClick = { porQuitar = persona },
+                                                enabled = !procesando,
+                                                modifier = Modifier.testTag("quitar_${persona.usuarioId}")
+                                            ) { Text("Quitar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
+                                        }
+                                        HorizontalDivider()
+                                    }
+                                }
                             }
                             }
                         }
