@@ -37,6 +37,9 @@ class ServidorSupabaseFalso : AutoCloseable {
     /** Imita unos permisos que impiden modificar filas: el PATCH no cambia nada y devuelve una lista vacía. */
     @Volatile var rechazarModificaciones = false
 
+    /** Columnas que este «servidor» aún no tiene (falta aplicar una migración): subirlas devuelve el error de PostgREST. */
+    @Volatile var columnasInexistentes: Set<String> = emptySet()
+
     /** «METODO ruta?consulta» de cada petición recibida, ya decodificada. */
     val peticiones = CopyOnWriteArrayList<String>()
 
@@ -237,6 +240,10 @@ class ServidorSupabaseFalso : AutoCloseable {
                 val items = if (cuerpo.trimStart().startsWith("[")) {
                     JSONArray(cuerpo).let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
                 } else listOf(JSONObject(cuerpo))
+                items.firstNotNullOfOrNull { fila -> columnasInexistentes.firstOrNull { fila.has(it) } }?.let { columna ->
+                    return json(400, JSONObject().put("code", "PGRST204")
+                        .put("message", "Could not find the '$columna' column of '$tabla' in the schema cache"))
+                }
                 val conflicto = p.consulta.firstOrNull { it.first == "on_conflict" }?.second?.split(',') ?: listOf("id")
                 val ignorar = preferencia.contains("ignore-duplicates")
                 val devueltas = mutableListOf<JSONObject>()

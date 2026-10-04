@@ -37,7 +37,8 @@ object DatosMapaParlante {
         ocupacion = "", sexo = sexo, escolaridad = "", vacunasCompletas = true, saludBucalAdecuada = true,
         estadoNutricional = "SIN_ALTERACION", hipertensionArterial = hta, diabetesMellitus = dm,
         tuberculosis = false, problemaSaludMental = false, consumoAlcoholDrogas = false, enfermedadCronica = false,
-        discapacidadVisual = visual
+        discapacidadVisual = visual, discapacidadAuditiva = false, discapacidadLenguaje = false, discapacidadFisica = false,
+        discapacidadIntelectual = false, discapacidadPsicosocial = false
     )
 
     /** Cerezal: 4 familias en el mismo sector; El Carmen: 1 familia. Devuelve el id de cada ficha por clave. */

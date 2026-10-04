@@ -852,13 +852,22 @@ class SupabaseApi(context: Context) {
 
     suspend fun upsertVarios(tabla: String, objetos: List<JSONObject>, conflicto: String = "id") {
         objetos.chunked(100).forEach { lote ->
-            solicitar(
+            suspend fun enviar(filas: List<JSONObject>) = solicitar(
                 "POST",
                 "/rest/v1/$tabla?on_conflict=${codificar(conflicto)}",
-                cuerpo = JSONArray().apply { lote.forEach(::put) },
+                cuerpo = JSONArray().apply { filas.forEach(::put) },
                 accessToken = tokenValido(),
                 headers = mapOf("Prefer" to "resolution=merge-duplicates,return=minimal")
             )
+            try {
+                enviar(lote)
+            } catch (error: ErrorSupabase) {
+                // Si el servidor aún no tiene una columna nueva (falta aplicar su migración), el resto de los datos
+                // sigue sincronizándose; lo nuevo viajará cuando la columna exista.
+                val faltantes = COLUMNAS_RECIENTES.filter { error.message.orEmpty().contains(it) }
+                if (faltantes.isEmpty()) throw error
+                enviar(lote.map { fila -> JSONObject(fila.toString()).also { copia -> faltantes.forEach(copia::remove) } })
+            }
         }
     }
 
@@ -1108,6 +1117,9 @@ class SupabaseApi(context: Context) {
     ).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
 
     companion object {
+        /** Columnas agregadas en versiones recientes: si el servidor no las tiene, se omiten al subir. */
+        private val COLUMNAS_RECIENTES = listOf("factores_riesgo_edad_json", "factores_obstetricos_json")
+
         /** Solo para pruebas del emulador: apunta la app a un servidor de mentira en este mismo teléfono. */
         @Volatile
         var urlParaPruebas: String? = null

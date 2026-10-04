@@ -16,6 +16,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.Image
+import com.ruralitos.app.ui.theme.VerdeSalud
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Checkbox
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.testTag
+import com.ruralitos.app.domain.EstrategiasDesdeCie10
+import com.ruralitos.app.domain.FactoresRiesgoEdad
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.layout.ContentScale
@@ -127,6 +135,8 @@ fun MiembrosFamiliaScreen(
     var textoNota by remember { mutableStateOf("") }
     var sesionNota by remember { mutableStateOf<SesionNota?>(null) }
     var errorNota by remember { mutableStateOf(false) }
+    var eligiendoActor by remember { mutableStateOf(false) }
+    var actorEditando by remember { mutableStateOf<MiembroFamiliaEntity?>(null) }
 
     suspend fun guardarNota(contenido: String, sesion: SesionNota) {
         withContext(NonCancellable) {
@@ -306,6 +316,71 @@ fun MiembrosFamiliaScreen(
         return
     }
 
+    if (eligiendoActor) {
+        AlertDialog(
+            onDismissRequest = { eligiendoActor = false },
+            title = { Text("Actores comunitarios") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState()).testTag("lista_actores")) {
+                    Text(
+                        "Elige a la persona que sea prestador comunitario de salud, partero/a ancestral o de sabiduría ancestral.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    miembros.forEach { persona ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { actorEditando = persona; eligiendoActor = false }
+                                .padding(vertical = 8.dp)
+                                .testTag("actor_persona_${persona.id}"),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(persona.apellidosNombres.ifBlank { "Integrante sin nombre" }, modifier = Modifier.weight(1f))
+                            IconosActores(persona)
+                        }
+                        HorizontalDivider()
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { eligiendoActor = false }) { Text("Cerrar") } }
+        )
+    }
+
+    actorEditando?.let { persona ->
+        var prestador by remember(persona.id) { mutableStateOf(persona.prestadorComunitario == true) }
+        var partero by remember(persona.id) { mutableStateOf(persona.parteroAncestral == true) }
+        var sabiduria by remember(persona.id) { mutableStateOf(persona.sabiduriaAncestral == true) }
+        AlertDialog(
+            onDismissRequest = { actorEditando = null },
+            title = { Text(persona.apellidosNombres.ifBlank { "Integrante sin nombre" }) },
+            text = {
+                Column {
+                    FilaActor("Prestador comunitario de salud", R.drawable.prestador_comunitario, prestador, "actor_prestador") { prestador = it }
+                    FilaActor("Partero/a ancestral tradicional", R.drawable.partero_ancestral, partero, "actor_partero") { partero = it }
+                    FilaActor("Hombre o mujer de sabiduría ancestral", R.drawable.sabiduria_ancestral, sabiduria, "actor_sabiduria") { sabiduria = it }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    modifier = Modifier.testTag("guardar_actores"),
+                    onClick = {
+                        val cambiada = persona.copy(
+                            prestadorComunitario = prestador, parteroAncestral = partero, sabiduriaAncestral = sabiduria
+                        )
+                        actorEditando = null
+                        scope.launch {
+                            runCatching { withContext(Dispatchers.IO) { database.fichaContenidoDao().actualizarMiembro(cambiada) } }
+                                .onFailure { Toast.makeText(context, "No se pudo guardar.", Toast.LENGTH_SHORT).show() }
+                        }
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = { TextButton(onClick = { actorEditando = null }) { Text("Cancelar") } }
+        )
+    }
+
     miembroEliminar?.let { seleccionado ->
         AlertDialog(
             onDismissRequest = { miembroEliminar = null },
@@ -331,6 +406,7 @@ fun MiembrosFamiliaScreen(
         )
     }
 
+    Box(Modifier.fillMaxSize()) {
     PantallaListaRuralitos(
         titulo = "Integrantes de la familia",
         descripcion = "Registra a cada persona del hogar. La edad determina automáticamente qué campos aplican en la ficha.",
@@ -412,6 +488,7 @@ fun MiembrosFamiliaScreen(
                         modifier = Modifier.padding(top = 3.dp)
                     )
                 }
+                IconosActores(miembro, Modifier.padding(top = 6.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                     TextButton(onClick = {
                         sesionNota = SesionNota(miembro.id)
@@ -425,6 +502,69 @@ fun MiembrosFamiliaScreen(
                 }
             }
         }
+    }
+    if (miembros.isNotEmpty() && !(fichaId == 0L && alCrearFicha != null)) {
+        ExtendedFloatingActionButton(
+            onClick = { eligiendoActor = true },
+            containerColor = VerdeSalud,
+            contentColor = Color.White,
+            icon = {
+                Image(
+                    painter = painterResource(R.drawable.prestador_comunitario),
+                    contentDescription = null,
+                    modifier = Modifier.size(30.dp),
+                    contentScale = ContentScale.Fit
+                )
+            },
+            text = { Text("Actores comunitarios") },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 16.dp, bottom = 104.dp)
+                .testTag("boton_actores_comunitarios")
+        )
+    }
+    }
+}
+
+/** Iconos de los roles comunitarios que tiene una persona. */
+@Composable
+private fun IconosActores(persona: MiembroFamiliaEntity, modifier: Modifier = Modifier) {
+    val iconos = buildList {
+        if (persona.prestadorComunitario == true) add(R.drawable.prestador_comunitario to "Prestador comunitario de salud")
+        if (persona.parteroAncestral == true) add(R.drawable.partero_ancestral to "Partero/a ancestral tradicional")
+        if (persona.sabiduriaAncestral == true) add(R.drawable.sabiduria_ancestral to "Sabiduría ancestral")
+    }
+    if (iconos.isEmpty()) return
+    Row(modifier.testTag("iconos_actores_${persona.id}"), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        iconos.forEach { (recurso, descripcion) ->
+            Image(
+                painter = painterResource(recurso),
+                contentDescription = descripcion,
+                modifier = Modifier.size(32.dp),
+                contentScale = ContentScale.Fit
+            )
+        }
+    }
+}
+
+@Composable
+private fun FilaActor(titulo: String, recurso: Int, marcado: Boolean, etiquetaPrueba: String, onCambio: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { onCambio(!marcado) }
+            .padding(vertical = 6.dp)
+            .testTag(etiquetaPrueba),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Checkbox(checked = marcado, onCheckedChange = null)
+        Image(
+            painter = painterResource(recurso),
+            contentDescription = null,
+            modifier = Modifier.padding(start = 10.dp).size(40.dp),
+            contentScale = ContentScale.Fit
+        )
+        Text(titulo, modifier = Modifier.padding(start = 10.dp).weight(1f))
     }
 }
 
@@ -457,20 +597,13 @@ private fun FormularioMiembroScreen(
     var vacunas by remember { mutableStateOf(miembro?.vacunasCompletas ?: false) }
     var saludBucal by remember { mutableStateOf(miembro?.saludBucalAdecuada ?: false) }
     var estadoNutricional by remember { mutableStateOf(miembro?.estadoNutricional.orEmpty().ifBlank { DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION }) }
-    var hipertension by remember { mutableStateOf(miembro?.hipertensionArterial ?: false) }
-    var diabetes by remember { mutableStateOf(miembro?.diabetesMellitus ?: false) }
-    var tuberculosis by remember { mutableStateOf(miembro?.tuberculosis ?: false) }
-    var saludMental by remember { mutableStateOf(miembro?.problemaSaludMental ?: false) }
-    var consumo by remember { mutableStateOf(miembro?.consumoAlcoholDrogas ?: false) }
-    var cuidadosPaliativos by remember { mutableStateOf(miembro?.cuidadosPaliativos ?: false) }
-    var vih by remember { mutableStateOf(miembro?.vih ?: false) }
+    var factoresEdad by remember { mutableStateOf(FactoresRiesgoEdad.decodificar(miembro?.factoresRiesgoEdadJson ?: "[]")) }
+    val factoresEdadIniciales = remember { FactoresRiesgoEdad.decodificar(miembro?.factoresRiesgoEdadJson ?: "[]") }
+    val codigosIniciales = remember { EstrategiasDesdeCie10.codigos(miembro?.comorbilidadesCie10Json ?: "[]") }
     var eventoSalud by remember { mutableStateOf(miembro?.eventoSalud ?: false) }
     var casoConfirmado by remember { mutableStateOf(miembro?.casoConfirmado ?: false) }
     var casoSospechosoUno by remember { mutableStateOf(miembro?.casoSospechosoUno ?: false) }
     var casoSospechosoDos by remember { mutableStateOf(miembro?.casoSospechosoDos ?: false) }
-    var prestadorComunitario by remember { mutableStateOf(miembro?.prestadorComunitario ?: false) }
-    var parteroAncestral by remember { mutableStateOf(miembro?.parteroAncestral ?: false) }
-    var sabiduriaAncestral by remember { mutableStateOf(miembro?.sabiduriaAncestral ?: false) }
     var diagnosticos by remember { mutableStateOf(CatalogoCie10.decodificar(miembro?.comorbilidadesCie10Json ?: "[]")) }
     var consultaCie10 by remember { mutableStateOf("") }
     var catalogoCie10 by remember { mutableStateOf<List<DiagnosticoCie10>>(emptyList()) }
@@ -507,7 +640,6 @@ private fun FormularioMiembroScreen(
         mutableStateOf(
             when {
                 miembro?.riesgoGenetico == true -> "GENETICO"
-                miembro?.victimaViolencia == true -> "VIOLENCIA"
                 miembro?.privadoLibertad == true -> "PRIVADO_LIBERTAD"
                 else -> "NINGUNO"
             }
@@ -565,6 +697,10 @@ private fun FormularioMiembroScreen(
                         }) {
                         error = "Hay diagnósticos que no pertenecen al catálogo CIE-10. Elimínalos y selecciónalos nuevamente."
                     } else {
+                        val codigosActuales = diagnosticos.map { it.codigo }
+                        // Se calculan de los diagnósticos CIE-10; un dato manual de versiones anteriores se conserva
+                        // mientras no lo explique (o lo desmienta) un diagnóstico.
+                        fun calculada(ahora: Boolean, antes: Boolean, guardado: Boolean?) = ahora || (guardado == true && !antes)
                         onGuardar(
                             MiembroFamiliaEntity(
                                 id = miembro?.id ?: 0,
@@ -582,11 +718,16 @@ private fun FormularioMiembroScreen(
                                 saludBucalAdecuada = saludBucal,
                                 riesgoEnfermedadDiscapacidad = diagnosticos.joinToString("; ") { it.etiqueta },
                                 estadoNutricional = estadoNutricional,
-                                hipertensionArterial = hipertension,
-                                diabetesMellitus = diabetes,
-                                tuberculosis = tuberculosis,
-                                problemaSaludMental = saludMental,
-                                consumoAlcoholDrogas = consumo,
+                                hipertensionArterial = calculada(EstrategiasDesdeCie10.hipertension(codigosActuales), EstrategiasDesdeCie10.hipertension(codigosIniciales), miembro?.hipertensionArterial),
+                                diabetesMellitus = calculada(EstrategiasDesdeCie10.diabetes(codigosActuales), EstrategiasDesdeCie10.diabetes(codigosIniciales), miembro?.diabetesMellitus),
+                                tuberculosis = calculada(EstrategiasDesdeCie10.tuberculosis(codigosActuales), EstrategiasDesdeCie10.tuberculosis(codigosIniciales), miembro?.tuberculosis),
+                                problemaSaludMental = calculada(EstrategiasDesdeCie10.saludMental(codigosActuales), EstrategiasDesdeCie10.saludMental(codigosIniciales), miembro?.problemaSaludMental),
+                                consumoAlcoholDrogas = calculada(
+                                    FactoresRiesgoEdad.CONSUMO in factoresEdad &&
+                                        FactoresRiesgoEdad.disponibles(FactoresRiesgoEdad.bandaPorFecha(fechaNacimiento)).any { it.codigo == FactoresRiesgoEdad.CONSUMO },
+                                    FactoresRiesgoEdad.CONSUMO in factoresEdadIniciales,
+                                    miembro?.consumoAlcoholDrogas
+                                ),
                                 enfermedadCronica = diagnosticos.isNotEmpty(),
                                 discapacidadVisual = tipoDiscapacidad == "VISUAL",
                                 discapacidadAuditiva = tipoDiscapacidad == "AUDITIVA",
@@ -594,15 +735,17 @@ private fun FormularioMiembroScreen(
                                 discapacidadFisica = tipoDiscapacidad == "FISICA",
                                 discapacidadIntelectual = tipoDiscapacidad == "INTELECTUAL",
                                 discapacidadPsicosocial = tipoDiscapacidad == "PSICOSOCIAL",
-                                cuidadosPaliativos = cuidadosPaliativos,
-                                vih = vih,
+                                cuidadosPaliativos = calculada(EstrategiasDesdeCie10.cuidadosPaliativos(codigosActuales), EstrategiasDesdeCie10.cuidadosPaliativos(codigosIniciales), miembro?.cuidadosPaliativos),
+                                vih = calculada(EstrategiasDesdeCie10.vih(codigosActuales), EstrategiasDesdeCie10.vih(codigosIniciales), miembro?.vih),
                                 eventoSalud = eventoSalud,
                                 casoConfirmado = casoConfirmado,
                                 casoSospechosoUno = casoSospechosoUno,
                                 casoSospechosoDos = casoSospechosoDos,
-                                prestadorComunitario = prestadorComunitario,
-                                parteroAncestral = parteroAncestral,
-                                sabiduriaAncestral = sabiduriaAncestral,
+                                // Los actores comunitarios se asignan desde el botón de la lista de integrantes.
+                                prestadorComunitario = miembro?.prestadorComunitario ?: false,
+                                parteroAncestral = miembro?.parteroAncestral ?: false,
+                                sabiduriaAncestral = miembro?.sabiduriaAncestral ?: false,
+                                factoresRiesgoEdadJson = FactoresRiesgoEdad.codificar(factoresEdad),
                                 comorbilidadesCie10Json = CatalogoCie10.codificar(diagnosticos),
                                 porcentajeDiscapacidad = porcentajeDiscapacidad.toIntOrNull()
                                     ?.coerceIn(0, 100)
@@ -610,7 +753,12 @@ private fun FormularioMiembroScreen(
                                 necesitaAyudaTecnica = necesitaAyudaTecnica && tipoDiscapacidad != "NINGUNA",
                                 enfermedadCronicaDescompensada = diagnosticos.any { it.descompensada },
                                 riesgoGenetico = riesgoPrioritario == "GENETICO",
-                                victimaViolencia = riesgoPrioritario == "VIOLENCIA",
+                                victimaViolencia = calculada(
+                                    FactoresRiesgoEdad.VIOLENCIA in factoresEdad &&
+                                        FactoresRiesgoEdad.disponibles(FactoresRiesgoEdad.bandaPorFecha(fechaNacimiento)).any { it.codigo == FactoresRiesgoEdad.VIOLENCIA },
+                                    FactoresRiesgoEdad.VIOLENCIA in factoresEdadIniciales,
+                                    miembro?.victimaViolencia
+                                ),
                                 privadoLibertad = riesgoPrioritario == "PRIVADO_LIBERTAD",
                                 numeroHistoriaClinica = cedula.trim(),
                                 cedula = cedula.trim(),
@@ -711,9 +859,9 @@ private fun FormularioMiembroScreen(
         SeccionFormularioRuralitos(
             titulo = "3. Seguimiento preventivo",
             desplegable = true,
-            progreso = avance("vacunas" in tocados, "saludBucal" in tocados, "nutricion" in tocados, "consumo" in tocados),
+            progreso = avance("vacunas" in tocados, "saludBucal" in tocados, "nutricion" in tocados),
             abiertaInicial = false,
-            descripcion = "Vacunas, nutrición, salud bucal y consumo. Estos datos alimentan la dispensarización automática."
+            descripcion = "Vacunas, nutrición y salud bucal. Estos datos alimentan la dispensarización automática."
         ) {
             SeleccionBooleanMiembro(
                 "Esquema completo de vacunas",
@@ -729,10 +877,6 @@ private fun FormularioMiembroScreen(
                 estadoNutricional,
                 NaranjaClinico
             ) { estadoNutricional = it; marcar("nutricion") }
-            SeleccionBooleanMiembro(
-                "Consumo de alcohol u otras drogas",
-                consumo
-            ) { consumo = it; marcar("consumo") }
             OutlinedTextField(
                 value = consultaCie10,
                 onValueChange = { consultaCie10 = it },
@@ -749,11 +893,6 @@ private fun FormularioMiembroScreen(
             resultadosCie10.forEach { resultado ->
                 TextButton(onClick = {
                     diagnosticos = diagnosticos + resultado
-                    when {
-                        resultado.codigo.uppercase().matches(Regex("I1[0-5].*")) -> hipertension = true
-                        resultado.codigo.uppercase().matches(Regex("E1[0-4].*")) -> diabetes = true
-                        resultado.codigo.uppercase().matches(Regex("A1[5-9].*")) -> tuberculosis = true
-                    }
                     consultaCie10 = ""
                 }, modifier = Modifier.fillMaxWidth()) { Text("+ ${resultado.etiqueta}") }
             }
@@ -783,53 +922,46 @@ private fun FormularioMiembroScreen(
                 }
             }
         }
+        val bandaEdad = FactoresRiesgoEdad.bandaPorFecha(fechaNacimiento)
+        val factoresDisponibles = FactoresRiesgoEdad.disponibles(bandaEdad)
         SeccionFormularioRuralitos(
-            titulo = "4. Estrategias Nacionales",
+            titulo = "4. Factores de riesgo según la edad",
             desplegable = true,
-            progreso = avance("estrategias" in tocados),
             abiertaInicial = false,
-            descripcion = "¿Esta persona pertenece a uno o varios de los siguientes grupos?"
+            descripcion = "Marca solo lo que corresponda. Cada factor marcado pasa a la persona al Grupo II."
         ) {
-            SelectorMultipleMiembro(
-                titulo = "Grupos de Estrategias Nacionales",
-                opciones = listOf(
-                    "DESNUTRICION" to "Desnutrición crónica",
-                    "SALUD_MENTAL" to "Salud mental",
-                    "PALIATIVOS" to "Cuidados paliativos",
-                    "TUBERCULOSIS" to "Tuberculosis",
-                    "DIABETES" to "Diabetes",
-                    "HIPERTENSION" to "Hipertensión",
-                    "VIH" to "VIH"
-                ),
-                seleccion = buildSet {
-                    if (estadoNutricional == DispensarizacionAutomatica.NUTRICION_DESNUTRICION_CRONICA) add("DESNUTRICION")
-                    if (saludMental) add("SALUD_MENTAL")
-                    if (cuidadosPaliativos) add("PALIATIVOS")
-                    if (tuberculosis) add("TUBERCULOSIS")
-                    if (diabetes) add("DIABETES")
-                    if (hipertension) add("HIPERTENSION")
-                    if (vih) add("VIH")
-                },
-                onSeleccion = { seleccion ->
-                    marcar("estrategias")
-                    estadoNutricional = if ("DESNUTRICION" in seleccion) {
-                        DispensarizacionAutomatica.NUTRICION_DESNUTRICION_CRONICA
-                    } else if (estadoNutricional == DispensarizacionAutomatica.NUTRICION_DESNUTRICION_CRONICA) {
-                        DispensarizacionAutomatica.NUTRICION_SIN_ALTERACION
-                    } else estadoNutricional
-                    saludMental = "SALUD_MENTAL" in seleccion
-                    cuidadosPaliativos = "PALIATIVOS" in seleccion
-                    tuberculosis = "TUBERCULOSIS" in seleccion
-                    diabetes = "DIABETES" in seleccion
-                    hipertension = "HIPERTENSION" in seleccion
-                    vih = "VIH" in seleccion
+            if (bandaEdad == null) {
+                MensajeEstadoRuralitos(
+                    titulo = "Falta la fecha de nacimiento",
+                    descripcion = "La lista de factores depende de la edad. Selecciona primero la fecha de nacimiento.",
+                    color = AzulClinico,
+                    simbolo = "i"
+                )
+            } else {
+                Text(
+                    bandaEdad.etiqueta,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 2.dp).testTag("banda_factores")
+                )
+                factoresDisponibles.forEach { factor ->
+                    CasillaFactorRiesgo(
+                        etiqueta = factor.etiqueta,
+                        marcada = factor.codigo in factoresEdad,
+                        etiquetaPrueba = "factor_${factor.codigo}"
+                    ) { marcado ->
+                        factoresEdad = if (marcado) factoresEdad + factor.codigo else factoresEdad - factor.codigo
+                    }
                 }
-            )
-            Text(
-                "Hipertensión, diabetes y tuberculosis se marcan automáticamente al seleccionar un CIE‑10 relacionado; puedes cambiarlas aquí.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+                val marcados = factoresDisponibles.count { it.codigo in factoresEdad }
+                MensajeEstadoRuralitos(
+                    titulo = if (marcados == 0) "Sin factores marcados" else "Grupo II · con factores de riesgo",
+                    descripcion = if (marcados == 0) "El grupo lo deciden el resto de datos de la ficha."
+                    else "$marcados factor(es) marcado(s).",
+                    color = if (marcados == 0) CianRuralitos else NaranjaClinico,
+                    simbolo = if (marcados == 0) "✓" else "II",
+                    modifier = Modifier.padding(top = 10.dp).testTag("resumen_factores")
+                )
+            }
         }
         SeccionFormularioRuralitos(
             titulo = "5. Discapacidad",
@@ -875,7 +1007,7 @@ private fun FormularioMiembroScreen(
                 enabled = tipoDiscapacidad != "NINGUNA"
             ) { necesitaAyudaTecnica = it; marcar("ayudaTecnica") }
         }
-        SeccionFormularioRuralitos(
+        if (EstrategiasDesdeCie10.pideAlertasEpidemiologicas(diagnosticos.map { it.codigo })) SeccionFormularioRuralitos(
             titulo = "6. Alertas Epidemiológicas",
             desplegable = true,
             progreso = avance("alertas" in tocados),
@@ -904,39 +1036,7 @@ private fun FormularioMiembroScreen(
             )
         }
         SeccionFormularioRuralitos(
-            titulo = "7. Actores comunitarios",
-            desplegable = true,
-            progreso = avance("actores" in tocados),
-            abiertaInicial = false,
-            descripcion = "Selecciona únicamente las funciones comunitarias que correspondan."
-        ) {
-            SelectorMultipleMiembro(
-                titulo = "Actores comunitarios",
-                opciones = listOf(
-                    "PRESTADOR" to "Prestador comunitario de salud",
-                    "PARTERO" to "Partero/a ancestral tradicional",
-                    "SABIDURIA" to "Hombre/mujer de sabiduría ancestral"
-                ),
-                seleccion = buildSet {
-                    if (prestadorComunitario) add("PRESTADOR")
-                    if (parteroAncestral) add("PARTERO")
-                    if (sabiduriaAncestral) add("SABIDURIA")
-                },
-                onSeleccion = { seleccion ->
-                    marcar("actores")
-                    prestadorComunitario = "PRESTADOR" in seleccion
-                    parteroAncestral = "PARTERO" in seleccion
-                    sabiduriaAncestral = "SABIDURIA" in seleccion
-                },
-                iconos = mapOf(
-                    "PRESTADOR" to R.drawable.prestador_comunitario,
-                    "PARTERO" to R.drawable.partero_ancestral,
-                    "SABIDURIA" to R.drawable.sabiduria_ancestral
-                )
-            )
-        }
-        SeccionFormularioRuralitos(
-            titulo = "8. Otros riesgos prioritarios",
+            titulo = "7. Otros riesgos prioritarios",
             desplegable = true,
             progreso = avance("riesgoPrioritario" in tocados),
             abiertaInicial = false,
@@ -947,7 +1047,6 @@ private fun FormularioMiembroScreen(
                 opciones = listOf(
                     "NINGUNO" to "Ninguno",
                     "GENETICO" to "Riesgo genético",
-                    "VIOLENCIA" to "Víctima de violencia",
                     "PRIVADO_LIBERTAD" to "Persona privada de la libertad"
                 ),
                 seleccion = riesgoPrioritario,
@@ -972,6 +1071,26 @@ private fun FormularioMiembroScreen(
             },
             onCerrar = { mostrarCalendario = false }
         )
+    }
+}
+
+@Composable
+private fun CasillaFactorRiesgo(
+    etiqueta: String,
+    marcada: Boolean,
+    etiquetaPrueba: String,
+    onCambio: (Boolean) -> Unit
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { onCambio(!marcada) }
+            .padding(vertical = 2.dp)
+            .testTag(etiquetaPrueba),
+        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+    ) {
+        androidx.compose.material3.Checkbox(checked = marcada, onCheckedChange = null)
+        Text(etiqueta, modifier = Modifier.padding(start = 10.dp, top = 8.dp, bottom = 8.dp))
     }
 }
 

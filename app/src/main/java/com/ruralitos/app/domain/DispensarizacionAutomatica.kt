@@ -160,6 +160,12 @@ object DispensarizacionAutomatica {
     ): ResultadoDispensarizacion {
         val pictogramas = pictogramas(miembro, embarazo)
         val pendientes = camposPendientes(miembro)
+        val diagnosticos = EstrategiasDesdeCie10.codigos(miembro.comorbilidadesCie10Json)
+        val obstetrica = embarazo?.let {
+            FactoresObstetricos.evaluar(
+                FactoresObstetricos.decodificar(it.factoresObstetricosJson), miembro, it.gestas, it.abortos, diagnosticos
+            )
+        }
         val razonesIv = buildList {
             if (miembro.discapacidadVisual == true) add("Discapacidad visual registrada")
             if (miembro.discapacidadAuditiva == true) add("Discapacidad auditiva registrada")
@@ -176,6 +182,9 @@ object DispensarizacionAutomatica {
             if (miembro.enfermedadCronica == true) add("Otra enfermedad crónica registrada")
             if (miembro.cuidadosPaliativos == true) add("Cuidados paliativos registrados")
             if (miembro.vih == true) add("VIH registrado")
+            // Una embarazada solo entra al Grupo III por una patología crónica marcada en su escala de riesgo.
+            obstetrica?.razones?.filter { it.cronica && it.origen == OrigenRazonObstetrica.MARCADA }
+                ?.forEach { add("Embarazo con ${it.etiqueta.replaceFirstChar { c -> c.lowercase() }}") }
         }
         val razonesIi = buildList {
             if (miembro.vacunasCompletas == false) add("Esquema de vacunación incompleto")
@@ -190,10 +199,12 @@ object DispensarizacionAutomatica {
                 if (embarazo.antecedentesPatologicosObstetricos.isNotBlank()) {
                     add("Embarazo con antecedente obstétrico registrado")
                 }
-                if (edadEnAnios(miembro.fechaNacimiento)?.let { it in 10..19 } == true) {
-                    add("Embarazo adolescente registrado")
-                }
+                // Cualquier otro criterio de la escala es un factor de riesgo (Grupo II), no una patología crónica.
+                obstetrica?.razones
+                    ?.filter { !it.cronica && (it.origen != OrigenRazonObstetrica.FICHA_DE_LA_PERSONA || it.codigo == "ANALFABETISMO") }
+                    ?.forEach { add("Embarazo: ${it.etiqueta.replaceFirstChar { c -> c.lowercase() }}") }
             }
+            FactoresRiesgoEdad.vigentes(miembro).forEach { add("Factor de riesgo: ${it.etiqueta.replaceFirstChar { c -> c.lowercase() }}") }
             if (miembro.riesgoEnfermedadDiscapacidad.isNotBlank()) {
                 add("Antecedente de texto libre pendiente de validación clínica")
             }
@@ -338,12 +349,11 @@ object DispensarizacionAutomatica {
         if (miembro.diabetesMellitus == null) add("diabetes")
         if (miembro.tuberculosis == null) add("tuberculosis")
         if (miembro.problemaSaludMental == null) add("salud mental")
-        if (miembro.consumoAlcoholDrogas == null) add("alcohol u otras drogas")
         if (miembro.enfermedadCronica == null) add("otras enfermedades crónicas")
         if (
             miembro.discapacidadVisual == null || miembro.discapacidadAuditiva == null ||
             miembro.discapacidadLenguaje == null || miembro.discapacidadFisica == null ||
-            miembro.discapacidadIntelectual == null
+            miembro.discapacidadIntelectual == null || miembro.discapacidadPsicosocial == null
         ) add("discapacidades")
     }
 

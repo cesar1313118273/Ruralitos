@@ -756,6 +756,7 @@ class SincronizadorSupabase(context: Context) {
         .put("riesgo_genetico", item.riesgoGenetico ?: JSONObject.NULL)
         .put("victima_violencia", item.victimaViolencia ?: JSONObject.NULL)
         .put("privado_libertad", item.privadoLibertad ?: JSONObject.NULL)
+        .put("factores_riesgo_edad_json", item.factoresRiesgoEdadJson)
         .put("numero_historia_clinica", item.numeroHistoriaClinica).put("cedula", item.cedula)
 
     private fun embarazadaJson(item: EmbarazadaEntity, fichaId: String, org: String) = JSONObject()
@@ -770,6 +771,7 @@ class SincronizadorSupabase(context: Context) {
         .put("cesareas", item.cesareas ?: JSONObject.NULL)
         .put("antecedentes_patologicos_obstetricos", item.antecedentesPatologicosObstetricos)
         .put("riesgo_obstetrico", item.riesgoObstetrico)
+        .put("factores_obstetricos_json", item.factoresObstetricosJson)
 
     private fun mortalidadJson(item: MortalidadFamiliarEntity, fichaId: String, org: String) = JSONObject()
         .put("id", item.syncId).put("organizacion_id", org).put("ficha_id", fichaId)

@@ -142,6 +142,50 @@ class SincronizacionConServidorFalsoTest {
     }
 
     @Test
+    fun losFactoresDeRiesgoPorEdadYLosCriteriosObstetricosViajanEnAmbosSentidos() = runBlocking {
+        val (syncId, id) = crearFichaConIntegrante()
+        val miembro = dao.miembros(id).single()
+        database.fichaContenidoDao().actualizarMiembro(miembro.copy(factoresRiesgoEdadJson = "[\"SEDENTARISMO\",\"VIOLENCIA\"]"))
+        database.fichaContenidoDao().guardarEmbarazada(
+            com.ruralitos.app.data.local.entity.EmbarazadaEntity(
+                fichaId = id, apellidosNombres = "INTEGRANTE UNO", fechaUltimaMenstruacion = "01/03/2026",
+                fechaProbableParto = "08/12/2026", riesgoObstetrico = "ALTO", factoresObstetricosJson = "[\"ANEMIA\"]"
+            )
+        )
+        assertEquals(0, sincronizar().errores)
+        val remotoMiembro = servidor.filas("miembros_familia").single()
+        assertEquals("[\"SEDENTARISMO\",\"VIOLENCIA\"]", remotoMiembro.getString("factores_riesgo_edad_json"))
+        assertEquals("[\"ANEMIA\"]", servidor.filas("embarazadas").single().getString("factores_obstetricos_json"))
+
+        // otra persona cambia lo marcado y el teléfono lo recibe
+        servidor.modificar("miembros_familia", remotoMiembro.getString("id")) { put("factores_riesgo_edad_json", "[\"FRAGILIDAD\"]") }
+        servidor.modificar("embarazadas", servidor.filas("embarazadas").single().getString("id")) { put("factores_obstetricos_json", "[\"EPILEPSIA\"]") }
+        servidor.modificar("fichas_familiares", syncId) { put("numero_telefono", "0911111111") }
+        assertEquals(0, sincronizar().errores)
+        assertEquals("[\"FRAGILIDAD\"]", dao.miembros(id).single().factoresRiesgoEdadJson)
+        assertEquals("[\"EPILEPSIA\"]", dao.embarazadas(id).single().factoresObstetricosJson)
+    }
+
+    @Test
+    fun sinLaColumnaNuevaEnElServidorTodoLoDemasSigueSincronizandoYLoMarcadoSeConserva() = runBlocking {
+        servidor.columnasInexistentes = setOf("factores_riesgo_edad_json", "factores_obstetricos_json")
+        val (syncId, id) = crearFichaConIntegrante()
+        database.fichaContenidoDao().actualizarMiembro(dao.miembros(id).single().copy(factoresRiesgoEdadJson = "[\"SEDENTARISMO\"]"))
+
+        val resultado = sincronizar()
+
+        assertEquals("la falta de la columna no es un error", 0, resultado.errores)
+        assertEquals("SINCRONIZADO", dao.fichaPorSyncId(syncId)!!.syncEstado)
+        assertEquals(1, servidor.filas("miembros_familia").size)
+        assertFalse(servidor.filas("miembros_familia").single().has("factores_riesgo_edad_json"))
+        // una descarga completa no borra lo que solo existe en este teléfono
+        MarcasDescarga.borrarTodo(context)
+        servidor.modificar("fichas_familiares", syncId) { put("numero_telefono", "0922222222") }
+        assertEquals(0, sincronizar().errores)
+        assertEquals("[\"SEDENTARISMO\"]", dao.miembros(id).single().factoresRiesgoEdadJson)
+    }
+
+    @Test
     fun siOtraPersonaCambioLaFichaMientrasSeEditabaSeMarcaConflictoSinPisarNada() = runBlocking {
         val (syncId, id) = crearFichaConIntegrante()
         sincronizar()

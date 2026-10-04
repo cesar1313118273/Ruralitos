@@ -138,6 +138,7 @@ internal class AplicadorDescarga(
         filas.filter { it.estaEliminada() }.forEach {
             dao.eliminarMiembroRemoto(it.getString("id")); dao.descartarTumbaRemota(it.getString("id"))
         }
+        val locales = dao.miembros(fichaId).associateBy { it.syncId }
         vigentes.forEach { remoto ->
             val syncId = remoto.getString("id")
             val idExistente = dao.idMiembro(syncId) ?: 0
@@ -183,6 +184,10 @@ internal class AplicadorDescarga(
                 riesgoGenetico = remoto.booleanNullable("riesgo_genetico"),
                 victimaViolencia = remoto.booleanNullable("victima_violencia"),
                 privadoLibertad = remoto.booleanNullable("privado_libertad"),
+                // Si el servidor aún no tiene la columna, se conserva lo que ya hay en este teléfono.
+                factoresRiesgoEdadJson = if (remoto.has("factores_riesgo_edad_json")) {
+                    remoto.texto("factores_riesgo_edad_json").ifBlank { "[]" }
+                } else locales[syncId]?.factoresRiesgoEdadJson ?: "[]",
                 numeroHistoriaClinica = remoto.texto("numero_historia_clinica"),
                 cedula = remoto.texto("cedula"),
                 syncId = syncId
@@ -203,6 +208,7 @@ internal class AplicadorDescarga(
         filas.filter { it.estaEliminada() }.forEach {
             dao.eliminarEmbarazadaRemota(it.getString("id")); dao.descartarTumbaRemota(it.getString("id"))
         }
+        val locales = dao.embarazadas(fichaId).associateBy { it.syncId }
         vigentes.forEach { remoto ->
             val syncId = remoto.getString("id")
             val idExistente = dao.idEmbarazada(syncId) ?: 0
@@ -222,6 +228,9 @@ internal class AplicadorDescarga(
                 cesareas = remoto.intNullable("cesareas"),
                 antecedentesPatologicosObstetricos = remoto.texto("antecedentes_patologicos_obstetricos"),
                 riesgoObstetrico = remoto.texto("riesgo_obstetrico"),
+                factoresObstetricosJson = if (remoto.has("factores_obstetricos_json")) {
+                    remoto.texto("factores_obstetricos_json").ifBlank { "[]" }
+                } else locales[syncId]?.factoresObstetricosJson ?: "[]",
                 syncId = syncId
             )
             if (idExistente == 0L) dao.guardarEmbarazadaRemota(entidad) else dao.actualizarEmbarazadaRemota(entidad)

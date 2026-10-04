@@ -257,6 +257,7 @@ class DispensarizacionAutomaticaTest {
         discapacidadAuditiva = false,
         discapacidadLenguaje = false,
         discapacidadFisica = discapacidadFisica,
-        discapacidadIntelectual = false
+        discapacidadIntelectual = false,
+        discapacidadPsicosocial = false
     )
 }

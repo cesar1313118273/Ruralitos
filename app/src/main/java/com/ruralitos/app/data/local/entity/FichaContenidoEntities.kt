@@ -60,6 +60,8 @@ data class MiembroFamiliaEntity(
     @ColumnInfo(defaultValue = "NULL") val riesgoGenetico: Boolean? = null,
     @ColumnInfo(defaultValue = "NULL") val victimaViolencia: Boolean? = null,
     @ColumnInfo(defaultValue = "NULL") val privadoLibertad: Boolean? = null,
+    /** Códigos de los factores de riesgo marcados para el grupo de edad (ver FactoresRiesgoEdad). */
+    @ColumnInfo(defaultValue = "'[]'") val factoresRiesgoEdadJson: String = "[]",
     val numeroHistoriaClinica: String = "",
     val cedula: String = "",
     @ColumnInfo(defaultValue = "''") val syncId: String = UUID.randomUUID().toString()
@@ -91,6 +93,8 @@ data class EmbarazadaEntity(
     val cesareas: Int? = null,
     val antecedentesPatologicosObstetricos: String = "",
     @ColumnInfo(defaultValue = "''") val riesgoObstetrico: String = "",
+    /** Códigos de los criterios de la escala de riesgo obstétrico marcados (ver FactoresObstetricos). */
+    @ColumnInfo(defaultValue = "'[]'") val factoresObstetricosJson: String = "[]",
     @ColumnInfo(defaultValue = "''") val syncId: String = UUID.randomUUID().toString()
 )
 
