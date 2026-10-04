@@ -1,26 +1,34 @@
 package com.ruralitos.app.ui.screens
 
-import com.ruralitos.app.domain.SaludoProfesional
-import androidx.compose.foundation.layout.statusBarsPadding
-import com.ruralitos.app.ui.theme.FondoClinico
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -28,31 +36,49 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.ruralitos.app.ui.components.BotonVolverRuralitos
-import com.ruralitos.app.ui.components.formularioSeguro
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.ruralitos.app.domain.SaludoProfesional
 import com.ruralitos.app.VerdeOscuro
 import com.ruralitos.app.domain.ValidadorIdentidadEcuador
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.sp
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.LogoRuralitos
+import com.ruralitos.app.ui.components.PantallaRuralitos
+import com.ruralitos.app.ui.components.SeccionFormularioRuralitos
+import com.ruralitos.app.ui.components.TarjetaFormularioRuralitos
+import com.ruralitos.app.ui.components.formularioSeguro
+import com.ruralitos.app.ui.theme.AzulClinico
+import com.ruralitos.app.ui.theme.AzulClinicoOscuro
+import com.ruralitos.app.ui.theme.BordeCampo
+import com.ruralitos.app.ui.theme.BordeClinico
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.theme.FondoClinico
+import com.ruralitos.app.ui.theme.NaranjaClinico
+import com.ruralitos.app.ui.theme.TextoSecundario
+import com.ruralitos.app.ui.theme.VerdeSalud
+
+// ---------------------------------------------------------------------------------------------------------------
+// Pantallas de acceso con el diseño general de la app: encabezado con botón de volver, tarjetas blancas de bordes
+// finos, secciones desplegables con barra de avance y el botón principal fijo abajo.
+// ---------------------------------------------------------------------------------------------------------------
 
 @Composable
 fun AccesoSupabaseScreen(
@@ -66,727 +92,76 @@ fun AccesoSupabaseScreen(
     var correo by remember { mutableStateOf("") }
     var clave by remember { mutableStateOf("") }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .background(FondoClinico)
-    ) {
-        FondoAbstractoLogin(
-            modifier = Modifier.fillMaxSize()
-        )
-
+    BoxWithConstraints(Modifier.fillMaxSize().formularioSeguro().background(FondoClinico)) {
+        val altoDisponible = maxHeight
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    start = 16.dp,
-                    end = 16.dp,
-                    top = 26.dp,
-                    bottom = 28.dp
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CabeceraLoginRuralitos()
-
-            Surface(
-                modifier = Modifier
-                    .widthIn(max = 560.dp)
-                    .fillMaxWidth()
-                    .padding(top = 18.dp),
-                shape = RoundedCornerShape(34.dp),
-                color = Color.White.copy(alpha = 0.97f),
-                shadowElevation = 1.dp,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    Color.White.copy(alpha = 0.90f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            horizontal = 20.dp,
-                            vertical = 26.dp
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Iniciar sesión",
-                        color = AzulLoginNuevoOscuro,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Text(
-                        text = "Ingresa con tu correo y contraseña",
-                        color = TextoLoginNuevoSecundario,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(
-                            top = 5.dp,
-                            bottom = 20.dp
-                        )
-                    )
-
-                    CampoCorreoLogin(
-                        valor = correo,
-                        onCambio = {
-                            correo = it
-                                .trim()
-                                .take(254)
-                        }
-                    )
-
-                    CampoClaveLogin(
-                        valor = clave,
-                        onCambio = {
-                            clave = it.take(128)
-                        }
-                    )
-
-                    MensajeAccesoLogin(
-                        mensaje = mensaje
-                    )
-
-                    BotonPrincipalLogin(
-                        texto = if (procesando) {
-                            "Iniciando…"
-                        } else {
-                            "Iniciar sesión"
-                        },
-                        enabled = !procesando &&
-                            correoValido(correo) &&
-                            clave.isNotBlank(),
-                        onClick = {
-                            onIngresar(
-                                correo.trim(),
-                                clave
-                            )
-                        }
-                    )
-
-                    SeparadorOpcionesLogin(
-                        modifier = Modifier.padding(top = 22.dp)
-                    )
-
-                    OpcionLoginRuralitos(
-                        titulo = "Crear una cuenta",
-                        descripcion = "Registra tus datos profesionales",
-                        simbolo = "+",
-                        color = AzulLoginNuevo,
-                        onClick = onCrearCuenta,
-                        enabled = !procesando
-                    )
-
-                    OpcionLoginRuralitos(
-                        titulo = "Recuperar contraseña",
-                        descripcion = "Recibe un enlace seguro en tu correo",
-                        simbolo = "↻",
-                        color = Color(0xFFF58A18),
-                        onClick = onRecuperar,
-                        enabled = !procesando,
-                        modifier = Modifier.padding(top = 11.dp)
-                    )
-
-                    OpcionLoginRuralitos(
-                        titulo = "Entrar sin internet con PIN",
-                        descripcion = "Usa el acceso protegido de este teléfono",
-                        simbolo = "#",
-                        color = Color(0xFF426FE5),
-                        onClick = onSinInternet,
-                        enabled = !procesando,
-                        modifier = Modifier.padding(top = 11.dp)
-                    )
-
-                    AvisoLocalLogin(
-                        modifier = Modifier.padding(top = 16.dp)
-                    )
-                }
-            }
-
-            Spacer(
-                modifier = Modifier.height(20.dp)
-            )
-        }
-    }
-}
-
-private val AzulLoginNuevo = Color(0xFF1565C0)
-private val AzulLoginNuevoOscuro = Color(0xFF0A2A5E)
-private val VerdeLoginNuevo = Color(0xFF0889A0)
-private val TextoLoginNuevoSecundario = Color(0xFF5B7083)
-private val BordeLoginNuevo = Color(0xFFE2ECF1)
-
-@Composable
-private fun CabeceraLoginRuralitos() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Surface(
-            modifier = Modifier.size(116.dp),
-            shape = CircleShape,
-            color = Color.White.copy(alpha = 0.84f),
-            shadowElevation = 1.dp,
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                Color.White.copy(alpha = 0.90f)
-            )
-        ) {
-            Box(
-                contentAlignment = Alignment.Center
-            ) {
-                LogoRuralitos(
-                    modifier = Modifier.size(94.dp)
-                )
-            }
-        }
-
-        Text(
-            text = "Ruralitos",
-            color = AzulLoginNuevoOscuro,
-            fontSize = 28.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 10.dp)
-        )
-
-        Text(
-            text = "Fichas familiares, incluso sin conexión",
-            color = TextoLoginNuevoSecundario,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 2.dp)
-        )
-    }
-}
-
-@Composable
-private fun CampoCorreoLogin(
-    valor: String,
-    onCambio: (String) -> Unit
-) {
-    OutlinedTextField(
-        value = valor,
-        onValueChange = onCambio,
-        label = {
-            Text("Correo electrónico")
-        },
-        placeholder = {
-            Text("nombre@correo.com")
-        },
-        leadingIcon = {
-            IconoCampoLogin(
-                simbolo = "✉",
-                color = AzulLoginNuevo
-            )
-        },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Email
-        ),
-        singleLine = true,
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AzulLoginNuevo,
-            unfocusedBorderColor = BordeLoginNuevo,
-            focusedLabelColor = AzulLoginNuevo,
-            cursorColor = AzulLoginNuevo,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White
-        ),
-        modifier = Modifier.fillMaxWidth()
-    )
-}
-
-@Composable
-private fun CampoClaveLogin(
-    valor: String,
-    onCambio: (String) -> Unit
-) {
-    var visible by remember {
-        mutableStateOf(false)
-    }
-
-    OutlinedTextField(
-        value = valor,
-        onValueChange = onCambio,
-        label = {
-            Text("Contraseña")
-        },
-        leadingIcon = {
-            IconoCampoLogin(
-                simbolo = "▢",
-                color = AzulLoginNuevo
-            )
-        },
-        visualTransformation = if (visible) {
-            androidx.compose.ui.text.input.VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
-        trailingIcon = {
-            TextButton(
-                onClick = {
-                    visible = !visible
-                }
-            ) {
-                Text(
-                    text = if (visible) {
-                        "Ocultar"
-                    } else {
-                        "Ver"
-                    },
-                    color = VerdeLoginNuevo,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AzulLoginNuevo,
-            unfocusedBorderColor = BordeLoginNuevo,
-            focusedLabelColor = AzulLoginNuevo,
-            cursorColor = AzulLoginNuevo,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 13.dp)
-    )
-}
-
-@Composable
-private fun IconoCampoLogin(
-    simbolo: String,
-    color: Color
-) {
-    Surface(
-        modifier = Modifier.size(34.dp),
-        shape = RoundedCornerShape(11.dp),
-        color = color.copy(alpha = 0.10f)
-    ) {
-        Box(
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = simbolo,
-                color = color,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-@Composable
-private fun MensajeAccesoLogin(
-    mensaje: String?
-) {
-    mensaje?.let {
-        val exito =
-            it.contains(
-                "enviado",
-                ignoreCase = true
-            ) ||
-            it.contains(
-                "correct",
-                ignoreCase = true
-            ) ||
-            it.contains(
-                "guard",
-                ignoreCase = true
-            )
-
-        val color = if (exito) {
-            VerdeLoginNuevo
-        } else {
-            Color(0xFFEF4357)
-        }
-
-        Surface(
-            modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 14.dp),
-            color = color.copy(alpha = 0.09f),
-            shape = RoundedCornerShape(16.dp),
-            border = androidx.compose.foundation.BorderStroke(
-                1.dp,
-                color.copy(alpha = 0.30f)
-            )
+                .verticalScroll(rememberScrollState())
+                .heightIn(min = altoDisponible)
+                .padding(horizontal = 16.dp, vertical = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
+            LogoRuralitos(modifier = Modifier.size(76.dp))
+            Text(
+                "Ruralitos",
+                color = AzulClinicoOscuro,
+                fontSize = 28.sp,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Text(
+                "Fichas familiares, incluso sin conexión",
+                color = TextoSecundario,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+
+            TarjetaFormularioRuralitos(Modifier.widthIn(max = 480.dp).padding(top = 20.dp)) {
+                Column {
+                    Text("Ingresa a tu cuenta", style = MaterialTheme.typography.titleMedium, color = AzulClinicoOscuro, fontWeight = FontWeight.SemiBold)
+                    Text("Usa el correo con el que te registraste.", style = MaterialTheme.typography.bodyMedium, color = TextoSecundario)
+                }
+                CampoCorreo(correo) { correo = it }
+                CampoClave(clave, "Contraseña") { clave = it }
+                TextButton(onClick = onRecuperar, enabled = !procesando, modifier = Modifier.align(Alignment.End)) {
+                    Text("¿Olvidaste tu contraseña?", color = AzulClinico, fontWeight = FontWeight.SemiBold)
+                }
+                MensajeAcceso(mensaje)
+                BotonPrincipalRuralitos(
+                    texto = if (procesando) "Entrando…" else "Entrar",
+                    color = CianRuralitos,
+                    enabled = !procesando && correoValido(correo) && clave.isNotBlank(),
+                    modifier = Modifier.testTag("boton_entrar"),
+                    onClick = { onIngresar(correo.trim(), clave) }
+                )
+            }
+
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = 13.dp,
-                        vertical = 12.dp
-                    ),
+                Modifier.widthIn(max = 480.dp).fillMaxWidth().padding(vertical = 14.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    shape = CircleShape,
-                    color = color
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (exito) {
-                                "✓"
-                            } else {
-                                "!"
-                            },
-                            color = Color.White,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
-
-                Text(
-                    text = it,
-                    color = if (exito) {
-                        AzulLoginNuevoOscuro
-                    } else {
-                        Color(0xFF9E2231)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(start = 10.dp)
-                )
+                HorizontalDivider(Modifier.weight(1f), color = BordeClinico)
+                Text("  o  ", color = TextoSecundario, style = MaterialTheme.typography.bodySmall)
+                HorizontalDivider(Modifier.weight(1f), color = BordeClinico)
             }
-        }
-    }
-}
-
-@Composable
-private fun BotonPrincipalLogin(
-    texto: String,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 16.dp)
-            .heightIn(min = 60.dp),
-        color = if (enabled) {
-            VerdeLoginNuevo
-        } else {
-            VerdeLoginNuevo.copy(alpha = 0.48f)
-        },
-        shape = RoundedCornerShape(16.dp),
-        shadowElevation = if (enabled) {
-            6.dp
-        } else {
-            0.dp
-        }
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = texto,
-                color = Color.White,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+            BotonSecundarioRuralitos(
+                texto = "Entrar sin internet con PIN",
+                onClick = onSinInternet,
+                enabled = !procesando,
+                modifier = Modifier.widthIn(max = 480.dp).testTag("boton_sin_internet")
             )
-
-            Text(
-                text = "  →",
-                color = Color.White,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.SemiBold
-            )
-        }
-    }
-}
-
-@Composable
-private fun SeparadorOpcionesLogin(
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(1.dp)
-                .background(
-                    AzulLoginNuevo.copy(alpha = 0.22f)
-                )
-        )
-
-        Text(
-            text = "Otras opciones",
-            color = AzulLoginNuevoOscuro,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.padding(horizontal = 12.dp)
-        )
-
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .height(1.dp)
-                .background(
-                    AzulLoginNuevo.copy(alpha = 0.22f)
-                )
-        )
-    }
-}
-
-@Composable
-private fun OpcionLoginRuralitos(
-    titulo: String,
-    descripcion: String,
-    simbolo: String,
-    color: Color,
-    onClick: () -> Unit,
-    enabled: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier
-            .fillMaxWidth()
-            .heightIn(min = 76.dp),
-        color = Color.White,
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            BordeLoginNuevo
-        ),
-        shadowElevation = 1.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    horizontal = 14.dp,
-                    vertical = 12.dp
-                ),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                color = color.copy(alpha = 0.11f)
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = simbolo,
-                        color = color,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 10.dp)) {
+                Text("¿Aún no tienes cuenta?", color = TextoSecundario, style = MaterialTheme.typography.bodyMedium)
+                TextButton(onClick = onCrearCuenta, enabled = !procesando, modifier = Modifier.testTag("boton_crear_cuenta")) {
+                    Text("Crear una cuenta", color = AzulClinico, fontWeight = FontWeight.SemiBold)
                 }
             }
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 13.dp)
-            ) {
-                Text(
-                    text = titulo,
-                    color = AzulLoginNuevoOscuro,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Text(
-                    text = descripcion,
-                    color = TextoLoginNuevoSecundario,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-
-            Text(
-                text = "›",
-                color = color,
-                fontSize = 28.sp,
-                fontWeight = FontWeight.SemiBold
-            )
         }
     }
 }
 
-@Composable
-private fun AvisoLocalLogin(
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = Color(0xFFE3F4F7),
-        shape = RoundedCornerShape(16.dp),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            VerdeLoginNuevo.copy(alpha = 0.28f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(38.dp),
-                shape = CircleShape,
-                color = VerdeLoginNuevo
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "✓",
-                        color = Color.White,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
-
-            Text(
-                text =
-                    "Las fichas se guardan primero en este teléfono y se sincronizan automáticamente cuando vuelve internet.",
-                color = AzulLoginNuevoOscuro,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 11.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun FondoAbstractoLogin(
-    modifier: Modifier = Modifier
-) {
-    Canvas(
-        modifier = modifier
-    ) {
-        drawCircle(
-            color = Color(0xFF79CBFF).copy(alpha = 0.25f),
-            radius = size.width * 0.50f,
-            center = Offset(
-                size.width * 0.04f,
-                size.height * 0.02f
-            )
-        )
-
-        val derecha = Path().apply {
-            moveTo(
-                size.width,
-                size.height * 0.05f
-            )
-
-            cubicTo(
-                size.width * 0.77f,
-                size.height * 0.12f,
-                size.width * 0.91f,
-                size.height * 0.24f,
-                size.width * 0.72f,
-                size.height * 0.32f
-            )
-
-            cubicTo(
-                size.width * 0.91f,
-                size.height * 0.35f,
-                size.width * 0.88f,
-                size.height * 0.46f,
-                size.width,
-                size.height * 0.52f
-            )
-
-            close()
-        }
-
-        drawPath(
-            path = derecha,
-            color = Color(0xFF46D1A5).copy(alpha = 0.27f)
-        )
-
-        val izquierda = Path().apply {
-            moveTo(
-                0f,
-                size.height * 0.48f
-            )
-
-            cubicTo(
-                size.width * 0.16f,
-                size.height * 0.55f,
-                size.width * 0.11f,
-                size.height * 0.68f,
-                0f,
-                size.height * 0.74f
-            )
-
-            close()
-        }
-
-        drawPath(
-            path = izquierda,
-            color = Color(0xFF1565C0).copy(alpha = 0.22f)
-        )
-
-        val inferior = Path().apply {
-            moveTo(
-                0f,
-                size.height * 0.88f
-            )
-
-            cubicTo(
-                size.width * 0.18f,
-                size.height * 0.82f,
-                size.width * 0.36f,
-                size.height * 0.98f,
-                size.width * 0.56f,
-                size.height * 0.92f
-            )
-
-            cubicTo(
-                size.width * 0.74f,
-                size.height * 0.87f,
-                size.width * 0.86f,
-                size.height * 0.81f,
-                size.width,
-                size.height * 0.86f
-            )
-
-            lineTo(
-                size.width,
-                size.height
-            )
-
-            lineTo(
-                0f,
-                size.height
-            )
-
-            close()
-        }
-
-        drawPath(
-            path = inferior,
-            color = Color(0xFF62D8D1).copy(alpha = 0.25f)
-        )
-    }
-}
 @Composable
 fun RegistroSupabaseScreen(
     procesando: Boolean,
@@ -806,100 +181,108 @@ fun RegistroSupabaseScreen(
     var confirmar by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
 
-    FormularioBase("Crear cuenta", "Completa tus datos para empezar a crear fichas familiares", onVolver = onVolver) {
-        TituloSeccionAcceso(
-            numero = "1",
-            titulo = "Datos de acceso",
-            descripcion = "El correo será tu usuario para ingresar",
-            color = ColorAccesoAzul
-        )
-        CampoCorreo(correo) { correo = it; error = null }
-
-        TituloSeccionAcceso(
-            numero = "2",
-            titulo = "Información personal y profesional",
-            descripcion = "Estos datos identificarán al responsable de las fichas",
-            color = ColorAccesoVerde
-        )
-        OutlinedTextField(
-            value = cedula,
-            onValueChange = { cedula = it.filter(Char::isDigit).take(13); error = null },
-            label = { Text("Cédula") },
-            supportingText = { Text("Será también tu número de historia clínica") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-        )
-        SelectorSexoProfesional(
-            valor = sexo,
-            onCambio = {
-                sexo = it
-                cargo = SaludoProfesional.cargoEquivalente(cargo, it)
-                error = null
-            }
-        )
-        CampoTexto(apellidos, "Apellidos") { apellidos = it.take(80); error = null }
-        CampoTexto(nombres, "Nombres") { nombres = it.take(80); error = null }
-        CampoCargoPredeterminado(
-            valor = cargo,
-            sexo = sexo,
-            onCambio = { cargo = it; error = null }
-        )
-        CampoCodigoProfesional(codigoSenescyt) { codigoSenescyt = it; error = null }
-        OutlinedTextField(
-            value = telefono,
-            onValueChange = { telefono = it.filter { c -> c.isDigit() || c == '+' }.take(20) },
-            label = { Text("Teléfono (opcional)") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-            singleLine = true,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
-        )
-
-        TituloSeccionAcceso(
-            numero = "3",
-            titulo = "Seguridad",
-            descripcion = "Usa al menos 8 caracteres y confirma la contraseña",
-            color = ColorAccesoMorado
-        )
-        CampoClave(clave, "Contraseña") { clave = it; error = null }
-        CampoClave(confirmar, "Confirmar contraseña") { confirmar = it; error = null }
+    FormularioBase(
+        "Crear cuenta",
+        "Completa tus datos para empezar a crear fichas familiares",
+        onVolver = onVolver,
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Creando cuenta…" else "Crear mi cuenta",
+                color = CianRuralitos,
+                enabled = !procesando,
+                modifier = Modifier.testTag("boton_crear_mi_cuenta"),
+                onClick = {
+                    error = when {
+                        !correoValido(correo) -> "Ingresa un correo válido."
+                        !ValidadorIdentidadEcuador.esIdentificacionAceptable(cedula) -> "Ingresa una cédula o RUC válido."
+                        sexo.isBlank() -> "Elige tu sexo."
+                        apellidos.isBlank() -> "Ingresa tus apellidos."
+                        nombres.isBlank() -> "Ingresa tus nombres."
+                        cargo.isBlank() -> "Elige tu cargo."
+                        !codigoSenescytValido(codigoSenescyt) -> "Completa el código SENESCYT con sus 15 dígitos."
+                        clave.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
+                        clave != confirmar -> "Las contraseñas no coinciden."
+                        else -> null
+                    }
+                    if (error == null) {
+                        onRegistrar(
+                            correo.trim(),
+                            clave,
+                            cedula.trim(),
+                            "${apellidos.trim()} ${nombres.trim()}".replace(Regex("\\s+"), " "),
+                            cargo.trim(),
+                            telefono.trim(),
+                            codigoSenescyt.trim(),
+                            sexo,
+                            apellidos.trim()
+                        )
+                    }
+                }
+            )
+        }
+    ) {
+        SeccionFormularioRuralitos(
+            titulo = "1. Datos de acceso",
+            descripcion = "El correo será tu usuario para ingresar.",
+            desplegable = true,
+            abiertaInicial = true,
+            progreso = fraccion(correoValido(correo))
+        ) {
+            CampoCorreo(correo) { correo = it; error = null }
+        }
+        SeccionFormularioRuralitos(
+            titulo = "2. Información personal y profesional",
+            descripcion = "Estos datos identificarán al responsable de las fichas.",
+            desplegable = true,
+            abiertaInicial = false,
+            progreso = fraccion(
+                ValidadorIdentidadEcuador.esIdentificacionAceptable(cedula), sexo.isNotBlank(), apellidos.isNotBlank(),
+                nombres.isNotBlank(), cargo.isNotBlank(), codigoSenescytValido(codigoSenescyt)
+            )
+        ) {
+            OutlinedTextField(
+                value = cedula,
+                onValueChange = { cedula = it.filter(Char::isDigit).take(13); error = null },
+                label = { Text("Cédula") },
+                supportingText = { Text("Será también tu número de historia clínica") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = FormaCampo,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+            )
+            SelectorSexoProfesional(
+                valor = sexo,
+                onCambio = {
+                    sexo = it
+                    cargo = SaludoProfesional.cargoEquivalente(cargo, it)
+                    error = null
+                }
+            )
+            CampoTexto(apellidos, "Apellidos") { apellidos = it.take(80); error = null }
+            CampoTexto(nombres, "Nombres") { nombres = it.take(80); error = null }
+            CampoCargoPredeterminado(valor = cargo, sexo = sexo, onCambio = { cargo = it; error = null })
+            CampoCodigoProfesional(codigoSenescyt) { codigoSenescyt = it; error = null }
+            OutlinedTextField(
+                value = telefono,
+                onValueChange = { telefono = it.filter { c -> c.isDigit() || c == '+' }.take(20) },
+                label = { Text("Teléfono (opcional)") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                singleLine = true,
+                shape = FormaCampo,
+                modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+            )
+        }
+        SeccionFormularioRuralitos(
+            titulo = "3. Seguridad",
+            descripcion = "Usa al menos 8 caracteres y confirma la contraseña.",
+            desplegable = true,
+            abiertaInicial = false,
+            progreso = fraccion(clave.length >= 8, confirmar.isNotBlank() && confirmar == clave)
+        ) {
+            CampoClave(clave, "Contraseña") { clave = it; error = null }
+            CampoClave(confirmar, "Confirmar contraseña") { confirmar = it; error = null }
+        }
         MensajeAcceso(error ?: mensaje)
-
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Creando cuenta…" else "Crear mi cuenta",
-            descripcion = if (procesando) null else "Guardar datos y continuar",
-            onClick = {
-                error = when {
-                    !correoValido(correo) -> "Ingresa un correo válido."
-                    !ValidadorIdentidadEcuador.esIdentificacionAceptable(cedula) -> "Ingresa una cédula o RUC válido."
-                    sexo.isBlank() -> "Elige tu sexo."
-                    apellidos.isBlank() -> "Ingresa tus apellidos."
-                    nombres.isBlank() -> "Ingresa tus nombres."
-                    cargo.isBlank() -> "Elige tu cargo."
-                    !codigoSenescytValido(codigoSenescyt) -> "Completa el código SENESCYT con sus 15 dígitos."
-                    clave.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
-                    clave != confirmar -> "Las contraseñas no coinciden."
-                    else -> null
-                }
-                if (error == null) {
-                    onRegistrar(
-                        correo.trim(),
-                        clave,
-                        cedula.trim(),
-                        "${apellidos.trim()} ${nombres.trim()}".replace(Regex("\\s+"), " "),
-                        cargo.trim(),
-                        telefono.trim(),
-                        codigoSenescyt.trim(),
-                        sexo,
-                        apellidos.trim()
-                    )
-                }
-            },
-            enabled = !procesando,
-            color = ColorAccesoVerde
-        )
     }
 }
 
@@ -915,21 +298,38 @@ fun RecuperarCuentaScreen(
     FormularioBase(
         "Recuperar contraseña",
         "Te enviaremos un enlace seguro al correo registrado",
-        onVolver = onVolver
+        onVolver = onVolver,
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Enviando enlace…" else "Enviar enlace de recuperación",
+                color = CianRuralitos,
+                enabled = !procesando && correoValido(correo),
+                modifier = Modifier.testTag("boton_enviar_enlace"),
+                onClick = { onEnviar(correo.trim()) }
+            )
+        }
     ) {
+        TarjetaFormularioRuralitos {
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                IconoAcceso("✉", CianRuralitos)
+                Text(
+                    "¿Olvidaste tu contraseña?",
+                    style = MaterialTheme.typography.titleMedium, color = AzulClinicoOscuro,
+                    fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp)
+                )
+                Text(
+                    "Escribe tu correo y te enviamos un enlace para crear una nueva.",
+                    style = MaterialTheme.typography.bodyMedium, color = TextoSecundario, textAlign = TextAlign.Center
+                )
+            }
+            CampoCorreo(correo) { correo = it }
+        }
         AvisoAccesoRuralitos(
             texto = "Abre el enlace desde este mismo teléfono para volver a Ruralitos y crear una contraseña nueva.",
-            color = ColorAccesoNaranja,
-            simbolo = "1"
+            color = AzulClinico,
+            simbolo = "i"
         )
-        CampoCorreo(correo) { correo = it }
         MensajeAcceso(mensaje)
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Enviando enlace…" else "Enviar enlace de recuperación",
-            onClick = { onEnviar(correo.trim()) },
-            enabled = !procesando && correoValido(correo),
-            color = ColorAccesoVerde
-        )
     }
 }
 
@@ -945,44 +345,42 @@ fun OrganizacionInicialScreen(
 
     FormularioBase(
         "Código del grupo",
-        "Vincula las fichas con tu institución"
+        "Vincula las fichas con tu institución",
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Comprobando…" else "Continuar con el código",
+                color = CianRuralitos,
+                enabled = !procesando && invitacion.length >= 8,
+                onClick = { onAceptarCodigo(invitacion.trim()) }
+            )
+        }
     ) {
         AvisoAccesoRuralitos(
             texto = "Ingresa el código entregado por la administración. Así las fichas podrán revisarse posteriormente desde la plataforma web.",
-            color = ColorAccesoAzul,
+            color = AzulClinico,
             simbolo = "i"
         )
-        OutlinedTextField(
-            value = invitacion,
-            onValueChange = { invitacion = it.uppercase().filter(Char::isLetterOrDigit).take(32) },
-            label = { Text("Código de invitación") },
-            supportingText = { Text("Mínimo 8 caracteres") },
-            singleLine = true,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
-        )
+        TarjetaFormularioRuralitos {
+            OutlinedTextField(
+                value = invitacion,
+                onValueChange = { invitacion = it.uppercase().filter(Char::isLetterOrDigit).take(32) },
+                label = { Text("Código de invitación") },
+                supportingText = { Text("Mínimo 8 caracteres") },
+                singleLine = true,
+                shape = FormaCampo,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         MensajeAcceso(mensaje)
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Comprobando…" else "Continuar con el código",
-            onClick = { onAceptarCodigo(invitacion.trim()) },
-            enabled = !procesando && invitacion.length >= 8,
-            color = ColorAccesoVerde
-        )
-        BotonAccesoSecundario(
-            texto = "Crear mi propia Sala",
-            onClick = onCrearSala,
-            enabled = !procesando
-        )
-        AvisoAccesoRuralitos(
-            texto = "Si todavía no tienes un código de asignación, elige tu centro de salud y crea tu propia Sala. Luego podrás agregar EAIS y barrios.",
-            color = ColorAccesoMorado,
-            simbolo = "+"
-        )
-        BotonAccesoSecundario(
-            texto = "Cerrar sesión",
-            onClick = onCerrarSesion,
-            enabled = !procesando
-        )
+        TarjetaFormularioRuralitos {
+            Text("¿Aún no tienes un código?", style = MaterialTheme.typography.titleMedium, color = AzulClinicoOscuro, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Elige tu centro de salud y crea tu propia Sala. Luego podrás agregar EAIS y barrios.",
+                style = MaterialTheme.typography.bodyMedium, color = TextoSecundario
+            )
+            BotonSecundarioRuralitos(texto = "Crear mi propia Sala", onClick = onCrearSala, enabled = !procesando)
+        }
+        BotonSecundarioRuralitos(texto = "Cerrar sesión", onClick = onCerrarSesion, enabled = !procesando)
     }
 }
 
@@ -998,30 +396,35 @@ fun ConfigurarPinScreen(
 
     FormularioBase(
         "Protege el acceso sin internet",
-        "Crea un PIN de 6 dígitos para este teléfono"
+        "Crea un PIN de 6 dígitos para este teléfono",
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Protegiendo acceso…" else "Guardar PIN seguro",
+                color = CianRuralitos,
+                enabled = !procesando,
+                modifier = Modifier.testTag("boton_guardar_pin"),
+                onClick = {
+                    error = when {
+                        pin.length != 6 -> "El PIN debe tener exactamente 6 dígitos."
+                        pin != confirmar -> "Los PIN no coinciden."
+                        pin.toSet().size == 1 -> "Elige un PIN menos predecible."
+                        else -> null
+                    }
+                    if (error == null) onGuardar(pin)
+                }
+            )
+        }
     ) {
         AvisoAccesoRuralitos(
             texto = "Este PIN permite abrir Ruralitos cuando no hay conexión. No sustituye la contraseña de tu cuenta.",
-            color = ColorAccesoMorado,
+            color = AzulClinico,
             simbolo = "#"
         )
-        CampoPin(pin, "PIN de 6 dígitos") { pin = it; error = null }
-        CampoPin(confirmar, "Confirmar PIN") { confirmar = it; error = null }
+        TarjetaFormularioRuralitos {
+            CampoPinCasillas(pin, "PIN de 6 dígitos", "pin_nuevo") { pin = it; error = null }
+            CampoPinCasillas(confirmar, "Confirmar PIN", "pin_confirmar") { confirmar = it; error = null }
+        }
         MensajeAcceso(error ?: mensaje)
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Protegiendo acceso…" else "Guardar PIN seguro",
-            onClick = {
-                error = when {
-                    pin.length != 6 -> "El PIN debe tener exactamente 6 dígitos."
-                    pin != confirmar -> "Los PIN no coinciden."
-                    pin.toSet().size == 1 -> "Elige un PIN menos predecible."
-                    else -> null
-                }
-                if (error == null) onGuardar(pin)
-            },
-            enabled = !procesando,
-            color = ColorAccesoVerde
-        )
     }
 }
 
@@ -1034,34 +437,41 @@ fun DesbloqueoOfflineScreen(
 ) {
     var cedula by remember { mutableStateOf("") }
     var pin by remember { mutableStateOf("") }
+    val completo = cedula.length >= 10 && pin.length == 6
 
     FormularioBase(
         "Entrar sin internet",
-        "Usa la cédula y el PIN guardados en este teléfono",
-        onVolver = onVolver
+        "Cédula y PIN guardados en este teléfono",
+        onVolver = onVolver,
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Comprobando…" else "Entrar sin conexión",
+                color = VerdeSalud,
+                enabled = !procesando && completo,
+                modifier = Modifier.testTag("boton_entrar_sin_conexion"),
+                onClick = { onEntrar(cedula, pin) }
+            )
+        }
     ) {
         AvisoAccesoRuralitos(
-            texto = "Podrás consultar y crear fichas locales. La sincronización se reanudará cuando vuelva la conexión.",
-            color = ColorAccesoMorado,
-            simbolo = "✓"
+            texto = "Sin conexión. Podrás consultar y crear fichas locales; se sincronizarán cuando vuelva internet.",
+            color = NaranjaClinico,
+            simbolo = "!"
         )
-        OutlinedTextField(
-            value = cedula,
-            onValueChange = { cedula = it.filter(Char::isDigit).take(13) },
-            label = { Text("Cédula") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true,
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth().padding(top = 14.dp)
-        )
-        CampoPin(pin, "PIN de 6 dígitos") { pin = it }
+        TarjetaFormularioRuralitos {
+            Text("Tu identificación", style = MaterialTheme.typography.titleMedium, color = AzulClinicoOscuro, fontWeight = FontWeight.SemiBold)
+            OutlinedTextField(
+                value = cedula,
+                onValueChange = { cedula = it.filter(Char::isDigit).take(13) },
+                label = { Text("Cédula") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                shape = FormaCampo,
+                modifier = Modifier.fillMaxWidth().testTag("campo_cedula")
+            )
+            CampoPinCasillas(pin, "PIN de 6 dígitos", "pin_acceso") { pin = it }
+        }
         MensajeAcceso(mensaje)
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Comprobando…" else "Entrar sin conexión",
-            onClick = { onEntrar(cedula, pin) },
-            enabled = !procesando && cedula.length >= 10 && pin.length == 6,
-            color = ColorAccesoVerde
-        )
     }
 }
 
@@ -1077,29 +487,33 @@ fun NuevaClaveSupabaseScreen(
 
     FormularioBase(
         "Crear nueva contraseña",
-        "Elige una clave segura para recuperar tu cuenta"
+        "Elige una clave segura para recuperar tu cuenta",
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Actualizando…" else "Guardar nueva contraseña",
+                color = CianRuralitos,
+                enabled = !procesando,
+                onClick = {
+                    error = when {
+                        clave.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
+                        clave != confirmar -> "Las contraseñas no coinciden."
+                        else -> null
+                    }
+                    if (error == null) onGuardar(clave)
+                }
+            )
+        }
     ) {
         AvisoAccesoRuralitos(
             texto = "La contraseña debe tener al menos 8 caracteres. Evita usar tu cédula o datos fáciles de adivinar.",
-            color = ColorAccesoMorado,
-            simbolo = "✓"
+            color = AzulClinico,
+            simbolo = "i"
         )
-        CampoClave(clave, "Nueva contraseña") { clave = it; error = null }
-        CampoClave(confirmar, "Confirmar nueva contraseña") { confirmar = it; error = null }
+        TarjetaFormularioRuralitos {
+            CampoClave(clave, "Nueva contraseña") { clave = it; error = null }
+            CampoClave(confirmar, "Confirmar nueva contraseña") { confirmar = it; error = null }
+        }
         MensajeAcceso(error ?: mensaje)
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Actualizando…" else "Guardar nueva contraseña",
-            onClick = {
-                error = when {
-                    clave.length < 8 -> "La contraseña debe tener al menos 8 caracteres."
-                    clave != confirmar -> "Las contraseñas no coinciden."
-                    else -> null
-                }
-                if (error == null) onGuardar(clave)
-            },
-            enabled = !procesando,
-            color = ColorAccesoVerde
-        )
     }
 }
 
@@ -1118,39 +532,45 @@ fun CambiarClaveCuentaScreen(
     FormularioBase(
         "Cambiar contraseña",
         "Confirma tu contraseña actual antes de crear una nueva",
-        onVolver = onVolver
-    ) {
-        TituloSeccionAcceso(
-            numero = "1",
-            titulo = "Verifica tu identidad",
-            descripcion = "Escribe la contraseña que usas actualmente",
-            color = ColorAccesoNaranja
-        )
-        CampoClave(actual, "Contraseña actual") { actual = it; error = null }
-        TituloSeccionAcceso(
-            numero = "2",
-            titulo = "Crea la contraseña nueva",
-            descripcion = "Debe tener al menos 8 caracteres",
-            color = ColorAccesoMorado
-        )
-        CampoClave(nueva, "Nueva contraseña") { nueva = it; error = null }
-        CampoClave(confirmar, "Confirmar nueva contraseña") { confirmar = it; error = null }
-        MensajeAcceso(error ?: mensaje)
-        BotonAccesoPrincipal(
-            texto = if (procesando) "Actualizando…" else "Cambiar contraseña",
-            onClick = {
-                error = when {
-                    actual.isBlank() -> "Ingresa la contraseña actual."
-                    nueva.length < 8 -> "La nueva contraseña debe tener al menos 8 caracteres."
-                    nueva != confirmar -> "Las contraseñas nuevas no coinciden."
-                    nueva == actual -> "La nueva contraseña debe ser diferente."
-                    else -> null
+        onVolver = onVolver,
+        accion = {
+            BotonPrincipalRuralitos(
+                texto = if (procesando) "Actualizando…" else "Cambiar contraseña",
+                color = CianRuralitos,
+                enabled = !procesando,
+                onClick = {
+                    error = when {
+                        actual.isBlank() -> "Ingresa la contraseña actual."
+                        nueva.length < 8 -> "La nueva contraseña debe tener al menos 8 caracteres."
+                        nueva != confirmar -> "Las contraseñas nuevas no coinciden."
+                        nueva == actual -> "La nueva contraseña debe ser diferente."
+                        else -> null
+                    }
+                    if (error == null) onGuardar(actual, nueva)
                 }
-                if (error == null) onGuardar(actual, nueva)
-            },
-            enabled = !procesando,
-            color = ColorAccesoVerde
-        )
+            )
+        }
+    ) {
+        SeccionFormularioRuralitos(
+            titulo = "1. Verifica tu identidad",
+            descripcion = "Escribe la contraseña que usas actualmente.",
+            desplegable = true,
+            abiertaInicial = true,
+            progreso = fraccion(actual.isNotBlank())
+        ) {
+            CampoClave(actual, "Contraseña actual") { actual = it; error = null }
+        }
+        SeccionFormularioRuralitos(
+            titulo = "2. Crea la contraseña nueva",
+            descripcion = "Debe tener al menos 8 caracteres.",
+            desplegable = true,
+            abiertaInicial = false,
+            progreso = fraccion(nueva.length >= 8, confirmar.isNotBlank() && confirmar == nueva)
+        ) {
+            CampoClave(nueva, "Nueva contraseña") { nueva = it; error = null }
+            CampoClave(confirmar, "Confirmar nueva contraseña") { confirmar = it; error = null }
+        }
+        MensajeAcceso(error ?: mensaje)
     }
 }
 
@@ -1267,95 +687,40 @@ fun GestionEquipoSupabaseScreen(
     }
 }
 
+
+// ---------------------------------------------------------------------------------------------------------------
+// Piezas comunes
+// ---------------------------------------------------------------------------------------------------------------
+
+private val FormaCampo = RoundedCornerShape(12.dp)
+
+private fun fraccion(vararg cumplidos: Boolean): Float =
+    if (cumplidos.isEmpty()) 0f else cumplidos.count { it }.toFloat() / cumplidos.size
+
 @Composable
 private fun FormularioBase(
     titulo: String,
     subtitulo: String,
-    estiloLogin: Boolean = true,
     onVolver: (() -> Unit)? = null,
+    accion: (@Composable ColumnScope.() -> Unit)? = null,
     contenido: @Composable ColumnScope.() -> Unit
 ) {
-    if (estiloLogin) {
-        FormularioConDisenoLogin(titulo, subtitulo, onVolver, contenido)
-    } else {
-        MarcoAccesoRuralitos(
-            titulo = titulo,
-            subtitulo = subtitulo,
-            contenido = contenido
-        )
-    }
+    PantallaRuralitos(
+        titulo = titulo,
+        descripcion = subtitulo,
+        onVolver = onVolver,
+        barraAccion = accion,
+        anchoMaximo = 560.dp,
+        contenido = contenido
+    )
 }
 
 @Composable
-private fun FormularioConDisenoLogin(
-    titulo: String,
-    subtitulo: String,
-    onVolver: (() -> Unit)?,
-    contenido: @Composable ColumnScope.() -> Unit
-) {
+private fun IconoAcceso(simbolo: String, color: Color) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .formularioSeguro()
-            .background(FondoClinico)
-    ) {
-        FondoAbstractoLogin(modifier = Modifier.fillMaxSize())
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 26.dp, bottom = 28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            CabeceraLoginRuralitos()
-            Surface(
-                modifier = Modifier
-                    .widthIn(max = 560.dp)
-                    .fillMaxWidth()
-                    .padding(top = 18.dp),
-                shape = RoundedCornerShape(34.dp),
-                color = Color.White.copy(alpha = 0.97f),
-                shadowElevation = 1.dp,
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    Color.White.copy(alpha = 0.90f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 26.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = titulo,
-                        color = AzulLoginNuevoOscuro,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center
-                    )
-                    Text(
-                        text = subtitulo,
-                        color = TextoLoginNuevoSecundario,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(top = 5.dp, bottom = 20.dp)
-                    )
-                    contenido()
-                }
-            }
-            Spacer(modifier = Modifier.height(20.dp))
-        }
-        onVolver?.let {
-            BotonVolverRuralitos(
-                it,
-                Modifier
-                    .align(Alignment.TopStart)
-                    .statusBarsPadding()
-                    .padding(start = 16.dp, top = 12.dp)
-            )
-        }
-    }
+        Modifier.size(46.dp).background(color.copy(alpha = 0.12f), RoundedCornerShape(14.dp)),
+        contentAlignment = Alignment.Center
+    ) { Text(simbolo, color = color, fontSize = 22.sp, fontWeight = FontWeight.SemiBold) }
 }
 
 @Composable
@@ -1367,8 +732,8 @@ private fun CampoCorreo(valor: String, onCambio: (String) -> Unit) {
         placeholder = { Text("nombre@correo.com") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
         singleLine = true,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+        shape = FormaCampo,
+        modifier = Modifier.fillMaxWidth().testTag("campo_correo")
     )
 }
 
@@ -1379,7 +744,7 @@ private fun CampoTexto(valor: String, etiqueta: String, onCambio: (String) -> Un
         onValueChange = onCambio,
         label = { Text(etiqueta) },
         singleLine = true,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        shape = FormaCampo,
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 }
@@ -1400,8 +765,7 @@ private fun CampoCodigoProfesional(valor: String, onCambio: (String) -> Unit) {
         supportingText = { Text("Formato automático: 0000.0000-0000000") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         singleLine = true,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-       
+        shape = FormaCampo,
         modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
     )
 }
@@ -1427,87 +791,96 @@ private fun CampoClave(valor: String, etiqueta: String, onCambio: (String) -> Un
         value = valor,
         onValueChange = { onCambio(it.take(128)) },
         label = { Text(etiqueta) },
-        visualTransformation = if (visible) {
-            androidx.compose.ui.text.input.VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             TextButton(onClick = { visible = !visible }) {
-                Text(if (visible) "Ocultar" else "Ver")
+                Text(if (visible) "Ocultar" else "Ver", color = CianRuralitos, fontWeight = FontWeight.SemiBold)
             }
         },
         singleLine = true,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
+        shape = FormaCampo,
+        colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = BordeCampo),
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp).testTag("campo_clave_${etiqueta.lowercase().replace(' ', '_')}")
     )
 }
 
+/**
+ * PIN de 6 dígitos en casillas separadas. Un campo de texto invisible recibe el teclado numérico; las casillas solo
+ * dibujan lo escrito (un punto por dígito) y resaltan la que sigue.
+ */
 @Composable
-private fun CampoPin(valor: String, etiqueta: String, onCambio: (String) -> Unit) {
-    var visible by remember { mutableStateOf(false) }
-    OutlinedTextField(
-        value = valor,
-        onValueChange = { onCambio(it.filter(Char::isDigit).take(6)) },
-        label = { Text(etiqueta) },
-        supportingText = { Text("${valor.length}/6 dígitos") },
-        leadingIcon = {
-            IconoCampoLogin(simbolo = "#", color = AzulLoginNuevo)
-        },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
-        visualTransformation = if (visible) {
-            androidx.compose.ui.text.input.VisualTransformation.None
-        } else {
-            PasswordVisualTransformation()
-        },
-        trailingIcon = {
-            TextButton(onClick = { visible = !visible }) {
-                Text(
-                    text = if (visible) "Ocultar" else "Ver",
-                    color = VerdeLoginNuevo,
-                    fontWeight = FontWeight.SemiBold
-                )
+private fun CampoPinCasillas(valor: String, titulo: String, etiquetaPrueba: String, onCambio: (String) -> Unit) {
+    val foco = remember { FocusRequester() }
+    val teclado = LocalSoftwareKeyboardController.current
+    Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+        Text(titulo, style = MaterialTheme.typography.titleSmall, color = AzulClinicoOscuro, fontWeight = FontWeight.SemiBold)
+        BasicTextField(
+            value = valor,
+            onValueChange = { onCambio(it.filter(Char::isDigit).take(6)) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            singleLine = true,
+            textStyle = TextStyle(color = Color.Transparent),
+            cursorBrush = SolidColor(Color.Transparent),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+                .focusRequester(foco)
+                .testTag(etiquetaPrueba)
+                .semantics { contentDescription = "$titulo: ${valor.length} de 6 dígitos" },
+            decorationBox = { campoInterno ->
+                Box {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) { foco.requestFocus(); teclado?.show() },
+                        horizontalArrangement = Arrangement.spacedBy(7.dp)
+                    ) {
+                        repeat(6) { indice ->
+                            val siguiente = indice == valor.length
+                            Box(
+                                Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                                    .background(Color.White, RoundedCornerShape(12.dp))
+                                    .border(
+                                        if (siguiente) 2.dp else 1.dp,
+                                        if (siguiente) CianRuralitos else BordeCampo,
+                                        RoundedCornerShape(12.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (indice < valor.length) {
+                                    Text("•", color = AzulClinicoOscuro, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                    }
+                    Box(Modifier.size(1.dp).alpha(0f)) { campoInterno() }
+                }
             }
-        },
-        singleLine = true,
-        shape = RoundedCornerShape(16.dp),
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = AzulLoginNuevo,
-            unfocusedBorderColor = BordeLoginNuevo,
-            focusedLabelColor = AzulLoginNuevo,
-            cursorColor = AzulLoginNuevo,
-            focusedContainerColor = Color.White,
-            unfocusedContainerColor = Color.White
-        ),
-        modifier = Modifier.fillMaxWidth().padding(top = 13.dp)
-    )
-}
-
-@Composable
-private fun BotonVolver(onVolver: () -> Unit, procesando: Boolean) {
-    BotonAccesoSecundario(
-        texto = "Regresar",
-        onClick = onVolver,
-        enabled = !procesando
-    )
+        )
+        Text(
+            "${valor.length}/6 dígitos",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextoSecundario,
+            modifier = Modifier.padding(top = 6.dp)
+        )
+    }
 }
 
 @Composable
 private fun MensajeAcceso(mensaje: String?) {
     mensaje?.let {
+        val exito = it.contains("enviado", ignoreCase = true) ||
+            it.contains("correct", ignoreCase = true) ||
+            it.contains("guard", ignoreCase = true)
         AvisoAccesoRuralitos(
             texto = it,
-            color = if (
-                it.contains("enviado", ignoreCase = true) ||
-                it.contains("correct", ignoreCase = true) ||
-                it.contains("guard", ignoreCase = true)
-            ) ColorAccesoVerde else MaterialTheme.colorScheme.error,
-            simbolo = if (
-                it.contains("enviado", ignoreCase = true) ||
-                it.contains("correct", ignoreCase = true) ||
-                it.contains("guard", ignoreCase = true)
-            ) "✓" else "!",
-            modifier = Modifier.padding(top = 12.dp)
+            color = if (exito) CianRuralitos else MaterialTheme.colorScheme.error,
+            simbolo = if (exito) "✓" else "!"
         )
     }
 }
