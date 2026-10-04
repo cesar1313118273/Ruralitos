@@ -32,9 +32,17 @@ fun codigoAgrupado(codigo: String): String = codigo.chunked(4).joinToString(" ")
 
 /** Texto listo para pegar en un chat con las instrucciones para usar el código. */
 fun mensajeDeCodigo(codigo: String): String =
-    "Código de acceso de Ruralitos: $codigo\n" +
-        "En la app entra a Mis Salas → Compartir acceso → Ingresar con un código y pégalo. " +
-        "Caduca en 7 días y solo se puede usar una vez."
+    // Solo letras, números y signos comunes: algunas aplicaciones de chat no muestran bien flechas ni símbolos especiales.
+    "*Ruralitos*\n" +
+        "Te compartieron acceso a fichas familiares.\n\n" +
+        "*Tu código de acceso* (mantén presionado para copiarlo):\n" +
+        "$codigo\n\n" +
+        "*Cómo usarlo*\n" +
+        "1. Abre Ruralitos e inicia sesión.\n" +
+        "2. Entra a Mis Salas, luego a Compartir acceso.\n" +
+        "3. Toca la sección Ingresar un código y pega el código.\n" +
+        "4. Toca Verificar y agregar acceso.\n\n" +
+        "El código caduca en 7 días y se usa una sola vez."
 
 /**
  * El código recién creado, grande y seleccionable, con un botón para copiarlo y otro para mandarlo por chat
