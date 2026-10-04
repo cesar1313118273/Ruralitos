@@ -1,5 +1,14 @@
 # Changelog de Supabase
 
+## 2026-10-06 — Etiquetas de fichas compartidas y «quitarme el acceso»
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261006100000_fichas_compartidas_etiquetas.sql`).
+- Tipo: cambio compatible; solo agrega funciones, no toca tablas ni datos.
+- `info_fichas_compartidas()`: para cada ficha visible, si me la compartieron (autor y permiso) o a cuántas personas se la compartí.
+- `listar_accesos_recibidos()` y `quitar_mi_acceso(organizacion, autor)`: quién me compartió fichas y cómo quitarme yo mismo ese acceso.
+- Antes también se aplicaron `20261005200000_compartir_lo_propio.sql` (cada quien comparte lo propio) y `20261005220000_quitar_acceso_heredado.sql`.
+
+
 ## 2026-10-05 — Compartir acceso con varios centros, EAIS, barrios o fichas
 
 - Estado: pendiente de aplicar (`migrations/20261005120000_acceso_por_alcances.sql`).

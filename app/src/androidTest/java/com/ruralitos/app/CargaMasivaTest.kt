@@ -79,14 +79,14 @@ class CargaMasivaTest {
         assertEquals(total, runBlocking { fichas.listarFichas().first().count { it.numeroFichaFamiliar.startsWith("QA-CARGA-") } })
 
         medir("búsqueda por nombre de un integrante", 10_000) {
-            val r = fichas.buscarFichasFiltradasPaginadas("PERSONA4321-2", "", "", "", "", "ACTIVAS", 20, 0).first()
+            val r = fichas.buscarFichasFiltradasPaginadas("PERSONA4321-2", "", "", "", "", "ACTIVAS", "TODAS", 20, 0).first()
             assertEquals(1, r.size)
         }
         medir("búsqueda por texto frecuente, primera página", 10_000) {
-            assertEquals(20, fichas.buscarFichasFiltradasPaginadas("COMUNIDAD 7", "", "", "", "", "ACTIVAS", 20, 0).first().size)
+            assertEquals(20, fichas.buscarFichasFiltradasPaginadas("COMUNIDAD 7", "", "", "", "", "ACTIVAS", "TODAS", 20, 0).first().size)
         }
         medir("conteo de resultados de la búsqueda", 10_000) {
-            assertTrue(fichas.contarFichasFiltradas("COMUNIDAD 3", "", "", "", "", "ACTIVAS").first() > 0)
+            assertTrue(fichas.contarFichasFiltradas("COMUNIDAD 3", "", "", "", "", "ACTIVAS", "TODAS").first() > 0)
         }
         medir("resumen para estadísticas", 8_000) { assertTrue(fichas.observarResumen().first().total >= total) }
         medir("fichas de una fecha", 8_000) { fichas.observarPorFecha("05/03/2026").first() }

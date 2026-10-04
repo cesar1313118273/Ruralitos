@@ -99,6 +99,19 @@ class SincronizadorSupabase(context: Context) {
         aplicador.aplicar(org, datos, completo = true, forzar = true)
     }
 
+    /**
+     * Después de quitarme el acceso a lo que alguien me compartió: borra de este teléfono las fichas de esa persona que
+     * el servidor ya no me deja ver (las que sigo viendo por otra vía se quedan). Nunca toca fichas con cambios sin subir.
+     */
+    suspend fun retirarFichasDeAutorSinAcceso(autorId: String): Int = bloqueoProceso.withLock {
+        val aunVisibles = api.infoFichasCompartidas().filter { it.recibida }.mapTo(mutableSetOf()) { it.fichaId }
+        val retirar = dao.fichasSincronizadasDeAutor(autorId).filter { it.syncId !in aunVisibles }
+        retirar.groupBy { it.organizacionId }.forEach { (org, fichas) ->
+            aplicador.eliminarFichas(org, fichas.mapTo(mutableSetOf()) { it.syncId })
+        }
+        retirar.size
+    }
+
     /** Decisión del usuario ante un conflicto: «conservar mis cambios» (se vuelven a subir encima). */
     suspend fun resolverConflictoConservandoLocal(fichaId: Long): Boolean = bloqueoProceso.withLock {
         val ficha = dao.fichaPorSyncId(dao.fichaSyncId(fichaId) ?: return@withLock false)
@@ -205,6 +218,7 @@ class SincronizadorSupabase(context: Context) {
                 }
                 .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
         }
+        if (!soloSubidas) runCatching { actualizarEtiquetasCompartidas(organizacionId) }
         val resultadoPrivado = privados.ejecutar(organizacionId, soloSubidas)
         return ResultadoSincronizacion(
             subidas + resultadoPrivado.subidas,
@@ -214,6 +228,21 @@ class SincronizadorSupabase(context: Context) {
             reintentables + resultadoPrivado.reintentables,
             conflictos
         )
+    }
+
+    /**
+     * Anota en cada ficha si me la compartieron (y quién) o a cuántas personas se la compartí. Si el servidor aún no
+     * tiene la función (migración 20261006100000) o no hay internet, las etiquetas quedan como estaban.
+     */
+    private suspend fun actualizarEtiquetasCompartidas(org: String) {
+        val filas = api.infoFichasCompartidas()
+        database.withTransaction {
+            dao.limpiarEtiquetasCompartidas(org)
+            filas.forEach { fila ->
+                if (fila.recibida) dao.marcarFichaRecibida(fila.fichaId, fila.autorId, fila.autorNombre, fila.permiso)
+                else if (fila.personas > 0) dao.marcarFichaCompartidaPorMi(fila.fichaId, fila.personas)
+            }
+        }
     }
 
     // ---- subida ----------------------------------------------------------------------------

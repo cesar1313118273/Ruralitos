@@ -56,6 +56,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ruralitos.app.R
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
+import com.ruralitos.app.domain.EtiquetasFicha
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.testTag
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.BotonVolverRuralitos
 import com.ruralitos.app.ui.components.formularioSeguro
 import com.ruralitos.app.ui.theme.AzulClinico
@@ -166,6 +171,25 @@ fun FichaSeccionesScreen(
         ) {
             if (ficha.syncEstado == "CONFLICTO") AvisoConflictoFicha(ficha)
 
+            EtiquetasFicha.texto(ficha)?.let { AvisoFichaCompartida(ficha, it) }
+
+            if (EtiquetasFicha.soloLectura(ficha)) {
+                ResumenSoloLectura(ficha)
+                BotonPrincipalRuralitos(
+                    texto = "Descargar PDF o Excel",
+                    onClick = { onAbrirSeccion("revision") },
+                    descripcion = "Se guardan en Descargas/Ruralitos; no cambia la ficha.",
+                    modifier = Modifier.testTag("solo_lectura_descargar")
+                )
+                BotonSecundarioRuralitos(
+                    texto = "Historial de cambios",
+                    onClick = { onAbrirSeccion("historial") },
+                    modifier = Modifier.testTag("solo_lectura_historial")
+                )
+                Spacer(Modifier.height(24.dp))
+                return@Column
+            }
+
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 color = Color.White.copy(alpha = 0.97f),
@@ -199,7 +223,8 @@ fun FichaSeccionesScreen(
             PanelAdministracionFicha(
                 ficha = ficha,
                 onCambiarArchivado = onCambiarArchivado,
-                onEliminar = { confirmarEliminacion = true }
+                onEliminar = { confirmarEliminacion = true },
+                puedeEliminar = EtiquetasFicha.puedeEliminar(ficha)
             )
 
             Spacer(Modifier.height(24.dp))
@@ -338,7 +363,8 @@ private fun GrupoFichaDesplegable(
 private fun PanelAdministracionFicha(
     ficha: FichaFamiliarEntity,
     onCambiarArchivado: () -> Unit,
-    onEliminar: () -> Unit
+    onEliminar: () -> Unit,
+    puedeEliminar: Boolean = true
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -407,14 +433,103 @@ private fun PanelAdministracionFicha(
                 onClick = onCambiarArchivado
             )
 
-            AccionBordeFicha(
-                texto = "Eliminar ficha y todos sus datos",
-                descripcion = "Acción permanente; se pedirá confirmación",
-                color = RojoClinico,
-                icono = "🗑",
-                onClick = onEliminar
+            if (puedeEliminar) {
+                AccionBordeFicha(
+                    texto = "Eliminar ficha y todos sus datos",
+                    descripcion = "Acción permanente; se pedirá confirmación",
+                    color = RojoClinico,
+                    icono = "🗑",
+                    onClick = onEliminar
+                )
+            }
+        }
+    }
+}
+
+/** Franja que dice de quién es la ficha y qué se puede hacer con ella. */
+@Composable
+private fun AvisoFichaCompartida(ficha: FichaFamiliarEntity, texto: String) {
+    val recibida = EtiquetasFicha.esRecibida(ficha)
+    val color = if (!recibida) CianRuralitos else if (EtiquetasFicha.soloLectura(ficha)) Color(0xFFB26A00) else Color(0xFF2E7D32)
+    Surface(
+        modifier = Modifier.fillMaxWidth().testTag("aviso_ficha_compartida"),
+        color = color.copy(alpha = 0.10f),
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, color.copy(alpha = 0.35f))
+    ) {
+        Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(texto, color = color, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
+            Text(
+                when {
+                    !recibida -> "Tú la creaste. Quienes la reciben ven su avance cuando sincronizas."
+                    EtiquetasFicha.soloLectura(ficha) ->
+                        "Solo puedes verla y descargar su PDF o Excel. No se puede modificar."
+                    else -> "Puedes editarla; tus cambios los ve su autor al sincronizar. Solo su autor puede eliminarla."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+/** Lo esencial de una ficha compartida solo para ver: datos del hogar, integrantes y nivel de riesgo. */
+@Composable
+private fun ResumenSoloLectura(ficha: FichaFamiliarEntity) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val contenido = remember(context) {
+        com.ruralitos.app.data.local.database.RuralitosDatabase.obtenerBaseDatos(context).fichaContenidoDao()
+    }
+    val miembros by contenido.listarMiembros(ficha.id).collectAsState(initial = emptyList())
+    val calificaciones by contenido.listarCalificaciones(ficha.id).collectAsState(initial = emptyList())
+    val riesgo = calificaciones.maxByOrNull { it.id }?.nivel?.replace('_', ' ')?.lowercase()
+        ?.replaceFirstChar { it.uppercase() }
+    Surface(
+        modifier = Modifier.fillMaxWidth().testTag("resumen_solo_lectura"),
+        color = Color.White,
+        shape = RoundedCornerShape(16.dp),
+        border = BorderStroke(1.dp, BordeClinico)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text("Datos de la ficha", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = AzulClinicoOscuro)
+            DatoSoloLectura("Jefe o jefa del hogar", ficha.nombreApellidoJefeFamilia)
+            DatoSoloLectura("Cédula", ficha.cedulaJefeHogar)
+            DatoSoloLectura("Teléfono", ficha.numeroTelefono)
+            DatoSoloLectura(
+                "Dirección",
+                listOf(ficha.barrio, ficha.sector, ficha.comunidad, ficha.numeroCasa.takeIf { it.isNotBlank() }?.let { "Casa $it" })
+                    .filterNot { it.isNullOrBlank() }.joinToString(" · ")
+            )
+            DatoSoloLectura("Fecha de llenado", ficha.fechaLlenado)
+            DatoSoloLectura("Responsable", ficha.responsableNombre)
+            DatoSoloLectura("Riesgo familiar", riesgo.orEmpty())
+            HorizontalDivider(color = BordeClinico)
+            Text(
+                "Integrantes (${miembros.size})",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = AzulClinicoOscuro
+            )
+            if (miembros.isEmpty()) {
+                Text("Todavía no tiene integrantes registrados.", style = MaterialTheme.typography.bodySmall, color = TextoSecundario)
+            }
+            miembros.forEach { m ->
+                Text(
+                    "• ${m.apellidosNombres.ifBlank { "Sin nombre" }}" +
+                        listOf(m.parentesco, m.grupoEdad).filter { it.isNotBlank() }.joinToString(" · ", prefix = " — ").takeIf { it != " — " }.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DatoSoloLectura(etiqueta: String, valor: String) {
+    if (valor.isBlank()) return
+    Column {
+        Text(etiqueta, style = MaterialTheme.typography.labelMedium, color = TextoSecundario)
+        Text(valor, style = MaterialTheme.typography.bodyLarge, color = AzulClinicoOscuro)
     }
 }
 

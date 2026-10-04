@@ -57,6 +57,27 @@ interface SincronizacionDao {
     """)
     suspend fun contarCambiosSinSubir(): Int
 
+    /** Antes de poner las etiquetas de compartidas que dice el servidor se borran las anteriores. */
+    @Query("""
+        UPDATE fichas_familiares SET miPermiso = '', autorNombre = '', compartidaConPersonas = 0
+        WHERE organizacionId = :organizacionId AND syncEstado = 'SINCRONIZADO'
+    """)
+    suspend fun limpiarEtiquetasCompartidas(organizacionId: String)
+
+    /** Ficha que otra persona me compartió: quién la creó y qué puedo hacer con ella. */
+    @Query("""
+        UPDATE fichas_familiares SET autorRemotoId = :autorId, autorNombre = :autorNombre, miPermiso = :permiso
+        WHERE syncId = :syncId
+    """)
+    suspend fun marcarFichaRecibida(syncId: String, autorId: String, autorNombre: String, permiso: String)
+
+    @Query("SELECT * FROM fichas_familiares WHERE autorRemotoId = :autorId AND syncEstado = 'SINCRONIZADO'")
+    suspend fun fichasSincronizadasDeAutor(autorId: String): List<FichaFamiliarEntity>
+
+    /** Ficha mía que ya compartí con :personas personas. */
+    @Query("UPDATE fichas_familiares SET compartidaConPersonas = :personas WHERE syncId = :syncId")
+    suspend fun marcarFichaCompartidaPorMi(syncId: String, personas: Int)
+
     @Query("SELECT COUNT(*) FROM fichas_familiares WHERE organizacionId = :organizacionId")
     suspend fun contarFichasDeOrganizacion(organizacionId: String): Int
 

@@ -36,7 +36,11 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.testTag
+import com.ruralitos.app.domain.EtiquetasFicha
 import com.ruralitos.app.domain.FechasBusqueda
+import com.ruralitos.app.domain.OrigenFicha
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -129,6 +133,8 @@ fun BuscarFichasScreen(
     var fechaFin by remember { mutableStateOf("") }
     var todasLasFechas by remember { mutableStateOf(false) }
     var estado by remember { mutableStateOf("ACTIVAS") }
+    // El origen (todas, mías, compartidas…) se aplica al tocarlo, sin pulsar Buscar.
+    var origen by remember { mutableStateOf(OrigenFicha.TODAS) }
     var filtrosAplicados by remember {
         mutableStateOf(
             FiltrosFichasAplicados(
@@ -174,7 +180,7 @@ fun BuscarFichasScreen(
     val (inicioEfectivo, finEfectivo) = FechasBusqueda.efectivas(
         filtrosAplicados.fechaInicio, filtrosAplicados.fechaFin, filtrosAplicados.todasLasFechas, fechaHoy
     )
-    val flujo = remember(filtrosAplicados, pagina, inicioEfectivo, finEfectivo) {
+    val flujo = remember(filtrosAplicados, pagina, inicioEfectivo, finEfectivo, origen) {
         dao.buscarFichasFiltradasPaginadas(
             texto = filtrosAplicados.texto,
             unidad = filtrosAplicados.unidad,
@@ -182,18 +188,20 @@ fun BuscarFichasScreen(
             fechaInicioClave = fechaAClaveOrdenable(inicioEfectivo),
             fechaFinClave = fechaAClaveOrdenable(finEfectivo),
             estado = filtrosAplicados.estado,
+            origen = origen.name,
             limite = FICHAS_POR_PAGINA,
             desplazamiento = (pagina - 1) * FICHAS_POR_PAGINA
         )
     }
-    val totalFlujo = remember(filtrosAplicados, inicioEfectivo, finEfectivo) {
+    val totalFlujo = remember(filtrosAplicados, inicioEfectivo, finEfectivo, origen) {
         dao.contarFichasFiltradas(
             texto = filtrosAplicados.texto,
             unidad = filtrosAplicados.unidad,
             sector = filtrosAplicados.sector,
             fechaInicioClave = fechaAClaveOrdenable(inicioEfectivo),
             fechaFinClave = fechaAClaveOrdenable(finEfectivo),
-            estado = filtrosAplicados.estado
+            estado = filtrosAplicados.estado,
+            origen = origen.name
         )
     }
     val fichas by flujo.collectAsState(initial = emptyList())
@@ -283,6 +291,36 @@ Column(
                     errorFiltros = errorFiltros,
                     onBuscar = { buscar() }
                 )
+            }
+
+            item(key = "origen") {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OrigenFicha.entries.forEach { opcion ->
+                        val activa = opcion == origen
+                        Surface(
+                            onClick = { origen = opcion; pagina = 1 },
+                            shape = RoundedCornerShape(50),
+                            color = if (activa) CianRuralitos else Color.White,
+                            border = BorderStroke(1.dp, if (activa) CianRuralitos else Color(0xFFCFDDE5)),
+                            modifier = Modifier.testTag("origen_${opcion.name}")
+                        ) {
+                            Text(
+                                opcion.etiqueta,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                                color = if (activa) Color.White else Color(0xFF0A2A5E),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.SemiBold,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
             }
 
             item(key = "alcance_fechas") {
@@ -1038,6 +1076,27 @@ private fun TarjetaFichaElegante(
                     color = Color(0xFF5B7083),
                     fontSize = 22.sp
                 )
+            }
+
+            EtiquetasFicha.texto(ficha)?.let { etiqueta ->
+                val recibida = EtiquetasFicha.esRecibida(ficha)
+                val colorEtiqueta = if (!recibida) CianRuralitos
+                    else if (EtiquetasFicha.soloLectura(ficha)) Color(0xFFB26A00) else Color(0xFF2E7D32)
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = colorEtiqueta.copy(alpha = 0.12f),
+                    modifier = Modifier.padding(top = 10.dp).testTag("etiqueta_compartida")
+                ) {
+                    Text(
+                        text = etiqueta,
+                        color = colorEtiqueta,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                    )
+                }
             }
         }
     }

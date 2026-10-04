@@ -538,7 +538,11 @@ internal class AplicadorDescarga(
             organizacionId = organizacionId,
             establecimientoRemotoId = if (remoto.isNull("establecimiento_id")) null else remoto.optLong("establecimiento_id"),
             eaisId = remoto.texto("eais_id"),
-            territorioId = remoto.texto("territorio_id")
+            territorioId = remoto.texto("territorio_id"),
+            autorRemotoId = remoto.texto("creado_por").ifBlank { existente?.autorRemotoId.orEmpty() },
+            autorNombre = existente?.autorNombre.orEmpty(),
+            miPermiso = existente?.miPermiso.orEmpty(),
+            compartidaConPersonas = existente?.compartidaConPersonas ?: 0
         )
     }
 }

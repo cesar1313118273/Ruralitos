@@ -83,6 +83,7 @@ import com.ruralitos.app.ui.theme.CianRuralitos
 import com.ruralitos.app.ui.theme.VerdeSuaveRuralitos
 import com.ruralitos.app.ui.theme.NaranjaSuaveRuralitos
 import com.ruralitos.app.ui.theme.BordeClinico
+import com.ruralitos.app.domain.EtiquetasFicha
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -128,12 +129,17 @@ fun RevisionFinalFichaScreen(
     )
     val pendientes = requisitos.filterNot { it.cumplido }
 
+    // Una ficha que me compartieron solo para ver: aquí solo se descargan los archivos, sin tocar la ficha.
+    val soloLectura = EtiquetasFicha.soloLectura(fichaActual)
+    val terminar: (String) -> Unit = { estado -> if (soloLectura) onRegresar() else onFinalizada(estado) }
+
     val finalizarFicha: () -> Unit = {
         procesando = true
         scope.launch {
-            val nuevoEstado = if (pendientes.isEmpty()) "COMPLETA" else "BORRADOR"
+            val nuevoEstado = if (soloLectura) fichaActual.estado
+                else if (pendientes.isEmpty()) "COMPLETA" else "BORRADOR"
             runCatching {
-                withContext(Dispatchers.IO) {
+                if (!soloLectura) withContext(Dispatchers.IO) {
                     database.fichaFamiliarDao().actualizarEstado(fichaId, nuevoEstado, usuarioId)
                     database.historialFichaDao().registrar(
                         HistorialFichaEntity(
@@ -163,6 +169,9 @@ fun RevisionFinalFichaScreen(
                 estadoGuardado = nuevoEstado
                 archivosGenerados = descarga.archivos
                 val mensaje = when {
+                    soloLectura && descarga.errores.isNotEmpty() ->
+                        "Hubo errores al descargar: " + descarga.errores.joinToString()
+                    soloLectura -> "Archivos descargados."
                     descarga.errores.isNotEmpty() ->
                         "La ficha se guardó, pero hubo errores: " + descarga.errores.joinToString()
                     nuevoEstado == "COMPLETA" -> "Ficha finalizada correctamente."
@@ -170,7 +179,7 @@ fun RevisionFinalFichaScreen(
                 }
                 com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(mensaje)
                 if (descarga.archivos.isNotEmpty()) mostrarCompartir = true
-                else onFinalizada(nuevoEstado)
+                else terminar(nuevoEstado)
             }.onFailure {
                 procesando = false
                 com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo finalizar la ficha: " + (it.message ?: "error desconocido"))
@@ -188,7 +197,7 @@ fun RevisionFinalFichaScreen(
             cerrarAlTocarFuera = false,
             onCerrar = {
                 mostrarCompartir = false
-                onFinalizada(estadoGuardado)
+                terminar(estadoGuardado)
             },
             contenido = {
                 Text(
@@ -210,14 +219,14 @@ fun RevisionFinalFichaScreen(
                             com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se encontró una aplicación para compartir.")
                         }
                         mostrarCompartir = false
-                        onFinalizada(estadoGuardado)
+                        terminar(estadoGuardado)
                     }
                 )
                 BotonSecundarioRuralitos(
                     texto = "Conservar en el celular",
                     onClick = {
                         mostrarCompartir = false
-                        onFinalizada(estadoGuardado)
+                        terminar(estadoGuardado)
                     }
                 )
             }
@@ -225,13 +234,17 @@ fun RevisionFinalFichaScreen(
     }
 
     PantallaRuralitos(
-        titulo = "Revisión y finalización",
-        descripcion = "Comprueba los datos, elige qué archivos deseas descargar y finaliza la ficha.",
-        subtitulo = "Último paso",
+        titulo = if (soloLectura) "Descargar la ficha" else "Revisión y finalización",
+        descripcion = if (soloLectura) "Elige qué archivos deseas descargar. La ficha no se modifica."
+            else "Comprueba los datos, elige qué archivos deseas descargar y finaliza la ficha.",
+        subtitulo = if (soloLectura) "Solo lectura" else "Último paso",
         onVolver = onRegresar,
         barraAccion = {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                val descripcionFinal = if (pendientes.isEmpty()) {
+                val textoBoton = if (soloLectura) "Descargar archivos" else "Finalizar ficha"
+                val descripcionFinal = if (soloLectura) {
+                    "Guardar en Descargas/Ruralitos"
+                } else if (pendientes.isEmpty()) {
                     "Guardar como completa y procesar la selección"
                 } else {
                     "Guardar como pendiente y procesar la selección"
@@ -239,14 +252,14 @@ fun RevisionFinalFichaScreen(
                 if (maxWidth >= 650.dp) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         BotonPrincipalRuralitos(
-                            "Finalizar ficha", finalizarFicha, Modifier.weight(1f),
+                            textoBoton, finalizarFicha, Modifier.weight(1f),
                             descripcionFinal, !procesando, CianRuralitos
                         )
                     }
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         BotonPrincipalRuralitos(
-                            "Finalizar ficha", finalizarFicha,
+                            textoBoton, finalizarFicha,
                             descripcion = descripcionFinal, enabled = !procesando, color = CianRuralitos
                         )
                     }
@@ -254,7 +267,7 @@ fun RevisionFinalFichaScreen(
             }
         }
     ) {
-        SeccionFormularioRuralitos(
+        if (!soloLectura) SeccionFormularioRuralitos(
             titulo = "Comprobación de información",
             descripcion = "Toca cualquier apartado para revisarlo o completar lo que falta antes de finalizar."
         ) {
@@ -291,7 +304,7 @@ fun RevisionFinalFichaScreen(
             }
         }
 
-        Surface(
+        if (!soloLectura) Surface(
             color = if (pendientes.isEmpty()) VerdeSuaveRuralitos else NaranjaSuaveRuralitos,
             shape = RoundedCornerShape(16.dp),
             border = BorderStroke(

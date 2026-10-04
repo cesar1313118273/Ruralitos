@@ -84,6 +84,34 @@ data class AccesoOtorgado(
         }
 }
 
+/** Una persona que me compartió fichas y lo que me compartió. */
+data class AccesoRecibido(
+    val organizacionId: String,
+    val autorId: String,
+    val nombre: String,
+    val cargo: String,
+    val correo: String,
+    val permiso: String,
+    val centros: Int,
+    val eais: Int,
+    val barrios: Int,
+    val fichas: Int
+) {
+    val resumen: String
+        get() = AccesoOtorgado(organizacionId, autorId, nombre, cargo, correo, permiso, centros, eais, barrios, fichas)
+            .resumen.replace("Todas tus fichas del centro", "Todas sus fichas del centro")
+}
+
+/** Lo que el servidor sabe de una ficha compartida: si me la dieron (autor, permiso) o a cuántas personas se la di. */
+data class InfoFichaCompartida(
+    val fichaId: String,
+    val recibida: Boolean,
+    val autorId: String,
+    val autorNombre: String,
+    val permiso: String,
+    val personas: Int
+)
+
 data class MembresiaRemota(
     val organizacionId: String,
     val rol: String,
@@ -711,6 +739,51 @@ class SupabaseApi(context: Context) {
             "quitar_acceso_compartido",
             JSONObject().put("p_organizacion_id", organizacionId).put("p_usuario_id", usuarioId)
         )
+    }
+
+    /** Personas que me compartieron fichas, con un resumen de lo que me dieron. */
+    suspend fun listarAccesosRecibidos(): List<AccesoRecibido> {
+        val filas = rpc("listar_accesos_recibidos", JSONObject()).jsonArreglo()
+        return (0 until filas.length()).map { i ->
+            val f = filas.getJSONObject(i)
+            AccesoRecibido(
+                organizacionId = f.getString("organizacion_id"),
+                autorId = f.getString("autor_id"),
+                nombre = f.optString("nombres").takeIf { it.isNotBlank() && it != "null" }
+                    ?: f.optString("correo").takeIf { it.isNotBlank() && it != "null" } ?: "Persona sin nombre",
+                cargo = f.optString("cargo").takeIf { it != "null" }.orEmpty(),
+                correo = f.optString("correo").takeIf { it != "null" }.orEmpty(),
+                permiso = f.optString("permiso"),
+                centros = f.optInt("n_sala"),
+                eais = f.optInt("n_eais"),
+                barrios = f.optInt("n_barrios"),
+                fichas = f.optInt("n_fichas")
+            )
+        }
+    }
+
+    /** Me quito a mí mismo el acceso a lo que esa persona me compartió. */
+    suspend fun quitarMiAcceso(organizacionId: String, autorId: String) {
+        rpc(
+            "quitar_mi_acceso",
+            JSONObject().put("p_organizacion_id", organizacionId).put("p_autor_id", autorId)
+        )
+    }
+
+    /** Etiquetas de las fichas compartidas (las que me dieron y las que yo di). */
+    suspend fun infoFichasCompartidas(): List<InfoFichaCompartida> {
+        val filas = rpc("info_fichas_compartidas", JSONObject()).jsonArreglo()
+        return (0 until filas.length()).map { i ->
+            val f = filas.getJSONObject(i)
+            InfoFichaCompartida(
+                fichaId = f.getString("ficha_id"),
+                recibida = f.optString("tipo") == "RECIBIDA",
+                autorId = f.optString("autor_id").takeIf { it != "null" }.orEmpty(),
+                autorNombre = f.optString("autor_nombre").takeIf { it != "null" }.orEmpty(),
+                permiso = f.optString("permiso").takeIf { it != "null" }.orEmpty(),
+                personas = f.optInt("personas")
+            )
+        }
     }
 
     suspend fun actualizarPerfil(perfil: PerfilRemoto) {

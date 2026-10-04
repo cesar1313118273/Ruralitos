@@ -100,5 +100,17 @@ data class FichaFamiliarEntity(
     @ColumnInfo(defaultValue = "''")
     val eaisId: String = "",
     @ColumnInfo(defaultValue = "''")
-    val territorioId: String = ""
+    val territorioId: String = "",
+
+    /** Quién creó la ficha en la nube (id de su cuenta) y cómo se llama; vacíos si la creó este teléfono y aún no bajó. */
+    @ColumnInfo(defaultValue = "''")
+    val autorRemotoId: String = "",
+    @ColumnInfo(defaultValue = "''")
+    val autorNombre: String = "",
+    /** Vacío si la ficha es propia; «LECTOR» o «EDITOR» si otra persona me la compartió. */
+    @ColumnInfo(defaultValue = "''")
+    val miPermiso: String = "",
+    /** A cuántas personas les compartí esta ficha (solo las propias). */
+    @ColumnInfo(defaultValue = "0")
+    val compartidaConPersonas: Int = 0
 )

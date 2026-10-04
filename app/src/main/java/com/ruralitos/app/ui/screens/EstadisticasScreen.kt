@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -71,8 +72,11 @@ fun EstadisticasScreen(
     var fecha by remember { mutableStateOf(hoy) }
     var texto by remember { mutableStateOf("") }
     var mostrarCalendario by remember { mutableStateOf(false) }
-    val resumen by dao.observarResumen().collectAsState(ResumenFichas(0, 0, 0, 0))
-    val flujoFecha = remember(fecha) { dao.observarPorFecha(fecha) }
+    // Por defecto las estadísticas cuentan solo mi trabajo; las fichas que otras personas me compartieron se suman si se pide.
+    var incluirCompartidas by remember { mutableStateOf(false) }
+    val resumen by remember(incluirCompartidas) { dao.observarResumen(incluirCompartidas) }
+        .collectAsState(ResumenFichas(0, 0, 0, 0))
+    val flujoFecha = remember(fecha, incluirCompartidas) { dao.observarPorFecha(fecha, incluirCompartidas) }
     val fichasFecha by flujoFecha.collectAsState(initial = emptyList())
     val fichasVisibles = remember(fichasFecha, texto) {
         val filtro = texto.trim()
@@ -95,6 +99,27 @@ fun EstadisticasScreen(
         onVolver = onRegresar
     ) {
 item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { incluirCompartidas = !incluirCompartidas }
+                    .padding(vertical = 4.dp)
+                    .testTag("estadisticas_incluir_compartidas"),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                com.ruralitos.app.ui.components.CasillaRuralitos(incluirCompartidas)
+                Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                    Text("Incluir fichas compartidas conmigo", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (incluirCompartidas) "Se cuentan también las fichas que otras personas te compartieron."
+                        else "Solo se cuentan las fichas que tú creaste.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+        item {
             TarjetasResumen(resumen)
 }
         item { GraficoEstadoFichas(resumen) }

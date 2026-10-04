@@ -294,6 +294,12 @@ interface FichaFamiliarDao {
             OR (:estado = 'ACTIVAS' AND estado != 'ARCHIVADA')
             OR estado = :estado
           )
+          AND (
+            :origen = 'TODAS'
+            OR (:origen = 'MIAS' AND miPermiso = '')
+            OR (:origen = 'RECIBIDAS' AND miPermiso != '')
+            OR (:origen = 'OTORGADAS' AND compartidaConPersonas > 0)
+          )
         ORDER BY actualizadoEn DESC
         LIMIT :limite OFFSET :desplazamiento
     """)
@@ -304,6 +310,7 @@ interface FichaFamiliarDao {
         fechaInicioClave: String,
         fechaFinClave: String,
         estado: String,
+        origen: String,
         limite: Int,
         desplazamiento: Int
     ): Flow<List<FichaFamiliarEntity>>
@@ -329,6 +336,12 @@ interface FichaFamiliarDao {
             OR (:estado = 'ACTIVAS' AND estado != 'ARCHIVADA')
             OR estado = :estado
           )
+          AND (
+            :origen = 'TODAS'
+            OR (:origen = 'MIAS' AND miPermiso = '')
+            OR (:origen = 'RECIBIDAS' AND miPermiso != '')
+            OR (:origen = 'OTORGADAS' AND compartidaConPersonas > 0)
+          )
     """)
     fun contarFichasFiltradas(
         texto: String,
@@ -336,11 +349,17 @@ interface FichaFamiliarDao {
         sector: String,
         fechaInicioClave: String,
         fechaFinClave: String,
-        estado: String
+        estado: String,
+        origen: String
     ): Flow<Int>
 
-    @Query("SELECT * FROM fichas_familiares WHERE fechaLlenado = :fecha ORDER BY actualizadoEn DESC")
-    fun observarPorFecha(fecha: String): Flow<List<FichaFamiliarEntity>>
+    /** Con :incluirCompartidas en falso solo salen las fichas propias (las que otra persona compartió no cuentan). */
+    @Query("""
+        SELECT * FROM fichas_familiares
+        WHERE fechaLlenado = :fecha AND (:incluirCompartidas = 1 OR miPermiso = '')
+        ORDER BY actualizadoEn DESC
+    """)
+    fun observarPorFecha(fecha: String, incluirCompartidas: Boolean = true): Flow<List<FichaFamiliarEntity>>
 
     @Query("""
         SELECT
@@ -349,8 +368,9 @@ interface FichaFamiliarDao {
             COALESCE(SUM(CASE WHEN estado = 'COMPLETA' THEN 1 ELSE 0 END), 0) AS completas,
             COALESCE(SUM(CASE WHEN estado = 'ARCHIVADA' THEN 1 ELSE 0 END), 0) AS archivadas
         FROM fichas_familiares
+        WHERE (:incluirCompartidas = 1 OR miPermiso = '')
     """)
-    fun observarResumen(): Flow<ResumenFichas>
+    fun observarResumen(incluirCompartidas: Boolean = true): Flow<ResumenFichas>
 
     /** Viviendas con ubicación válida, con lo necesario para pintarlas en el mapa general. */
     @Query("""

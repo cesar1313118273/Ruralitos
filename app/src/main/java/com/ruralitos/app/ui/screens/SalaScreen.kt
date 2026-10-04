@@ -44,6 +44,12 @@ import com.ruralitos.app.data.local.entity.EaisSalaEntity
 import com.ruralitos.app.data.local.entity.SalaEntity
 import com.ruralitos.app.data.local.entity.TerritorioSalaEntity
 import com.ruralitos.app.data.remote.SupabaseApi
+import com.ruralitos.app.data.remote.AccesoRecibido
+import com.ruralitos.app.data.sync.SincronizadorSupabase
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import com.ruralitos.app.ui.components.VentanaRuralitos
 import com.ruralitos.app.data.remote.AccesoOtorgado
 import com.ruralitos.app.data.sync.SincronizadorSalas
 import com.ruralitos.app.data.sync.ProgramadorSincronizacion
@@ -277,6 +283,101 @@ fun SalaScreen(
             .onFailure { errorOtorgados = it.message ?: "No se pudo cargar la lista." }
         cargandoOtorgados = false
     }
+    // Botón redondo de «Compartido con»: yo mismo me quito el acceso a lo que otras personas me compartieron.
+    var recibidosAbierto by remember { mutableStateOf(false) }
+    var recibidos by remember { mutableStateOf<List<AccesoRecibido>>(emptyList()) }
+    var cargandoRecibidos by remember { mutableStateOf(false) }
+    var errorRecibidos by remember { mutableStateOf<String?>(null) }
+    var recargaRecibidos by remember { mutableIntStateOf(0) }
+    var porQuitarme by remember { mutableStateOf<AccesoRecibido?>(null) }
+    LaunchedEffect(recibidosAbierto, recargaRecibidos) {
+        if (!recibidosAbierto) return@LaunchedEffect
+        if (!supabase.hayInternet()) {
+            errorRecibidos = "Necesitas internet para ver y quitarte accesos."
+            return@LaunchedEffect
+        }
+        cargandoRecibidos = true
+        errorRecibidos = null
+        runCatching { supabase.listarAccesosRecibidos() }
+            .onSuccess { recibidos = it }
+            .onFailure { errorRecibidos = it.message ?: "No se pudo cargar la lista." }
+        cargandoRecibidos = false
+    }
+    if (recibidosAbierto) {
+        VentanaRuralitos(
+            titulo = "Lo que me compartieron",
+            subtitulo = "Tú también puedes quitarte el acceso, sin pedirle permiso a quien te compartió.",
+            simbolo = "↩",
+            color = RojoClinico,
+            onCerrar = { recibidosAbierto = false },
+            contenido = {
+                when {
+                    cargandoRecibidos -> Text("Cargando…", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    errorRecibidos != null -> MensajeEstadoRuralitos(
+                        titulo = "No se pudo cargar la lista",
+                        descripcion = errorRecibidos.orEmpty(),
+                        color = NaranjaClinico,
+                        simbolo = "!"
+                    )
+                    recibidos.isEmpty() -> Text(
+                        "Nadie te ha compartido fichas.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.testTag("sin_accesos_recibidos")
+                    )
+                    else -> recibidos.forEach { persona ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text(persona.nombre, fontWeight = FontWeight.SemiBold)
+                                listOf(persona.cargo, persona.correo).filter { it.isNotBlank() }.joinToString(" · ")
+                                    .takeIf { it.isNotBlank() }?.let {
+                                        Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
+                                Text(
+                                    persona.resumen + " · " + if (persona.permiso == "LECTOR") "Solo lectura" else "Puede editar",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MoradoClinico,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                            TextButton(
+                                onClick = { porQuitarme = persona },
+                                enabled = !procesando,
+                                modifier = Modifier.testTag("quitarme_${persona.autorId}")
+                            ) { Text("Quitarme", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
+                        }
+                        HorizontalDivider()
+                    }
+                }
+            },
+            acciones = {
+                BotonSecundarioRuralitos(texto = "Cerrar", onClick = { recibidosAbierto = false })
+            }
+        )
+    }
+    porQuitarme?.let { persona ->
+        VentanaConfirmarRuralitos(
+            titulo = "Quitarme el acceso",
+            mensaje = "Dejarás de ver las fichas que ${persona.nombre} te compartió y se borrarán de este teléfono. " +
+                "Tus propias fichas no cambian. Si ${persona.nombre} te vuelve a compartir con un código nuevo, recuperarás el acceso.",
+            textoConfirmar = "Quitarme el acceso",
+            confirmarHabilitado = !procesando,
+            onConfirmar = {
+                porQuitarme = null
+                ejecutar("Te quitaste el acceso correctamente.") {
+                    supabase.quitarMiAcceso(persona.organizacionId, persona.autorId)
+                    SincronizadorSupabase(context).retirarFichasDeAutorSinAcceso(persona.autorId)
+                    recargaRecibidos++
+                }
+            },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { porQuitarme = null }
+        )
+    }
+
     porQuitar?.let { persona ->
         VentanaConfirmarRuralitos(
             titulo = "Quitar acceso",
@@ -873,7 +974,8 @@ fun SalaScreen(
                             } else {
                             SeccionFormularioRuralitos(
                                 titulo = "Personas con acceso a tus fichas",
-                                descripcion = "Ellas pueden ver (o editar) las fichas que tú compartiste. Tú decides cuándo quitarles el acceso."
+                                descripcion = "Ellas pueden ver (o editar) las fichas que tú compartiste. Tú decides cuándo quitarles el acceso. " +
+                                    "Con el botón rojo redondo de abajo puedes quitarte tú el acceso a lo que otras personas te compartieron."
                             ) {
                                 when {
                                     cargandoOtorgados -> Text("Cargando…", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -951,6 +1053,25 @@ fun SalaScreen(
                 }
             }
         }
+        }
+        // Botón redondo flotante: abre la lista de quienes me compartieron para quitarme el acceso.
+        if (seccion == SeccionSala.ACCESOS && subAcceso == 2) {
+            Surface(
+                onClick = { recibidosAbierto = true },
+                shape = CircleShape,
+                color = RojoClinico,
+                shadowElevation = 6.dp,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 20.dp, bottom = 24.dp)
+                    .size(58.dp)
+                    .testTag("fab_quitarme_acceso")
+                    .semantics { contentDescription = "Quitarme el acceso a lo que me compartieron" }
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text("↩", color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                }
+            }
         }
     }
 }
