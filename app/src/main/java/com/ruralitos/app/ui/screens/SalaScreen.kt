@@ -254,8 +254,8 @@ fun SalaScreen(
     var centrosAbierto by remember { mutableStateOf(true) }
     var eaisAbierto by remember { mutableStateOf(true) }
     var barriosAbierto by remember { mutableStateOf(false) }
-    var compartirAbierto by remember { mutableStateOf(true) }
-    var ingresarCodigoAbierto by remember { mutableStateOf(false) }
+    // Dentro de «Compartir acceso»: 0 = compartir (elegir, permiso y código), 1 = ingresar un código recibido.
+    var subAcceso by remember { mutableStateOf(0) }
 
     Box(
         modifier = Modifier
@@ -679,6 +679,12 @@ fun SalaScreen(
                         }
 
                         SeccionSala.ACCESOS -> {
+                            SubTabsAcceso(
+                                opciones = listOf("Compartir" to "subtab_compartir", "Ingresar un código" to "subtab_ingresar"),
+                                seleccionada = subAcceso,
+                                onSeleccionar = { subAcceso = it; mensaje = null }
+                            )
+                            if (subAcceso == 0) {
                             SelectorAlcanceRuralitos(
                                 estado = estadoAlcance,
                                 catalogo = catalogoCompartir,
@@ -781,16 +787,10 @@ fun SalaScreen(
                                 }
                             }
 
-                            PanelDesplegableSala(
+                            } else {
+                            SeccionFormularioRuralitos(
                                 titulo = "Ingresar con un código",
-                                descripcion = "Únete a una Sala o recibe acceso a un EAIS o barrio.",
-                                simbolo = "#",
-                                color = AzulClinico,
-                                abierto = ingresarCodigoAbierto,
-                                onCambiar = {
-                                    ingresarCodigoAbierto =
-                                        !ingresarCodigoAbierto
-                                }
+                                descripcion = "Únete a una Sala o recibe acceso a un centro, EAIS, barrio o ficha. Pega aquí el código que te enviaron."
                             ) {
                                 OutlinedTextField(
                                     value = codigoIngreso,
@@ -812,7 +812,7 @@ fun SalaScreen(
                                     },
                                     singleLine = true,
                                     shape = RoundedCornerShape(16.dp),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth().testTag("codigo_ingreso")
                                 )
 
                                 BotonPrincipalRuralitos(
@@ -832,8 +832,9 @@ fun SalaScreen(
                                     enabled = !procesando &&
                                         codigoIngreso.length >= 8,
                                     color = AzulClinico,
-                                    modifier = Modifier.padding(top = 8.dp)
+                                    modifier = Modifier.padding(top = 8.dp).testTag("verificar_codigo")
                                 )
+                            }
                             }
                         }
                     }
@@ -1031,6 +1032,49 @@ private fun PanelDesplegableSala(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     contenido()
+                }
+            }
+        }
+    }
+}
+
+/** Dos secciones dentro de «Compartir acceso»: [opciones] son (texto, etiqueta de prueba). */
+@Composable
+private fun SubTabsAcceso(
+    opciones: List<Pair<String, String>>,
+    seleccionada: Int,
+    onSeleccionar: (Int) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = Color.White,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, AzulClinico.copy(alpha = 0.18f))
+    ) {
+        Row(Modifier.fillMaxWidth().padding(4.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            opciones.forEachIndexed { indice, (texto, etiqueta) ->
+                val activa = indice == seleccionada
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 46.dp)
+                        .testTag(etiqueta)
+                        .clickable { onSeleccionar(indice) },
+                    color = if (activa) AzulClinico else Color.Transparent,
+                    shape = RoundedCornerShape(11.dp)
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        TextoAjustado(
+                            texto = texto,
+                            color = if (activa) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold,
+                            tamano = 14.sp,
+                            tamanoMinimo = 10.sp,
+                            maxLineas = 2,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                        )
+                    }
                 }
             }
         }
