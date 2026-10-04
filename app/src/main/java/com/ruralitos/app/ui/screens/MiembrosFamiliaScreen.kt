@@ -2,6 +2,7 @@ package com.ruralitos.app.ui.screens
 
 import androidx.compose.runtime.mutableStateListOf
 import com.ruralitos.app.ui.components.VentanaRuralitos
+import com.ruralitos.app.domain.EtiquetasFicha
 import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
@@ -147,6 +148,10 @@ fun MiembrosFamiliaScreen(
     val fichaActual by database.fichaFamiliarDao()
         .observarPorId(fichaId)
         .collectAsState(initial = null)
+    var fichasRepetidas by remember { mutableStateOf<List<com.ruralitos.app.data.local.entity.FichaFamiliarEntity>>(emptyList()) }
+    var creacionPendiente by remember {
+        mutableStateOf<Triple<MiembroFamiliaEntity, String, EmbarazadaEntity?>?>(null)
+    }
     var mostrandoFormulario by remember { mutableStateOf(false) }
     var miembroEditando by remember { mutableStateOf<MiembroFamiliaEntity?>(null) }
     var miembroEliminar by remember { mutableStateOf<MiembroFamiliaEntity?>(null) }
@@ -266,6 +271,34 @@ fun MiembrosFamiliaScreen(
         )
     }
 
+    if (fichasRepetidas.isNotEmpty()) {
+        VentanaConfirmarRuralitos(
+            titulo = "Ya existe una ficha con esta identificación",
+            mensaje = fichasRepetidas.take(3).joinToString("\n") { f ->
+                "• ${f.nombreApellidoJefeFamilia.ifBlank { "Familia sin nombre" }} · ficha ${f.numeroFichaFamiliar}" +
+                    (EtiquetasFicha.texto(f)?.let { " · $it" } ?: " · tuya")
+            } + "\n\nSi es la misma familia, ábrela desde «Buscar y modificar fichas» en lugar de crear otra.",
+            textoConfirmar = "Crear otra de todos modos",
+            onConfirmar = {
+                val pendiente = creacionPendiente
+                fichasRepetidas = emptyList()
+                creacionPendiente = null
+                if (pendiente != null && alCrearFicha != null) scope.launch {
+                    val creada = runCatching { alCrearFicha(pendiente.first, pendiente.second, pendiente.third) }.getOrDefault(false)
+                    if (creada) {
+                        mostrandoFormulario = false
+                        miembroEditando = null
+                    } else {
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar la ficha.")
+                    }
+                }
+            },
+            textoCancelar = "Cancelar",
+            peligro = false,
+            onCancelar = { fichasRepetidas = emptyList(); creacionPendiente = null }
+        )
+    }
+
     if (mostrandoFormulario) {
         FormularioMiembroScreen(
             fichaId = fichaId,
@@ -282,6 +315,16 @@ fun MiembrosFamiliaScreen(
                     com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Primero registra al jefe o jefa de familia. Hasta entonces no se guarda nada.")
                 } else {
                     scope.launch {
+                        // Antes de crear, se avisa si este teléfono ya tiene una ficha con la misma identificación
+                        // (propia o compartida por otra persona) para no duplicar a la familia.
+                        val repetidas = if (miembro.cedula.isBlank()) emptyList() else withContext(Dispatchers.IO) {
+                            database.fichaFamiliarDao().fichasConCedula(miembro.cedula.trim())
+                        }
+                        if (repetidas.isNotEmpty()) {
+                            fichasRepetidas = repetidas
+                            creacionPendiente = Triple(miembro, telefonoJefe, embarazo)
+                            return@launch
+                        }
                         val creada = runCatching { alCrearFicha(miembro, telefonoJefe, embarazo) }.getOrDefault(false)
                         if (creada) {
                             mostrandoFormulario = false

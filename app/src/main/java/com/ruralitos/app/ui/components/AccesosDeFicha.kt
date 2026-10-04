@@ -58,7 +58,9 @@ internal fun textoViaAcceso(via: String): String = when (via) {
 @Composable
 fun AccesosDeFichaRuralitos(
     ficha: FichaFamiliarEntity,
-    onCerrar: () -> Unit
+    onCerrar: () -> Unit,
+    /** Se llama cuando la ficha ya pasó a otra persona (la pantalla de la ficha debe cerrarse). */
+    onTraspasada: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val api = remember(context) { SupabaseApi(context) }
@@ -71,6 +73,7 @@ fun AccesosDeFichaRuralitos(
     var trabajando by remember { mutableStateOf(false) }
     var porQuitar by remember { mutableStateOf<PersonaConAccesoFicha?>(null) }
     var paraVisita by remember { mutableStateOf<PersonaConAccesoFicha?>(null) }
+    var porTraspasar by remember { mutableStateOf<PersonaConAccesoFicha?>(null) }
 
     LaunchedEffect(recarga) {
         if (!api.hayInternet()) {
@@ -112,6 +115,34 @@ fun AccesosDeFichaRuralitos(
             textoCancelar = "Cancelar",
             peligro = true,
             onCancelar = { porQuitar = null }
+        )
+    }
+
+    porTraspasar?.let { persona ->
+        VentanaConfirmarRuralitos(
+            titulo = "Traspasar la ficha",
+            mensaje = "La ficha de ${ficha.nombreApellidoJefeFamilia.ifBlank { "esta familia" }} pasará a ser de ${persona.nombre}: " +
+                "ella decidirá con quién se comparte y será la única que pueda eliminarla. " +
+                "Tú seguirás pudiendo editarla. Las demás personas que la veían por ti dejarán de verla.",
+            textoConfirmar = "Sí, traspasar",
+            confirmarHabilitado = !trabajando,
+            onConfirmar = {
+                porTraspasar = null
+                trabajando = true
+                scope.launch {
+                    runCatching { api.traspasarFicha(ficha.syncId, persona.usuarioId) }
+                        .onSuccess {
+                            com.ruralitos.app.data.sync.ProgramadorSincronizacion.ejecutarAhora(context)
+                            AvisosRuralitos.mostrar("Ficha traspasada a ${persona.nombre}.")
+                            onTraspasada()
+                        }
+                        .onFailure { aviso = it.message ?: "No se pudo traspasar la ficha." }
+                    trabajando = false
+                }
+            },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { porTraspasar = null }
         )
     }
 
@@ -169,6 +200,11 @@ fun AccesosDeFichaRuralitos(
                                     modifier = Modifier.testTag("quitar_ficha_${persona.usuarioId}")
                                 ) { Text("Quitar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
                             }
+                            TextButton(
+                                onClick = { porTraspasar = persona },
+                                enabled = !trabajando,
+                                modifier = Modifier.testTag("traspasar_${persona.usuarioId}")
+                            ) { Text("Traspasar", color = MoradoClinico, fontWeight = FontWeight.SemiBold) }
                         }
                         if (persona.via != "FICHA") {
                             Text(

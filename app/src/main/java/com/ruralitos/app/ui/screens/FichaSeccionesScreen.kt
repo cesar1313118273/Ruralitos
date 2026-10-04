@@ -98,7 +98,11 @@ fun FichaSeccionesScreen(
     var verAccesos by remember { mutableStateOf(false) }
     val context = androidx.compose.ui.platform.LocalContext.current
     if (verAccesos) {
-        com.ruralitos.app.ui.components.AccesosDeFichaRuralitos(ficha = ficha, onCerrar = { verAccesos = false })
+        com.ruralitos.app.ui.components.AccesosDeFichaRuralitos(
+            ficha = ficha,
+            onCerrar = { verAccesos = false },
+            onTraspasada = { verAccesos = false; onRegresar() }
+        )
     }
     val grupos = listOf(
         GrupoFicha(
@@ -501,7 +505,8 @@ private fun AvisoFichaCompartida(ficha: FichaFamiliarEntity, texto: String) {
             Text(texto, color = color, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.titleSmall)
             Text(
                 when {
-                    !recibida -> "Tú la creaste. Quienes la reciben ven su avance cuando sincronizas."
+                    !recibida -> "Tú la creaste. Quienes la reciben ven su avance cuando sincronizas." +
+                        (EtiquetasFicha.textoEdicionAjena(ficha)?.let { "\n$it." } ?: "")
                     EtiquetasFicha.soloLectura(ficha) ->
                         "Solo puedes verla y descargar su PDF o Excel. No se puede modificar."
                     else -> "Puedes editarla; tus cambios los ve su autor al sincronizar. Solo su autor puede eliminarla."

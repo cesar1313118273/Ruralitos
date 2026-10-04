@@ -50,6 +50,7 @@ import com.ruralitos.app.data.sync.ProgramadorSincronizacion
 import com.ruralitos.app.data.sync.SincronizadorSupabase
 import com.ruralitos.app.domain.AlcanceFichas
 import com.ruralitos.app.domain.CatalogoAlcance
+import com.ruralitos.app.domain.EtiquetasFicha
 import com.ruralitos.app.ui.components.AvisosRuralitos
 import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
 import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
@@ -107,6 +108,7 @@ fun SeguridadRespaldoScreen(
     var textoBorrado by remember { mutableStateOf("") }
     var errorBorrado by remember { mutableStateOf(false) }
     val estadoAlcance = rememberEstadoAlcance()
+    val miCuentaRemota = remember(context) { com.ruralitos.app.data.remote.SupabaseApi(context).sesionGuardada()?.usuarioId.orEmpty() }
 
     val database = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
     val fichasGuardadas by remember(database) { database.fichaFamiliarDao().listarFichas() }
@@ -118,7 +120,7 @@ fun SeguridadRespaldoScreen(
         .collectAsState(initial = emptyList())
 
     // Todos los usuarios por igual: cada uno exporta las fichas que él mismo creó.
-    val exportables = fichasGuardadas.filter { it.creadoPorUsuarioId == usuario.id }
+    val exportables = fichasGuardadas.filter { EtiquetasFicha.esMia(it, usuario.id, miCuentaRemota) }
     val catalogo = CatalogoAlcance(
         salas = salas,
         eais = todosLosEais,

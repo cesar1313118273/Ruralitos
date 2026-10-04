@@ -8,6 +8,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class EtiquetasFichaTest {
+    private fun fichaCon(
+        miPermiso: String = "", creadoPor: Long? = null, autorRemoto: String = "", editadaEn: Long = 0L, editor: String = ""
+    ) = ficha(miPermiso).copy(creadoPorUsuarioId = creadoPor, autorRemotoId = autorRemoto, editadaPorOtroEn = editadaEn, editorNombre = editor)
+
     private fun ficha(
         miPermiso: String = "",
         autor: String = "",
@@ -49,5 +53,26 @@ class EtiquetasFichaTest {
     fun fichaPropiaCompartidaDiceConCuantasPersonas() {
         assertEquals("Compartida por ti con 1 persona", EtiquetasFicha.texto(ficha(personas = 1)))
         assertEquals("Compartida por ti con 3 personas", EtiquetasFicha.texto(ficha(personas = 3)))
+    }
+
+    @Test
+    fun esMiaSiLaCreeAquiOConMiCuentaEnOtroTelefono() {
+        assertTrue(EtiquetasFicha.esMia(fichaCon(creadoPor = 5L), 5L, "cuenta"))
+        assertTrue(EtiquetasFicha.esMia(fichaCon(autorRemoto = "cuenta"), 5L, "cuenta"))
+        assertFalse(EtiquetasFicha.esMia(fichaCon(autorRemoto = "otra"), 5L, "cuenta"))
+        assertFalse(EtiquetasFicha.esMia(fichaCon(autorRemoto = "cuenta"), 5L, ""))
+    }
+
+    @Test
+    fun unaFichaTraspasadaOCompartidaYaNoEsMia() {
+        assertFalse(EtiquetasFicha.esMia(fichaCon(miPermiso = "EDITOR", creadoPor = 5L, autorRemoto = "cuenta"), 5L, "cuenta"))
+    }
+
+    @Test
+    fun avisaCuandoOtraPersonaEditoUnaFichaPropia() {
+        assertNull(EtiquetasFicha.textoEdicionAjena(fichaCon()))
+        assertNull(EtiquetasFicha.textoEdicionAjena(fichaCon(miPermiso = "LECTOR", editadaEn = 1L, editor = "Luis")))
+        val texto = EtiquetasFicha.textoEdicionAjena(fichaCon(editadaEn = 1_700_000_000_000L, editor = "Luis"))
+        assertTrue(texto!!.startsWith("Última modificación de otra persona: Luis, "))
     }
 }

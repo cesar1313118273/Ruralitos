@@ -58,6 +58,10 @@ interface FichaFamiliarDao {
     @Query("SELECT * FROM fichas_familiares WHERE cedulaJefeHogar = :cedula LIMIT 1")
     suspend fun buscarPorCedula(cedula: String): FichaFamiliarEntity?
 
+    /** Fichas de este teléfono (propias o compartidas) cuyo jefe o jefa tiene esa identificación. */
+    @Query("SELECT * FROM fichas_familiares WHERE :cedula != '' AND cedulaJefeHogar = :cedula AND estado != 'ARCHIVADA' ORDER BY actualizadoEn DESC")
+    suspend fun fichasConCedula(cedula: String): List<FichaFamiliarEntity>
+
     @Query("SELECT * FROM fichas_familiares WHERE id = :id LIMIT 1")
     suspend fun buscarPorId(id: Long): FichaFamiliarEntity?
 

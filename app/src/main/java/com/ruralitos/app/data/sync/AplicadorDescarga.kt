@@ -542,7 +542,9 @@ internal class AplicadorDescarga(
             autorRemotoId = remoto.texto("creado_por").ifBlank { existente?.autorRemotoId.orEmpty() },
             autorNombre = existente?.autorNombre.orEmpty(),
             miPermiso = existente?.miPermiso.orEmpty(),
-            compartidaConPersonas = existente?.compartidaConPersonas ?: 0
+            compartidaConPersonas = existente?.compartidaConPersonas ?: 0,
+            editorNombre = existente?.editorNombre.orEmpty(),
+            editadaPorOtroEn = existente?.editadaPorOtroEn ?: 0L
         )
     }
 }

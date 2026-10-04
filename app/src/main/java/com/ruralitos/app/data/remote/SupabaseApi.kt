@@ -109,7 +109,10 @@ data class InfoFichaCompartida(
     val autorId: String,
     val autorNombre: String,
     val permiso: String,
-    val personas: Int
+    val personas: Int,
+    /** En fichas mías: quién, distinta de mí, la modificó por última vez y cuándo (vacío / 0 si nadie). */
+    val editorNombre: String = "",
+    val editadaEn: Long = 0L
 )
 
 /** Una persona que ve una de mis fichas; `via` = FICHA, BARRIO, EAIS o CENTRO. */
@@ -798,7 +801,9 @@ class SupabaseApi(context: Context) {
                 autorId = f.optString("autor_id").takeIf { it != "null" }.orEmpty(),
                 autorNombre = f.optString("autor_nombre").takeIf { it != "null" }.orEmpty(),
                 permiso = f.optString("permiso").takeIf { it != "null" }.orEmpty(),
-                personas = f.optInt("personas")
+                personas = f.optInt("personas"),
+                editorNombre = f.optString("editor_nombre").takeIf { it != "null" }.orEmpty(),
+                editadaEn = f.optLong("editada_en")
             )
         }
     }
@@ -836,6 +841,11 @@ class SupabaseApi(context: Context) {
                 permiso = f.optString("permiso")
             )
         }
+    }
+
+    /** Traspasa la ficha a otra persona (con la que ya está compartida); quien la creó conserva acceso para editar. */
+    suspend fun traspasarFicha(fichaId: String, usuarioId: String) {
+        rpc("traspasar_ficha", JSONObject().put("p_ficha_id", fichaId).put("p_usuario_id", usuarioId))
     }
 
     /** Le asigna una visita a alguien con quien ya compartí la ficha; le aparece en su agenda al sincronizar. */

@@ -236,12 +236,24 @@ class SincronizadorSupabase(context: Context) {
      */
     private suspend fun actualizarEtiquetasCompartidas(org: String) {
         val filas = api.infoFichasCompartidas()
+        val previas = dao.fichasDeOrganizacion(org).associate { it.syncId to EtiquetaPrevia(it.miPermiso, it.editadaPorOtroEn) }
         database.withTransaction {
             dao.limpiarEtiquetasCompartidas(org)
             filas.forEach { fila ->
                 if (fila.recibida) dao.marcarFichaRecibida(fila.fichaId, fila.autorId, fila.autorNombre, fila.permiso)
-                else if (fila.personas > 0) dao.marcarFichaCompartidaPorMi(fila.fichaId, fila.personas)
+                else {
+                    if (fila.personas > 0) dao.marcarFichaCompartidaPorMi(fila.fichaId, fila.personas)
+                    if (fila.editadaEn > 0L) dao.marcarFichaEditadaPorOtro(fila.fichaId, fila.editorNombre, fila.editadaEn)
+                }
             }
+        }
+        // La primera vez solo se toma la foto de lo que ya había; los avisos son para lo que cambie después.
+        val preferencias = appContext.getSharedPreferences("avisos_compartidas_ruralitos", Context.MODE_PRIVATE)
+        val claveBase = "base_$org"
+        if (preferencias.getBoolean(claveBase, false)) {
+            runCatching { AvisosCompartidas.mostrar(appContext, AvisosCompartidas.detectar(previas, filas)) }
+        } else {
+            preferencias.edit().putBoolean(claveBase, true).apply()
         }
     }
 

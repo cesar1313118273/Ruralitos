@@ -14,6 +14,16 @@ object EtiquetasFicha {
     /** Otra persona me la compartió (la creó ella). */
     fun esRecibida(ficha: FichaFamiliarEntity): Boolean = ficha.miPermiso.isNotBlank()
 
+    /**
+     * La ficha es mía si no me la compartieron y la creé yo, en este teléfono o en otro con mi misma cuenta
+     * (en ese caso su autor en la nube es mi cuenta).
+     */
+    fun esMia(ficha: FichaFamiliarEntity, usuarioLocalId: Long, miCuentaRemota: String): Boolean =
+        !esRecibida(ficha) && (
+            ficha.creadoPorUsuarioId == usuarioLocalId ||
+                (miCuentaRemota.isNotBlank() && ficha.autorRemotoId == miCuentaRemota)
+            )
+
     /** Me la compartieron solo para ver: no se puede modificar, pero sí descargar PDF y Excel. */
     fun soloLectura(ficha: FichaFamiliarEntity): Boolean = ficha.miPermiso == "LECTOR"
 
@@ -21,6 +31,14 @@ object EtiquetasFicha {
     fun puedeEliminar(ficha: FichaFamiliarEntity): Boolean = !esRecibida(ficha)
 
     fun permisoTexto(ficha: FichaFamiliarEntity): String = if (soloLectura(ficha)) "Solo lectura" else "Puede editar"
+
+    /** «Última modificación de otra persona: Luis, 06/10/2026 14:30», solo en fichas propias que otra persona tocó. */
+    fun textoEdicionAjena(ficha: FichaFamiliarEntity): String? {
+        if (esRecibida(ficha) || ficha.editadaPorOtroEn <= 0L) return null
+        val cuando = java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.getDefault())
+            .format(java.util.Date(ficha.editadaPorOtroEn))
+        return "Última modificación de otra persona: ${ficha.editorNombre.ifBlank { "alguien de tu equipo" }}, $cuando"
+    }
 
     /** «Compartida por Ana · Solo lectura», «Compartida por ti con 2 personas» o nulo si no se compartió. */
     fun texto(ficha: FichaFamiliarEntity): String? = when {

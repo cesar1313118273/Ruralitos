@@ -112,5 +112,10 @@ data class FichaFamiliarEntity(
     val miPermiso: String = "",
     /** A cuántas personas les compartí esta ficha (solo las propias). */
     @ColumnInfo(defaultValue = "0")
-    val compartidaConPersonas: Int = 0
+    val compartidaConPersonas: Int = 0,
+    /** Última persona distinta del autor que modificó esta ficha (solo en fichas propias) y cuándo. */
+    @ColumnInfo(defaultValue = "''")
+    val editorNombre: String = "",
+    @ColumnInfo(defaultValue = "0")
+    val editadaPorOtroEn: Long = 0L
 )

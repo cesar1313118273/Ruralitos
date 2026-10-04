@@ -1,5 +1,13 @@
 # Changelog de Supabase
 
+## 2026-10-07 — Avisos de ediciones ajenas y traspaso de fichas
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261007100000_avisos_y_traspaso_de_fichas.sql`).
+- Tipo: cambio compatible. Reemplaza `info_fichas_compartidas()` (ahora devuelve también `editor_nombre` y `editada_en`; la app antigua sigue funcionando porque ignora columnas extra).
+- Trigger `fichas_marcar_actualizado_por`: `actualizado_por` ahora se llena en cada edición (antes solo al crear).
+- `traspasar_ficha(ficha, usuario)`: el autor pasa la ficha a alguien con acceso; el autor anterior conserva acceso de edición y los accesos dados ficha por ficha se anulan.
+
+
 ## 2026-10-06 — Detalle por ficha, quitar ficha por ficha y asignar visitas
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261006200000_visitas_y_acceso_por_ficha.sql`).

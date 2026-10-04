@@ -68,6 +68,7 @@ import com.ruralitos.app.ui.components.TextoAjustado
 import com.ruralitos.app.ui.components.rememberEstadoAlcance
 import com.ruralitos.app.domain.AlcanceFichas
 import com.ruralitos.app.domain.CatalogoAlcance
+import com.ruralitos.app.domain.EtiquetasFicha
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
@@ -159,6 +160,7 @@ fun SalaScreen(
         }
     }
 
+    val miCuentaRemota = remember(supabase) { supabase.sesionGuardada()?.usuarioId.orEmpty() }
     val sala = salas.firstOrNull { it.organizacionId == salaId }
     val eaisElegido = eais.firstOrNull { it.id == eaisId }
     val territorio = territorios.firstOrNull { it.id == territorioId }
@@ -174,7 +176,7 @@ fun SalaScreen(
         salas = salas,
         eais = todosLosEais,
         territorios = todosLosBarrios,
-        fichas = todasLasFichas.filter { it.creadoPorUsuarioId == usuarioId },
+        fichas = todasLasFichas.filter { EtiquetasFicha.esMia(it, usuarioId, miCuentaRemota) },
         salaActivaId = salaId
     )
 
