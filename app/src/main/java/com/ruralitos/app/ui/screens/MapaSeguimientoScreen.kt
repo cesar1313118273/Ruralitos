@@ -728,7 +728,6 @@ fun MapaSeguimientoVista(
                 if (avisoLlegada != null) {
                     AvisoLlegada(
                         avisoLlegada, esUltima = estado.paradaActual >= (estado.plan?.paradas?.lastIndex ?: 0),
-                        onAbrirFicha = { onAbrirFicha(avisoLlegada.vivienda.fichaId) },
                         onRegistrar = { abrirVisita(avisoLlegada) },
                         onSiguiente = {
                             estado.avisoLlegadaId = null
@@ -1243,7 +1242,6 @@ private fun TarjetaRecorrido(
 private fun AvisoLlegada(
     p: PuntoSeguimiento,
     esUltima: Boolean,
-    onAbrirFicha: () -> Unit,
     onRegistrar: () -> Unit,
     onSiguiente: () -> Unit,
     onCerrar: () -> Unit,
@@ -1265,10 +1263,7 @@ private fun AvisoLlegada(
                 }
                 Text("✕", color = GrisTexto, fontSize = 18.sp, modifier = Modifier.clickable(onClick = onCerrar).padding(4.dp))
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                BotonTarjeta("Abrir ficha", relleno = false, Modifier.weight(1f), onAbrirFicha)
-                BotonTarjeta("Registrar visita", relleno = true, Modifier.weight(1f).testTag("registrar_llegada"), onRegistrar)
-            }
+            BotonTarjeta("Registrar visita", relleno = true, Modifier.fillMaxWidth().testTag("registrar_llegada"), onRegistrar)
             if (!esUltima) BotonTarjeta("Siguiente parada", relleno = false, Modifier.fillMaxWidth().testTag("siguiente_parada"), onSiguiente)
         }
     }
