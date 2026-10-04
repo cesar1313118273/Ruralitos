@@ -123,7 +123,7 @@ class EmpezarDeCeroTest {
         rule.waitUntil(15_000) { rule.onAllNodes(hasTestTag("abrir_eliminar")).fetchSemanticsNodes().isNotEmpty() }
         rule.onNodeWithTag("abrir_eliminar").performClick()
         rule.waitUntil(5_000) { rule.onAllNodes(hasTestTag("eliminar_todas_fichas")).fetchSemanticsNodes().isNotEmpty() }
-        rule.onAllNodes(hasText("5 fichas guardadas", substring = true)).fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
+        rule.onAllNodes(hasText("5 fichas tuyas", substring = true)).fetchSemanticsNodes().let { assertTrue(it.isNotEmpty()) }
 
         // sin la palabra no se borra nada
         rule.onNodeWithTag("eliminar_todas_fichas").performScrollTo().performClick()

@@ -271,7 +271,7 @@ fun SeguridadRespaldoScreen(
         descripcion = when (modo) {
             MODO_EXPORTAR -> "Crea un archivo cifrado con las fichas que elijas."
             MODO_IMPORTAR -> "Las fichas pasan a tu cuenta y a tu Sala activa."
-            MODO_ELIMINAR -> "Empieza desde cero. Tu cuenta se conserva."
+            MODO_ELIMINAR -> "Borra solo tus fichas. Las compartidas contigo y tu cuenta se conservan."
             else -> "Exporta, importa o elimina tus fichas con archivos cifrados bajo tu control."
         },
         subtitulo = "Protección de datos",
@@ -311,7 +311,7 @@ fun SeguridadRespaldoScreen(
                     simbolo = "!", color = RojoClinico,
                     titulo = "Eliminar fichas",
                     descripcion = "Empezar desde cero",
-                    estado = if (fichasGuardadas.size == 1) "1 ficha guardada" else "${fichasGuardadas.size} fichas guardadas",
+                    estado = fichasGuardadas.count { !EtiquetasFicha.esRecibida(it) }.let { if (it == 1) "1 ficha tuya" else "$it fichas tuyas" },
                     etiquetaPrueba = "abrir_eliminar"
                 ) { modo = MODO_ELIMINAR; mensaje = null; textoBorrado = ""; errorBorrado = false }
             }
@@ -437,12 +437,14 @@ fun SeguridadRespaldoScreen(
             }
 
             MODO_ELIMINAR -> {
-                val cantidad = fichasGuardadas.size
+                val cantidad = fichasGuardadas.count { !EtiquetasFicha.esRecibida(it) }
+                val recibidas = fichasGuardadas.size - cantidad
                 MensajeEstadoRuralitos(
-                    titulo = if (cantidad == 1) "1 ficha guardada" else "$cantidad fichas guardadas",
-                    descripcion = "Se borran con todo su contenido (integrantes, salud, riesgos, croquis, fotos y firmas), " +
+                    titulo = if (cantidad == 1) "1 ficha tuya" else "$cantidad fichas tuyas",
+                    descripcion = "Se borran solo las fichas que tú creaste, con todo su contenido (integrantes, salud, riesgos, croquis, fotos y firmas), " +
                         "además de sus visitas en la agenda y tus notas sobre sus integrantes. Se borran de este teléfono " +
                         "y de la nube, y tus compañeros dejarán de verlas. Tu cuenta, tu Sala y los barrios se conservan. " +
+                        (if (recibidas > 0) "Las $recibidas ficha(s) que otras personas te compartieron no se tocan. " else "") +
                         "No se puede deshacer.",
                     color = RojoClinico,
                     simbolo = "!"

@@ -26,10 +26,13 @@ object EliminadorFichas {
         }
     }
 
-    /** Elimina todas las fichas del teléfono, con su historial. Devuelve cuántas eran. */
+    /**
+     * Elimina las fichas que creó esta persona, con su historial. Las que otras personas le compartieron no se tocan:
+     * ni en el teléfono ni en la nube. Devuelve cuántas eran.
+     */
     suspend fun eliminarTodas(context: Context, database: RuralitosDatabase, usuarioId: Long): Int =
         withContext(Dispatchers.IO) {
-            val fichas = database.fichaFamiliarDao().todas()
+            val fichas = database.fichaFamiliarDao().todas().filterNot { com.ruralitos.app.domain.EtiquetasFicha.esRecibida(it) }
             val eliminadas = fichas.map { eliminarRegistros(database, it, usuarioId, borrarHistorial = true) }
             limpiar(context, eliminadas)
             fichas.size
