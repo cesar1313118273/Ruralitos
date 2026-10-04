@@ -102,6 +102,20 @@ object MapaSeguimiento {
         }
     }
 
+    /**
+     * Una vivienda a la que solo se quiere llegar (botón «Cómo llegar» de la ficha), sin visita agendada: aparece en el
+     * mapa como cualquier otra y se puede trazar la ruta hasta ella. No tiene visitas (`visitas` vacía).
+     */
+    fun puntoDeDestino(v: ViviendaMapaFila, ahora: Long) = PuntoSeguimiento(
+        vivienda = v,
+        visitas = emptyList(),
+        estado = EstadoVisita.PROGRAMADA,
+        principal = ActividadAgendaEntity(
+            usuarioId = 0L, fichaId = v.fichaId, persona = v.jefe, fechaHora = ahora, tipo = "Destino",
+            estado = "PENDIENTE", origen = "MANUAL", fechaEditada = true
+        )
+    )
+
     /** Las fichas que tienen alguna visita así, tengan o no la vivienda ubicada. */
     fun fichasConVisita(
         actividades: List<ActividadAgendaEntity>,

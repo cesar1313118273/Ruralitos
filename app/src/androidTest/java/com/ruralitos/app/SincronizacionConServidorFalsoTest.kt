@@ -217,59 +217,51 @@ class SincronizacionConServidorFalsoTest {
     }
 
     @Test
-    fun siOtraPersonaCambioLaFichaMientrasSeEditabaSeMarcaConflictoSinPisarNada() = runBlocking {
+    fun siOtraPersonaCambioLaFichaMientrasSeEditabaGanaLoMasRecienteYSeUnenLosRegistrosNuevos() = runBlocking {
         val (syncId, id) = crearFichaConIntegrante()
         sincronizar()
-        // yo edito un integrante (queda pendiente) ...
+        // yo agrego un integrante (queda pendiente) ...
         database.fichaContenidoDao().guardarMiembro(miembro(id, "MI EDICION"))
-        // ... y mientras tanto otra persona cambia la cabecera en el servidor
+        Thread.sleep(20)
+        // ... y después otra persona cambia la cabecera en el servidor (su cambio es más reciente)
         servidor.modificar("fichas_familiares", syncId) { put("nombre_apellido_jefe_familia", "CAMBIO DEL EQUIPO") }
 
         val resultado = sincronizar()
 
-        assertEquals(1, resultado.conflictos)
-        assertEquals("CONFLICTO", dao.fichaPorSyncId(syncId)!!.syncEstado)
+        assertEquals("no se pregunta nada: se resuelve solo", 0, resultado.errores)
+        assertEquals("SINCRONIZADO", dao.fichaPorSyncId(syncId)!!.syncEstado)
+        assertEquals("gana el cambio más reciente", "CAMBIO DEL EQUIPO", dao.fichaPorSyncId(syncId)!!.nombreApellidoJefeFamilia)
         assertEquals("CAMBIO DEL EQUIPO", servidor.fila("fichas_familiares", syncId)!!.getString("nombre_apellido_jefe_familia"))
-        assertFalse("mi integrante nuevo no debe haberse subido",
-            servidor.filas("miembros_familia").any { it.getString("apellidos_nombres") == "MI EDICION" })
-        assertEquals("el conflicto no se vuelve a intentar solo", 0, sincronizar().conflictos)
+        assertTrue("mi integrante nuevo se suma", servidor.filas("miembros_familia").any { it.getString("apellidos_nombres") == "MI EDICION" })
         assertEquals(2, dao.miembros(id).size)
     }
 
     @Test
-    fun alConservarLaMiaSeSubenMisCambiosEncimaDelServidor() = runBlocking {
+    fun siMiCambioEsElMasRecienteSeSubeEncimaDelServidor() = runBlocking {
         val (syncId, id) = crearFichaConIntegrante()
         sincronizar()
-        database.fichaContenidoDao().guardarMiembro(miembro(id, "MI EDICION"))
         servidor.modificar("fichas_familiares", syncId) { put("nombre_apellido_jefe_familia", "CAMBIO DEL EQUIPO") }
-        sincronizar()
-        assertEquals("CONFLICTO", dao.fichaPorSyncId(syncId)!!.syncEstado)
+        Thread.sleep(20)
+        database.fichaContenidoDao().guardarMiembro(miembro(id, "MI EDICION"))
 
-        assertTrue(runBlocking { SincronizadorSupabase(context).resolverConflictoConservandoLocal(id) })
         val resultado = sincronizar()
 
         assertEquals(0, resultado.errores)
-        assertEquals(0, resultado.conflictos)
         assertEquals("SINCRONIZADO", dao.fichaPorSyncId(syncId)!!.syncEstado)
         assertTrue(servidor.filas("miembros_familia").any { it.getString("apellidos_nombres") == "MI EDICION" })
         assertEquals("LOCAL", servidor.fila("fichas_familiares", syncId)!!.getString("nombre_apellido_jefe_familia"))
     }
 
     @Test
-    fun alUsarLaDelEquipoSeDescartanMisCambios() = runBlocking {
+    fun unaFichaEliminadaPorSuAutorSeQuitaTambienDelTelefonoAunqueTengaCambios() = runBlocking {
         val (syncId, id) = crearFichaConIntegrante()
         sincronizar()
         database.fichaContenidoDao().guardarMiembro(miembro(id, "MI EDICION"))
-        servidor.modificar("fichas_familiares", syncId) { put("nombre_apellido_jefe_familia", "CAMBIO DEL EQUIPO") }
+        servidor.modificar("fichas_familiares", syncId) { put("deleted_at", "2026-01-01T00:00:00Z") }
+
         sincronizar()
 
-        assertTrue(runBlocking { SincronizadorSupabase(context).resolverConflictoUsandoServidor(id) })
-
-        val local = dao.fichaPorSyncId(syncId)!!
-        assertEquals("SINCRONIZADO", local.syncEstado)
-        assertEquals("CAMBIO DEL EQUIPO", local.nombreApellidoJefeFamilia)
-        assertEquals(listOf("INTEGRANTE UNO"), dao.miembros(id).map { it.apellidosNombres })
-        assertEquals(0, sincronizar().conflictos)
+        assertEquals(null, dao.fichaPorSyncId(syncId))
     }
 
     @Test

@@ -1474,6 +1474,13 @@ fun RuralitosApp() {
                     if (ficha != null) {
                         FichaSeccionesScreen(
                             ficha = ficha,
+                            onComoLlegar = {
+                                // El mapa de la Agenda traza la ruta hasta la vivienda, sin salir de Ruralitos.
+                                estadoMapaSeguimiento.irAVivienda(ficha.id)
+                                pestanaAgenda = 2
+                                fichaAbiertaDesdeAgenda = false
+                                pantallaActual = "agenda"
+                            },
                             onAbrirSeccion = { seccion ->
                                 pantallaActual = when (seccion) {
                                     "datos" -> "miembros"

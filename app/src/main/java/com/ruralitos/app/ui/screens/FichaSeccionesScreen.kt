@@ -92,6 +92,7 @@ fun FichaSeccionesScreen(
     onAbrirSeccion: (String) -> Unit,
     onCambiarArchivado: () -> Unit,
     onEliminar: () -> Unit,
+    onComoLlegar: () -> Unit,
     onRegresar: () -> Unit
 ) {
     var confirmarEliminacion by remember { mutableStateOf(false) }
@@ -184,24 +185,8 @@ fun FichaSeccionesScreen(
             if (RutaAVivienda.tieneUbicacion(ficha.latitud, ficha.longitud)) {
                 BotonSecundarioRuralitos(
                     texto = "Cómo llegar a la vivienda",
-                    descripcion = "Abre tu aplicación de mapas con la ruta hasta la casa.",
-                    onClick = {
-                        val lat = ficha.latitud ?: return@BotonSecundarioRuralitos
-                        val lng = ficha.longitud ?: return@BotonSecundarioRuralitos
-                        val abrir = { enlace: String ->
-                            runCatching {
-                                context.startActivity(
-                                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(enlace))
-                                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                                )
-                            }.isSuccess
-                        }
-                        if (!abrir(RutaAVivienda.enlaceNavegacion(lat, lng)) &&
-                            !abrir(RutaAVivienda.enlaceMapa(lat, lng, ficha.nombreApellidoJefeFamilia))
-                        ) {
-                            com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se encontró una aplicación de mapas.")
-                        }
-                    },
+                    descripcion = "Abre el mapa de Ruralitos con la ruta hasta la casa, desde donde estás.",
+                    onClick = onComoLlegar,
                     modifier = Modifier.testTag("como_llegar")
                 )
             }

@@ -164,6 +164,10 @@ class EstadoMapaSeguimiento {
     var fechasElegidas by mutableStateOf(false)
     var modoViaje by mutableStateOf("pedestrian")
     var seleccionadaId by mutableStateOf<Long?>(null)
+    /** Vivienda a la que se quiere llegar desde el botón «Cómo llegar» de la ficha (aunque no tenga visita). */
+    var destinoId by mutableStateOf<Long?>(null)
+    /** Pendiente: al abrir el mapa, trazar la ruta hasta [destinoId] desde la ubicación actual. */
+    var iniciarRutaAlDestino by mutableStateOf(false)
     var modoRecorrido by mutableStateOf(false)
     val paradasIds = mutableStateListOf<Long>()
     var plan by mutableStateOf<PlanRecorrido?>(null)
@@ -171,6 +175,13 @@ class EstadoMapaSeguimiento {
     /** Viviendas del recorrido a las que ya se llegó, para avisar una sola vez por cada una. */
     val llegadas = mutableStateListOf<Long>()
     var avisoLlegadaId by mutableStateOf<Long?>(null)
+
+    fun irAVivienda(fichaId: Long) {
+        reiniciarRecorrido()
+        destinoId = fichaId
+        seleccionadaId = fichaId
+        iniciarRutaAlDestino = true
+    }
 
     fun reiniciarRecorrido() {
         modoRecorrido = false
@@ -236,8 +247,14 @@ fun MapaSeguimientoVista(
         }
     }
     val hastaFinDeDia = MapaSeguimiento.finDia(estado.hasta)
-    val puntos = remember(viviendas, actividades, estado.estados, estado.desde, estado.hasta, ahora) {
+    val puntosConVisita = remember(viviendas, actividades, estado.estados, estado.desde, estado.hasta, ahora) {
         MapaSeguimiento.puntos(viviendas, actividades, estado.estados, estado.desde, hastaFinDeDia, ahora)
+    }
+    // La vivienda de «Cómo llegar» se muestra aunque no tenga visita agendada.
+    val puntos = remember(puntosConVisita, viviendas, estado.destinoId, ahora) {
+        val destino = viviendas.firstOrNull { it.fichaId == estado.destinoId }
+        if (destino == null || puntosConVisita.any { it.vivienda.fichaId == destino.fichaId }) puntosConVisita
+        else puntosConVisita + MapaSeguimiento.puntoDeDestino(destino, ahora)
     }
     val conteos = remember(viviendas, actividades, estado.desde, estado.hasta, ahora) {
         MapaSeguimiento.conteos(viviendas, actividades, estado.desde, hastaFinDeDia, ahora)
@@ -555,6 +572,25 @@ fun MapaSeguimientoVista(
         }
     }
 
+    // «Cómo llegar» desde la ficha: con la vivienda ya en el mapa se arma el recorrido de una sola parada, que dibuja la
+    // ruta por camino desde donde estás y avisa al llegar. Si falta el permiso de ubicación se pide.
+    LaunchedEffect(estado.iniciarRutaAlDestino, estado.destinoId, puntos, permiso, posicion) {
+        if (!estado.iniciarRutaAlDestino) return@LaunchedEffect
+        val destino = estado.destinoId ?: run { estado.iniciarRutaAlDestino = false; return@LaunchedEffect }
+        if (puntos.none { it.vivienda.fichaId == destino }) return@LaunchedEffect
+        if (!permiso) {
+            avisoRecorrido = "Permite la ubicación para trazar la ruta hasta la vivienda."
+            centrarEnMiUbicacion()
+            return@LaunchedEffect
+        }
+        if (posicion == null) return@LaunchedEffect
+        estado.iniciarRutaAlDestino = false
+        estado.modoRecorrido = true
+        estado.paradasIds.clear()
+        estado.paradasIds.add(destino)
+        planificar()
+    }
+
     fun seleccionar(punto: PuntoSeguimiento) {
         val v = punto.vivienda
         if (estado.modoRecorrido) {
@@ -566,7 +602,10 @@ fun MapaSeguimientoVista(
         mapa?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(v.latitud, v.longitud), 17.0), 450)
     }
 
-    fun abrirVisita(p: PuntoSeguimiento) = onAbrirVisita(MapaSeguimiento.grupoDe(p.principal, actividades))
+    // Un destino sin visita agendada (botón «Cómo llegar») abre su ficha en lugar de una visita.
+    fun abrirVisita(p: PuntoSeguimiento) =
+        if (p.visitas.isEmpty()) onAbrirFicha(p.vivienda.fichaId)
+        else onAbrirVisita(MapaSeguimiento.grupoDe(p.principal, actividades))
 
     val avisoLlegada = estado.avisoLlegadaId?.let { id -> estado.plan?.paradas?.firstOrNull { it.vivienda.fichaId == id } }
 
@@ -723,7 +762,7 @@ fun MapaSeguimientoVista(
                 } else if (!ancho && !estado.modoRecorrido && seleccionado != null) {
                     TarjetaVisita(
                         seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
-                        onCerrar = { estado.seleccionadaId = null },
+                        onCerrar = { if (estado.seleccionadaId == estado.destinoId) estado.destinoId = null; estado.seleccionadaId = null },
                         onVerVisita = { abrirVisita(seleccionado) },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
                     )
@@ -765,7 +804,7 @@ fun MapaSeguimientoVista(
                         item(key = "tarjeta") {
                             TarjetaVisita(
                                 seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
-                                onCerrar = { estado.seleccionadaId = null },
+                                onCerrar = { if (estado.seleccionadaId == estado.destinoId) estado.destinoId = null; estado.seleccionadaId = null },
                                 onVerVisita = { abrirVisita(seleccionado) },
                                 modifier = Modifier.padding(8.dp)
                             )
@@ -1013,7 +1052,7 @@ private fun FilaPunto(p: PuntoSeguimiento, activa: Boolean, marca: String? = nul
         Column(Modifier.padding(start = 10.dp).weight(1f)) {
             Text(v.jefe.ifBlank { "Ficha sin nombre" }, color = AzulTexto, fontWeight = FontWeight.Medium, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                listOf(v.barrio, fecha(p.principal.fechaHora)).filter { it.isNotBlank() }.joinToString(" · "),
+                listOf(v.barrio, if (p.visitas.isEmpty()) "Destino" else fecha(p.principal.fechaHora)).filter { it.isNotBlank() }.joinToString(" · "),
                 color = GrisTexto, fontSize = 12.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
             )
         }
@@ -1075,7 +1114,7 @@ private fun TarjetaVisita(
                     color = AzulTexto, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp).testTag("distancia_ruta")
                 )
             }
-            BotonTarjeta("Ver visita", relleno = true, Modifier.fillMaxWidth().padding(top = 10.dp).testTag("ver_visita_mapa"), onVerVisita)
+            BotonTarjeta(if (p.visitas.isEmpty()) "Abrir la ficha" else "Ver visita", relleno = true, Modifier.fillMaxWidth().padding(top = 10.dp).testTag("ver_visita_mapa"), onVerVisita)
         }
     }
 }
@@ -1202,7 +1241,7 @@ private fun TarjetaRecorrido(
                                 fontWeight = if (i == actual) FontWeight.Bold else FontWeight.Medium, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                listOf(p.vivienda.barrio, p.estado.etiqueta, fecha(p.principal.fechaHora, "d MMM HH:mm")).filter { it.isNotBlank() }.joinToString(" · "),
+                                listOf(p.vivienda.barrio, if (p.visitas.isEmpty()) "Destino" else p.estado.etiqueta, if (p.visitas.isEmpty()) "" else fecha(p.principal.fechaHora, "d MMM HH:mm")).filter { it.isNotBlank() }.joinToString(" · "),
                                 color = GrisTexto, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
