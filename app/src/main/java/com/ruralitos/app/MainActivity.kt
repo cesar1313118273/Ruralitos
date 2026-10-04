@@ -1,6 +1,7 @@
 package com.ruralitos.app
 
 import android.os.Bundle
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -172,6 +173,8 @@ class MainActivity : ComponentActivity() {
                 var animando by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(true) }
                 Box(Modifier.fillMaxSize()) {
                     RuralitosApp()
+                    // Avisos breves (guardado, error…) sobre toda la app.
+                    com.ruralitos.app.ui.components.HostAvisosRuralitos()
                     // Se anima encima mientras la app termina de cargar debajo.
                     if (animando) com.ruralitos.app.ui.screens.AnimacionInicioRuralitos(onTerminar = { animando = false })
                 }
@@ -312,34 +315,29 @@ fun RuralitosApp() {
         }
     }
     if (mostrarSolicitudAvisos && estadoAcceso == "autenticado") {
-        AlertDialog(
-            onDismissRequest = {
-                preferenciasAvisos.edit().putBoolean("decision_tomada", true).apply()
-                mostrarSolicitudAvisos = false
-            },
-            title = { Text("Recordatorios de Ruralitos") },
-            text = { Text("¿Quieres recibir avisos de visitas y notas pendientes? Funcionan sin internet y no muestran datos clínicos en la notificación. Puedes cambiar el permiso después en Ajustes del celular.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    mostrarSolicitudAvisos = false
-                    if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(
-                            context, Manifest.permission.POST_NOTIFICATIONS
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        permisoAvisos.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    } else {
-                        preferenciasAvisos.edit().putBoolean("decision_tomada", true)
-                            .putBoolean("permitidos", true).apply()
-                    }
-                }) { Text("Activar avisos") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    preferenciasAvisos.edit().putBoolean("decision_tomada", true)
-                        .putBoolean("permitidos", false).apply()
-                    mostrarSolicitudAvisos = false
-                }) { Text("Ahora no") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Recordatorios de Ruralitos",
+            mensaje = "¿Quieres recibir avisos de visitas y notas pendientes? Funcionan sin internet y no muestran datos clínicos en la notificación. Puedes cambiar el permiso después en Ajustes del celular.",
+            textoConfirmar = "Activar avisos",
+            onConfirmar = {
+                            mostrarSolicitudAvisos = false
+                            if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.POST_NOTIFICATIONS
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                permisoAvisos.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else {
+                                preferenciasAvisos.edit().putBoolean("decision_tomada", true)
+                                    .putBoolean("permitidos", true).apply()
+                            }
+                        },
+            textoCancelar = "Ahora no",
+            peligro = false,
+            onCancelar = {
+                            preferenciasAvisos.edit().putBoolean("decision_tomada", true)
+                                .putBoolean("permitidos", false).apply()
+                            mostrarSolicitudAvisos = false
+                        }
         )
     }
 
@@ -1078,11 +1076,7 @@ fun RuralitosApp() {
                                 if (supabase.hayInternet()) {
                                     ProgramadorSincronizacion.ejecutarAhora(context)
                                 }
-                                Toast.makeText(
-                                    context,
-                                    "${resultado.fichasImportadas} ficha(s) importadas.",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("${resultado.fichasImportadas} ficha(s) importadas.")
                             },
                             onRegresar = { pantallaActual = "inicio" }
                         )
@@ -1117,11 +1111,7 @@ fun RuralitosApp() {
                                     territorioSeleccionado = null
                                     pantallaActual = "inicio"
                                     estadoAcceso = "login"
-                                    Toast.makeText(
-                                        context,
-                                        "La cuenta y los datos locales fueron eliminados.",
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("La cuenta y los datos locales fueron eliminados.")
                                 }
                             },
                             onRegresar = { pantallaActual = "inicio" }
@@ -1144,7 +1134,7 @@ fun RuralitosApp() {
                                     runCatching {
                                         supabase.cambiarClave(usuario.correo, actual, nueva)
                                     }.onSuccess {
-                                        Toast.makeText(context, "Contraseña actualizada.", Toast.LENGTH_SHORT).show()
+                                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Contraseña actualizada.")
                                         pantallaActual = "inicio"
                                     }.onFailure {
                                         mensajeAcceso = it.message ?: "No se pudo cambiar la contraseña."
@@ -1223,7 +1213,7 @@ fun RuralitosApp() {
                                         )
                                     }.onSuccess {
                                         usuarioActual = it
-                                        Toast.makeText(context, "Identidad profesional actualizada.", Toast.LENGTH_SHORT).show()
+                                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Identidad profesional actualizada.")
                                         pantallaActual = "inicio"
                                     }.onFailure { mensajeAcceso = it.message ?: "No se pudo guardar." }
                                     procesandoAcceso = false
@@ -1311,8 +1301,9 @@ fun RuralitosApp() {
                                     if (actualizado != null) usuarioActual = actualizado
                                     pantallaActual = "sala"
                                 }.onFailure {
-                                    mensajeAcceso = it.message ?: "No se pudo agregar el centro."
-                                    Toast.makeText(context, mensajeAcceso, Toast.LENGTH_LONG).show()
+                                    val motivo = it.message ?: "No se pudo agregar el centro."
+                                    mensajeAcceso = motivo
+                                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(motivo)
                                     pantallaActual = "sala"
                                 }
                                 procesandoAcceso = false
@@ -1459,11 +1450,7 @@ fun RuralitosApp() {
                                         actualizadoPorUsuarioId = usuarioActual?.id,
                                         actualizadoEn = System.currentTimeMillis()
                                     )
-                                    Toast.makeText(
-                                        context,
-                                        if (nuevoEstado == "ARCHIVADA") "Ficha archivada." else "Ficha reactivada.",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(if (nuevoEstado == "ARCHIVADA") "Ficha archivada." else "Ficha reactivada.")
                                 }
                             },
                             onEliminar = {
@@ -1476,7 +1463,7 @@ fun RuralitosApp() {
                                     }
                                     EliminadorFichas.eliminarFicha(context, database, ficha, usuarioActual?.id ?: 0L)
                                     ProgramadorSincronizacion.ejecutarAhora(context)
-                                    Toast.makeText(context, "Ficha eliminada definitivamente.", Toast.LENGTH_SHORT).show()
+                                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Ficha eliminada definitivamente.")
                                     fichaSeleccionada = null
                                     fichaIdActual = null
                                     pantallaActual = if (fichaAbiertaDesdeAgenda) "agenda" else "buscarFichas"
@@ -1631,18 +1618,10 @@ fun RuralitosApp() {
                                             actualizadoPorUsuarioId = usuarioActual?.id,
                                             actualizadoEn = System.currentTimeMillis()
                                         )
-                                        Toast.makeText(
-                                            context,
-                                            "Borrador guardado correctamente.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Borrador guardado correctamente.")
                                         avanzarFicha("ubicacion")
                                     } catch (_: Exception) {
-                                        Toast.makeText(
-                                            context,
-                                            "No se pudo guardar la ubicación.",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
+                                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar la ubicación.")
                                     }
                                 }
                             },
@@ -1811,15 +1790,11 @@ fun RuralitosApp() {
                                 }
                             },
                             onFinalizada = { nuevoEstado ->
-                                Toast.makeText(
-                                    context,
-                                    if (nuevoEstado == "COMPLETA") {
+                                com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(if (nuevoEstado == "COMPLETA") {
                                         "Ficha finalizada correctamente."
                                     } else {
                                         "Ficha guardada como pendiente."
-                                    },
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                    })
                                 fichaSeleccionada = fichaSeleccionada?.copy(
                                     estado = nuevoEstado,
                                     completadoPorUsuarioId = if (nuevoEstado == "COMPLETA") {

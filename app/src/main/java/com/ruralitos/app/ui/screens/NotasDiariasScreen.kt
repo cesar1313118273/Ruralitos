@@ -1,6 +1,12 @@
 package com.ruralitos.app.ui.screens
 
 import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
+import com.ruralitos.app.ui.theme.CianRuralitos
+import com.ruralitos.app.ui.components.inicioDiaLocal
+import com.ruralitos.app.ui.components.CalendarioRuralitos
+import com.ruralitos.app.ui.components.CasillaRuralitos
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.VentanaRuralitos
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
 import android.Manifest
@@ -483,86 +489,14 @@ private fun SelectorFechaNotasDialog(
     onFecha: (String) -> Unit,
     onCerrar: () -> Unit
 ) {
-    val inicial = remember(valorActual) {
-        Calendar.getInstance().apply {
-            if (valorActual.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
-                set(valorActual.substring(0, 4).toInt(), valorActual.substring(5, 7).toInt() - 1,
-                    valorActual.substring(8, 10).toInt())
-            }
-            set(Calendar.DAY_OF_MONTH, 1)
-        }.timeInMillis
-    }
-    var mesActual by remember(valorActual) { mutableLongStateOf(inicial) }
-    val calendario = Calendar.getInstance().apply { timeInMillis = mesActual }
-    val desplazamiento = (calendario.get(Calendar.DAY_OF_WEEK) + 5) % 7
-    val dias = calendario.getActualMaximum(Calendar.DAY_OF_MONTH)
-    val filas = (desplazamiento + dias + 6) / 7
-    AlertDialog(
-        onDismissRequest = onCerrar,
-        shape = RoundedCornerShape(16.dp),
-        containerColor = Color.White,
-        title = { Text(titulo, color = AzulTituloNotas, fontWeight = FontWeight.SemiBold) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = {
-                        mesActual = Calendar.getInstance().apply {
-                            timeInMillis = mesActual
-                            add(Calendar.MONTH, -1)
-                        }.timeInMillis
-                    }) { Text("‹", color = AzulEtiquetaNotas, fontSize = 26.sp) }
-                    Text(SimpleDateFormat("MMMM yyyy", Locale("es", "EC")).format(Date(mesActual))
-                        .replaceFirstChar { it.uppercase() },
-                        modifier = Modifier.weight(1f),
-                        color = AzulTituloNotas, fontWeight = FontWeight.SemiBold,
-                        textAlign = TextAlign.Center)
-                    TextButton(onClick = {
-                        mesActual = Calendar.getInstance().apply {
-                            timeInMillis = mesActual
-                            add(Calendar.MONTH, 1)
-                        }.timeInMillis
-                    }) { Text("›", color = AzulEtiquetaNotas, fontSize = 26.sp) }
-                }
-                Row(Modifier.fillMaxWidth()) {
-                    listOf("L", "M", "M", "J", "V", "S", "D").forEach { nombre ->
-                        Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                            Text(nombre, color = GrisTextoNotas, fontSize = 12.sp)
-                        }
-                    }
-                }
-                repeat(filas) { fila ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        repeat(7) { columna ->
-                            val numero = fila * 7 + columna - desplazamiento + 1
-                            if (numero !in 1..dias) {
-                                Box(Modifier.weight(1f).height(35.dp))
-                            } else {
-                                val valor = String.format(Locale.US, "%04d-%02d-%02d",
-                                    calendario.get(Calendar.YEAR), calendario.get(Calendar.MONTH) + 1, numero)
-                                Surface(
-                                    onClick = { onFecha(valor) },
-                                    modifier = Modifier.weight(1f).height(35.dp),
-                                    shape = RoundedCornerShape(9.dp),
-                                    color = if (valor == valorActual) VerdeBotonNotas else FondoTarjetaNotas
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(numero.toString(),
-                                            color = if (valor == valorActual) Color.White else AzulTituloNotas,
-                                            fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        confirmButton = { TextButton(onClick = onCerrar) { Text("Cerrar", color = AzulEtiquetaNotas) } },
-        dismissButton = {
-            if (valorActual.isNotBlank()) {
-                TextButton(onClick = { onFecha("") }) { Text("Quitar fecha", color = VerdeBotonNotas) }
-            }
-        }
+    val iso = remember { SimpleDateFormat("yyyy-MM-dd", Locale.US) }
+    val inicial = remember(valorActual) { if (valorActual.isBlank()) null else runCatching { iso.parse(valorActual)?.time }.getOrNull() }
+    CalendarioRuralitos(
+        titulo = titulo,
+        fechaInicialMillis = inicial ?: inicioDiaLocal(System.currentTimeMillis()),
+        onElegida = { onFecha(iso.format(Date(it))) },
+        onCerrar = onCerrar,
+        onQuitar = if (valorActual.isNotBlank()) ({ onFecha("") }) else null
     )
 }
 
@@ -734,20 +668,13 @@ private fun DialogoNotaDiaria(
     onCerrar: () -> Unit
 ) {
     var marcada by remember(notaSeleccionadaId, notaRealizada) { mutableStateOf(notaRealizada) }
-    AlertDialog(
-        onDismissRequest = onCerrar,
-        shape = RoundedCornerShape(16.dp),
-        containerColor = Color.White,
-        title = {
-            Column {
-                Text(persona.apellidosNombres.ifBlank { "Persona sin nombre" },
-                    color = AzulTituloNotas, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                Text("Cédula: ${persona.cedula.ifBlank { "Sin registrar" }}",
-                    color = GrisTextoNotas, fontSize = 13.sp)
-            }
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    VentanaRuralitos(
+        titulo = persona.apellidosNombres.ifBlank { "Persona sin nombre" },
+        subtitulo = "Cédula: ${persona.cedula.ifBlank { "Sin registrar" }}",
+        simbolo = "✎",
+        color = CianRuralitos,
+        onCerrar = onCerrar,
+        contenido = {
                 if (notas.size > 1) {
                     Text("Notas de este período", color = AzulEtiquetaNotas, fontWeight = FontWeight.SemiBold)
                     LazyColumn(
@@ -787,11 +714,7 @@ private fun DialogoNotaDiaria(
                             marcada = !marcada
                             onRealizadaCambio(marcada)
                         }) {
-                        Checkbox(
-                            checked = marcada,
-                            onCheckedChange = { marcada = it; onRealizadaCambio(it) },
-                            colors = CheckboxDefaults.colors(checkedColor = VerdeBotonNotas)
-                        )
+                        CasillaRuralitos(marcada)
                         Column {
                             Text("Realizada", color = AzulTituloNotas, fontWeight = FontWeight.SemiBold)
                             Text("Al marcarla, la nota se elimina.", color = GrisTextoNotas, fontSize = 12.sp)
@@ -801,11 +724,8 @@ private fun DialogoNotaDiaria(
                 if (notaSeleccionadaId != null) {
                     TextButton(onClick = onNueva) { Text("Nueva nota de hoy", color = VerdeBotonNotas) }
                 }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onCerrar) { Text("Cerrar", color = AzulEtiquetaNotas) }
-        }
+            },
+        acciones = { BotonSecundarioRuralitos(texto = "Cerrar", onClick = onCerrar) }
     )
 }
 

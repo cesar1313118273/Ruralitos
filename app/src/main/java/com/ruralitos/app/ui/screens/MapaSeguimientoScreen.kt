@@ -1,6 +1,9 @@
 package com.ruralitos.app.ui.screens
 
 import android.Manifest
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.VentanaRuralitos
 import android.graphics.RectF
 import android.location.Location
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -579,18 +582,14 @@ fun MapaSeguimientoVista(
                         texto = if (estado.estados.size == EstadoVisita.entries.size) "Estado · todos" else "Estado · ${estado.estados.size} de ${EstadoVisita.entries.size}",
                         activo = estado.estados.size != EstadoVisita.entries.size, modifier = Modifier.testTag("boton_estado")
                     ) { abierto = true }
-                    DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
+                    com.ruralitos.app.ui.components.MenuDesplegableRuralitos(expanded = abierto, onDismissRequest = { abierto = false }) {
                         EstadoVisita.entries.forEach { e ->
                             val marcado = e in estado.estados
-                            DropdownMenuItem(
+                            com.ruralitos.app.ui.components.ItemMenuRuralitos(
                                 modifier = Modifier.testTag("estado_${e.name}"),
                                 text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            Modifier.size(18.dp).clip(RoundedCornerShape(4.dp))
-                                                .background(if (marcado) VerdeAgenda else Color(0xFFE3EAF0)),
-                                            contentAlignment = Alignment.Center
-                                        ) { if (marcado) Text("✓", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold) }
+                                        com.ruralitos.app.ui.components.CasillaRuralitos(marcado)
                                         Spacer(Modifier.width(10.dp))
                                         Box(Modifier.size(11.dp).clip(CircleShape).background(colorDe(e)))
                                         Text("  ${e.etiqueta}", color = AzulTexto)
@@ -599,12 +598,16 @@ fun MapaSeguimientoVista(
                                 },
                                 // el menú queda abierto para marcar varios; siempre debe quedar al menos un estado
                                 onClick = {
-                                    if (marcado && estado.estados.size == 1) return@DropdownMenuItem
+                                    if (marcado && estado.estados.size == 1) return@ItemMenuRuralitos
                                     estado.estados = if (marcado) estado.estados - e else estado.estados + e
                                     estado.plan = null
                                 }
                             )
                         }
+                        com.ruralitos.app.ui.components.ItemMenuRuralitos(
+                            text = { Text("Listo", color = CianRuralitos, fontWeight = FontWeight.SemiBold) },
+                            onClick = { abierto = false }
+                        )
                     }
                 }
                 Box(Modifier.weight(1.5f)) {
@@ -803,41 +806,45 @@ fun MapaSeguimientoVista(
     }
 
     if (verSinUbicacion) {
-        AlertDialog(
-            onDismissRequest = { verSinUbicacion = false },
-            title = { Text("Viviendas sin ubicación") },
-            text = {
-                Column {
-                    Text(
-                        "Pulsa «Ubicar ahora» para abrir el croquis de la ficha y guardar el punto de la vivienda.",
-                        style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    LazyColumn(Modifier.height(280.dp)) {
-                        items(sinUbicacionConVisita, key = { it.fichaId }) { f ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Column(Modifier.weight(1f).clickable { verSinUbicacion = false; onAbrirFicha(f.fichaId) }) {
-                                    Text(f.jefe.ifBlank { "Ficha sin nombre" }, fontWeight = FontWeight.Medium, color = AzulTexto)
-                                    Text(
-                                        listOf(f.barrio, "Ficha ${f.numero}").filter { it.isNotBlank() }.joinToString(" · "),
-                                        color = GrisTexto, fontSize = 12.sp
-                                    )
-                                }
-                                Surface(
-                                    onClick = { verSinUbicacion = false; onUbicarFicha(f.fichaId) },
-                                    modifier = Modifier.testTag("ubicar_ahora"),
-                                    shape = RoundedCornerShape(10.dp), color = CianRuralitos
-                                ) {
-                                    Text("Ubicar ahora", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+        VentanaRuralitos(
+            titulo = "Viviendas sin ubicación",
+            simbolo = "⌖",
+            color = AzulClinico,
+            onCerrar = { verSinUbicacion = false },
+            contenido = {
+        Column {
+                            Text(
+                                "Pulsa «Ubicar ahora» para abrir el croquis de la ficha y guardar el punto de la vivienda.",
+                                style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            LazyColumn(Modifier.height(280.dp)) {
+                                items(sinUbicacionConVisita, key = { it.fichaId }) { f ->
+                                    Row(
+                                        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column(Modifier.weight(1f).clickable { verSinUbicacion = false; onAbrirFicha(f.fichaId) }) {
+                                            Text(f.jefe.ifBlank { "Ficha sin nombre" }, fontWeight = FontWeight.Medium, color = AzulTexto)
+                                            Text(
+                                                listOf(f.barrio, "Ficha ${f.numero}").filter { it.isNotBlank() }.joinToString(" · "),
+                                                color = GrisTexto, fontSize = 12.sp
+                                            )
+                                        }
+                                        Surface(
+                                            onClick = { verSinUbicacion = false; onUbicarFicha(f.fichaId) },
+                                            modifier = Modifier.testTag("ubicar_ahora"),
+                                            shape = RoundedCornerShape(10.dp), color = CianRuralitos
+                                        ) {
+                                            Text("Ubicar ahora", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
             },
-            confirmButton = { TextButton(onClick = { verSinUbicacion = false }) { Text("Cerrar") } }
+            acciones = {
+                BotonSecundarioRuralitos(texto = "Cerrar", onClick = { verSinUbicacion = false })
+            }
         )
     }
 }
@@ -865,43 +872,7 @@ private fun BotonControl(texto: String, activo: Boolean, modifier: Modifier = Mo
     }
 }
 
-/** Una lista desplegable pequeña: muestra el valor elegido y, al tocarla, todas las opciones. */
-@Composable
-private fun SelectorDesplegable(
-    etiqueta: String,
-    valor: String,
-    opciones: List<Pair<Int, String>>,
-    etiquetaTest: String,
-    modifier: Modifier = Modifier,
-    onElegir: (Int) -> Unit
-) {
-    var abierto by remember { mutableStateOf(false) }
-    Box(modifier) {
-        Surface(
-            onClick = { abierto = true }, modifier = Modifier.fillMaxWidth().testTag("sel_$etiquetaTest"),
-            shape = RoundedCornerShape(10.dp), color = Color.White, border = BorderStroke(1.dp, Color(0xFFCFDDE5))
-        ) {
-            Column(Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
-                Text(etiqueta, color = GrisTexto, fontSize = 10.sp)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(valor, Modifier.weight(1f), color = AzulTexto, fontSize = 14.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                    Text("▾", color = VerdeAgenda, fontSize = 12.sp)
-                }
-            }
-        }
-        DropdownMenu(expanded = abierto, onDismissRequest = { abierto = false }) {
-            opciones.forEach { (v, texto) ->
-                DropdownMenuItem(
-                    modifier = Modifier.testTag("op_${etiquetaTest}_$v"),
-                    text = { Text(texto, color = AzulTexto) },
-                    onClick = { onElegir(v); abierto = false }
-                )
-            }
-        }
-    }
-}
-
-/** Fecha de inicio y fecha de fin, cada una con día, mes y año. Ninguna puede quedar antes de la otra. */
+/** Fecha de inicio y fecha de fin, cada una con el calendario de la app. Ninguna puede quedar antes de la otra. */
 @Composable
 private fun VentanaFechas(
     desde: Long,
@@ -910,65 +881,76 @@ private fun VentanaFechas(
     onHoy: () -> Unit,
     onCerrar: () -> Unit
 ) {
-    var diaI by remember { mutableStateOf(MapaSeguimiento.dia(desde)) }
-    var mesI by remember { mutableStateOf(MapaSeguimiento.mes(desde)) }
-    var anioI by remember { mutableStateOf(MapaSeguimiento.anio(desde)) }
-    var diaF by remember { mutableStateOf(MapaSeguimiento.dia(hasta)) }
-    var mesF by remember { mutableStateOf(MapaSeguimiento.mes(hasta)) }
-    var anioF by remember { mutableStateOf(MapaSeguimiento.anio(hasta)) }
+    var inicio by remember { mutableStateOf(MapaSeguimiento.inicioDia(desde)) }
+    var fin by remember { mutableStateOf(MapaSeguimiento.inicioDia(hasta)) }
     var error by remember { mutableStateOf<String?>(null) }
-    val anioActual = MapaSeguimiento.anio(System.currentTimeMillis())
-    val anios = (minOf(anioActual - 5, anioI, anioF)..maxOf(anioActual + 3, anioI, anioF)).map { it to it.toString() }
-    val meses = MESES.mapIndexed { i, nombre -> (i + 1) to nombre.replaceFirstChar { it.uppercase() } }
+    var editando by remember { mutableStateOf<String?>(null) }
 
-    @Composable
-    fun Fila(titulo: String, marca: String, dia: Int, mes: Int, anio: Int, cambiar: (Int, Int, Int) -> Unit) {
-        Text(titulo, color = AzulTexto, fontWeight = FontWeight.SemiBold, fontSize = 14.sp, modifier = Modifier.padding(top = 4.dp, bottom = 6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            SelectorDesplegable(
-                "Día", dia.toString(), (1..MapaSeguimiento.diasDelMes(anio, mes)).map { it to it.toString() }, "${marca}_dia",
-                Modifier.weight(0.8f)
-            ) { error = null; cambiar(it, mes, anio) }
-            SelectorDesplegable(
-                "Mes", MESES[mes - 1].replaceFirstChar { it.uppercase() }, meses, "${marca}_mes", Modifier.weight(1.5f)
-            ) { error = null; cambiar(minOf(dia, MapaSeguimiento.diasDelMes(anio, it)), it, anio) }
-            SelectorDesplegable(
-                "Año", anio.toString(), anios, "${marca}_anio", Modifier.weight(1f)
-            ) { error = null; cambiar(minOf(dia, MapaSeguimiento.diasDelMes(it, mes)), mes, it) }
-        }
+    editando?.let { campo ->
+        com.ruralitos.app.ui.components.CalendarioRuralitos(
+            titulo = if (campo == "ini") "Fecha inicio" else "Fecha fin",
+            fechaInicialMillis = if (campo == "ini") inicio else fin,
+            onElegida = { dia ->
+                if (campo == "ini") inicio = dia else fin = dia
+                error = null
+                editando = null
+            },
+            onCerrar = { editando = null }
+        )
     }
 
-    AlertDialog(
-        onDismissRequest = onCerrar,
-        title = { Text("Fechas del mapa", color = AzulTexto) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
-                Fila("Fecha inicio", "ini", diaI, mesI, anioI) { d, m, a -> diaI = d; mesI = m; anioI = a }
-                Spacer(Modifier.height(10.dp))
-                Fila("Fecha fin", "fin", diaF, mesF, anioF) { d, m, a -> diaF = d; mesF = m; anioF = a }
-                if (error != null) {
-                    Text(error!!, color = Color(0xFFC83E4D), fontSize = 12.sp, modifier = Modifier.padding(top = 8.dp).testTag("error_fechas"))
-                }
+    com.ruralitos.app.ui.components.VentanaRuralitos(
+        titulo = "Fechas del mapa",
+        subtitulo = "Visitas entre dos fechas",
+        simbolo = "▦",
+        color = CianRuralitos,
+        onCerrar = onCerrar,
+        contenido = {
+            CampoFechaMapa("Fecha inicio", inicio, "campo_fecha_ini") { editando = "ini" }
+            CampoFechaMapa("Fecha fin", fin, "campo_fecha_fin") { editando = "fin" }
+            if (error != null) {
+                Text(error!!, color = Color(0xFFC83E4D), fontSize = 12.sp, modifier = Modifier.testTag("error_fechas"))
             }
         },
-        confirmButton = {
-            TextButton(
+        acciones = {
+            com.ruralitos.app.ui.components.BotonPrincipalRuralitos(
+                texto = "Aplicar",
+                color = CianRuralitos,
                 modifier = Modifier.testTag("aplicar_fechas"),
                 onClick = {
-                    val d = MapaSeguimiento.fecha(anioI, mesI, diaI)
-                    val h = MapaSeguimiento.fecha(anioF, mesF, diaF)
-                    if (h < d) error = "La fecha fin no puede ser anterior a la fecha inicio."
-                    else onAplicar(d, h)
+                    if (fin < inicio) error = "La fecha fin no puede ser anterior a la fecha inicio."
+                    else onAplicar(inicio, fin)
                 }
-            ) { Text("Aplicar", color = VerdeAgenda, fontWeight = FontWeight.SemiBold) }
-        },
-        dismissButton = {
-            Row {
-                TextButton(modifier = Modifier.testTag("fechas_hoy"), onClick = onHoy) { Text("Hoy", color = AzulClinico) }
-                TextButton(onClick = onCerrar) { Text("Cancelar") }
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                com.ruralitos.app.ui.components.BotonSecundarioRuralitos(
+                    texto = "Hoy", onClick = onHoy, modifier = Modifier.weight(1f).testTag("fechas_hoy")
+                )
+                com.ruralitos.app.ui.components.BotonSecundarioRuralitos(
+                    texto = "Cancelar", onClick = onCerrar, modifier = Modifier.weight(1f)
+                )
             }
         }
     )
+}
+
+@Composable
+private fun CampoFechaMapa(etiqueta: String, valor: Long, etiquetaPrueba: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().testTag(etiquetaPrueba),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.White,
+        border = BorderStroke(1.dp, Color(0xFFCFDDE5))
+    ) {
+        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Text(etiqueta, color = GrisTexto, fontSize = 10.sp)
+            Text(
+                "%02d/%02d/%d".format(MapaSeguimiento.dia(valor), MapaSeguimiento.mes(valor), MapaSeguimiento.anio(valor)),
+                color = AzulTexto, fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
 }
 
 @Composable

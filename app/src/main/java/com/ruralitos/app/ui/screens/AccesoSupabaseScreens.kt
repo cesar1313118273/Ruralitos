@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -590,21 +591,15 @@ fun GestionEquipoSupabaseScreen(
     var rol by remember { mutableStateOf("MEDICO") }
     var porRevocar by remember { mutableStateOf<com.ruralitos.app.data.remote.MiembroEquipoRemoto?>(null) }
     porRevocar?.let { persona ->
-        androidx.compose.material3.AlertDialog(
-            onDismissRequest = { porRevocar = null },
-            title = { Text("Quitar acceso") },
-            text = {
-                Text(
-                    "${persona.nombre} dejará de ver las fichas de esta Sala y su teléfono las retirará en la próxima " +
-                        "sincronización. Lo que ya registró seguirá en la Sala. Si luego la invitas de nuevo recuperará el acceso."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { porRevocar = null; onRevocar(persona) }) {
-                    Text("Quitar acceso", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { porRevocar = null }) { Text("Cancelar") } }
+        VentanaConfirmarRuralitos(
+            titulo = "Quitar acceso",
+            mensaje = "${persona.nombre} dejará de ver las fichas de esta Sala y su teléfono las retirará en la próxima " +
+                                "sincronización. Lo que ya registró seguirá en la Sala. Si luego la invitas de nuevo recuperará el acceso.",
+            textoConfirmar = "Quitar acceso",
+            onConfirmar = { porRevocar = null; onRevocar(persona) },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { porRevocar = null }
         )
     }
     FormularioBase("Equipo de trabajo", "Invita personal para compartir las fichas de tu organización", onVolver = onRegresar) {

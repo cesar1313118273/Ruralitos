@@ -177,69 +177,21 @@ fun SelectorFechaDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectorFechaDialog(
     fechaInicial: String,
     onFechaSeleccionada: (String) -> Unit,
     onCerrar: () -> Unit
 ) {
-    /*
-     * Corrección de fecha:
-     * Material DatePicker trabaja con días UTC. Se inicializa el selector usando
-     * también UTC para evitar desfases de un día por zona horaria.
-     */
-    val formatoUtc = remember {
-        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply {
-            timeZone = TimeZone.getTimeZone("UTC")
-            isLenient = false
-        }
+    // El calendario de la app trabaja con días locales: no hay desfases de un día por zona horaria.
+    val formato = remember { SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).apply { isLenient = false } }
+    val inicial = remember(fechaInicial) {
+        if (fechaInicial.isBlank()) null else runCatching { formato.parse(fechaInicial)?.time }.getOrNull()
     }
-
-    val fechaInicialMillis = remember(fechaInicial) {
-        if (fechaInicial.isBlank()) {
-            val hoy = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date())
-            runCatching {
-                formatoUtc.parse(hoy)?.time
-            }.getOrNull()
-        } else {
-            runCatching {
-                formatoUtc.parse(fechaInicial)?.time
-            }.getOrNull()
-        }
-    }
-
-    val estadoFecha = rememberDatePickerState(
-        initialSelectedDateMillis = fechaInicialMillis
+    com.ruralitos.app.ui.components.CalendarioRuralitos(
+        fechaInicialMillis = inicial ?: com.ruralitos.app.ui.components.inicioDiaLocal(System.currentTimeMillis()),
+        onElegida = { onFechaSeleccionada(formato.format(Date(it))) },
+        onCerrar = onCerrar
     )
-
-    DatePickerDialog(
-        onDismissRequest = onCerrar,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val millis = estadoFecha.selectedDateMillis
-
-                    if (millis != null) {
-                        val textoFecha = formatoUtc.format(Date(millis))
-                        onFechaSeleccionada(textoFecha)
-                    } else {
-                        onCerrar()
-                    }
-                }
-            ) {
-                Text("Aceptar")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onCerrar) {
-                Text("Cancelar")
-            }
-        }
-    ) {
-        DatePicker(
-            state = estadoFecha
-        )
-    }
 }
 

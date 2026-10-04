@@ -322,10 +322,7 @@ fun InicioRuralitosScreen(
                                             ))
                                         )
                                     } catch (_: ActivityNotFoundException) {
-                                        Toast.makeText(
-                                            context, "No hay una app de correo instalada.",
-                                            Toast.LENGTH_LONG
-                                        ).show()
+                                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No hay una app de correo instalada.")
                                     }
                                 }
                             }

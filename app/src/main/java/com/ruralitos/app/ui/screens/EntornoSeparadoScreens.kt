@@ -1,6 +1,8 @@
 package com.ruralitos.app.ui.screens
 
 import android.graphics.Bitmap
+import com.ruralitos.app.ui.components.VentanaRuralitos
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.widget.Toast
@@ -197,30 +199,26 @@ fun FamiliogramaFotoScreen(
     }
 
     if (confirmarQuitar && adjunto != null) {
-        AlertDialog(
-            onDismissRequest = { confirmarQuitar = false },
-            title = { Text("Quitar familiograma") },
-            text = { Text("La imagen dejará de aparecer en Excel y PDF. Podrás subir otra posteriormente.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmarQuitar = false
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                database.withTransaction {
-                                    database.fichaContenidoDao().eliminarAdjunto(adjunto)
-                                    database.fichaFamiliarDao().marcarPendiente(fichaId)
+        VentanaConfirmarRuralitos(
+            titulo = "Quitar familiograma",
+            mensaje = "La imagen dejará de aparecer en Excel y PDF. Podrás subir otra posteriormente.",
+            textoConfirmar = "Sí, quitar imagen",
+            onConfirmar = {
+                                confirmarQuitar = false
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        database.withTransaction {
+                                            database.fichaContenidoDao().eliminarAdjunto(adjunto)
+                                            database.fichaFamiliarDao().marcarPendiente(fichaId)
+                                        }
+                                        eliminarArchivoAnterior(adjunto.uri)
+                                    }
+                                    mensaje = "Familiograma eliminado."
                                 }
-                                eliminarArchivoAnterior(adjunto.uri)
-                            }
-                            mensaje = "Familiograma eliminado."
-                        }
-                    }
-                ) { Text("Sí, quitar imagen", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmarQuitar = false }) { Text("Conservar imagen") }
-            }
+                            },
+            textoCancelar = "Conservar imagen",
+            peligro = true,
+            onCancelar = { confirmarQuitar = false }
         )
     }
 
@@ -417,7 +415,7 @@ fun ContaminacionAmbientalScreen(
                         mostrarFormulario = false
                         editando = null
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar el informe.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar el informe.")
                     }
                 }
             },
@@ -509,26 +507,22 @@ fun LugaresTratamientoScreen(
     var mostrandoVentana by remember { mutableStateOf(false) }
 
     eliminar?.let { seleccionado ->
-        AlertDialog(
-            onDismissRequest = { eliminar = null },
-            title = { Text("Eliminar lugar o persona") },
-            text = { Text("Se eliminará “${seleccionado.descripcion}” de la ficha.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        eliminar = null
-                        scope.launch(Dispatchers.IO) {
-                            database.withTransaction {
-                                database.fichaContenidoDao().eliminarLugarTratamiento(seleccionado)
-                                database.fichaFamiliarDao().marcarPendiente(fichaId)
-                            }
-                        }
-                    }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { eliminar = null }) { Text("Conservar registro") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar lugar o persona",
+            mensaje = "Se eliminará “${seleccionado.descripcion}” de la ficha.",
+            textoConfirmar = "Sí, eliminar",
+            onConfirmar = {
+                                eliminar = null
+                                scope.launch(Dispatchers.IO) {
+                                    database.withTransaction {
+                                        database.fichaContenidoDao().eliminarLugarTratamiento(seleccionado)
+                                        database.fichaFamiliarDao().marcarPendiente(fichaId)
+                                    }
+                                }
+                            },
+            textoCancelar = "Conservar registro",
+            peligro = true,
+            onCancelar = { eliminar = null }
         )
     }
 
@@ -577,11 +571,7 @@ fun LugaresTratamientoScreen(
             etiquetaPrueba = "boton_agregar_lugar",
             onClick = {
                 if (lugares.size >= 4) {
-                    Toast.makeText(
-                        context,
-                        "Ya registraste los 4 lugares permitidos. Edita o elimina uno para agregar otro.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Ya registraste los 4 lugares permitidos. Edita o elimina uno para agregar otro.")
                 } else {
                     editando = null
                     texto = ""
@@ -593,58 +583,61 @@ fun LugaresTratamientoScreen(
     }
 
     if (mostrandoVentana) {
-        AlertDialog(
-            onDismissRequest = { mostrandoVentana = false; editando = null; texto = "" },
-            title = { Text(if (editando == null) "Agregar lugar o persona" else "Editar lugar o persona") },
-            text = {
-                Column {
-                    Text(
-                        "Anota dónde o con quién se atiende la familia cuando alguien se enferma: un centro de salud, un hospital, un médico particular, un curandero o una persona de confianza. Puedes registrar hasta 4.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    OutlinedTextField(
-                        value = texto,
-                        onValueChange = { texto = it },
-                        label = { Text("Centro, lugar o persona") },
-                        supportingText = { Text("Escribe una descripción clara y reconocible") },
-                        minLines = 3,
-                        modifier = Modifier.fillMaxWidth().padding(top = 10.dp).testTag("texto_lugar")
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    modifier = Modifier.testTag("guardar_lugar"),
-                    enabled = texto.isNotBlank() && (editando != null || lugares.size < 4),
-                    onClick = {
-                        val actual = editando
-                        val descripcion = texto.trim()
-                        mostrandoVentana = false
-                        editando = null
-                        texto = ""
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                database.withTransaction {
-                                    if (actual == null) {
-                                        check(lugares.size < 4) { "La ficha ya tiene cuatro lugares de atención." }
-                                        database.fichaContenidoDao().guardarLugarTratamiento(
-                                            LugarTratamientoEntity(fichaId = fichaId, descripcion = descripcion)
-                                        )
-                                    } else {
-                                        database.fichaContenidoDao().actualizarLugarTratamiento(
-                                            actual.copy(descripcion = descripcion)
-                                        )
-                                    }
-                                    database.fichaFamiliarDao().marcarPendiente(fichaId)
-                                }
-                            }
+        VentanaRuralitos(
+            titulo = if (editando == null) "Agregar lugar o persona" else "Editar lugar o persona",
+            subtitulo = "Red de atención",
+            simbolo = "+",
+            color = CianRuralitos,
+            onCerrar = { mostrandoVentana = false; editando = null; texto = "" },
+            contenido = {
+        Column {
+                            Text(
+                                "Anota dónde o con quién se atiende la familia cuando alguien se enferma: un centro de salud, un hospital, un médico particular, un curandero o una persona de confianza. Puedes registrar hasta 4.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            OutlinedTextField(
+                                value = texto,
+                                onValueChange = { texto = it },
+                                label = { Text("Centro, lugar o persona") },
+                                supportingText = { Text("Escribe una descripción clara y reconocible") },
+                                minLines = 3,
+                                modifier = Modifier.fillMaxWidth().padding(top = 10.dp).testTag("texto_lugar")
+                            )
                         }
-                    }
-                ) { Text("Guardar") }
             },
-            dismissButton = {
-                TextButton(onClick = { mostrandoVentana = false; editando = null; texto = "" }) { Text("Cancelar") }
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar",
+                    color = CianRuralitos,
+                    enabled = texto.isNotBlank() && (editando != null || lugares.size < 4),
+                    modifier = Modifier.testTag("guardar_lugar"),
+                    onClick = {
+                                        val actual = editando
+                                        val descripcion = texto.trim()
+                                        mostrandoVentana = false
+                                        editando = null
+                                        texto = ""
+                                        scope.launch {
+                                            withContext(Dispatchers.IO) {
+                                                database.withTransaction {
+                                                    if (actual == null) {
+                                                        check(lugares.size < 4) { "La ficha ya tiene cuatro lugares de atención." }
+                                                        database.fichaContenidoDao().guardarLugarTratamiento(
+                                                            LugarTratamientoEntity(fichaId = fichaId, descripcion = descripcion)
+                                                        )
+                                                    } else {
+                                                        database.fichaContenidoDao().actualizarLugarTratamiento(
+                                                            actual.copy(descripcion = descripcion)
+                                                        )
+                                                    }
+                                                    database.fichaFamiliarDao().marcarPendiente(fichaId)
+                                                }
+                                            }
+                                        }
+                                    }
+                )
+                BotonSecundarioRuralitos(texto = "Cancelar", onClick = { mostrandoVentana = false; editando = null; texto = "" })
             }
         )
     }

@@ -1,6 +1,8 @@
 package com.ruralitos.app.ui.screens
 
 import android.content.Context
+import com.ruralitos.app.ui.theme.AzulClinicoOscuro
+import com.ruralitos.app.ui.components.VentanaRuralitos
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Color as AndroidColor
@@ -166,58 +168,58 @@ fun RevisionFinalFichaScreen(
                     nuevoEstado == "COMPLETA" -> "Ficha finalizada correctamente."
                     else -> "Ficha guardada como pendiente."
                 }
-                Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(mensaje)
                 if (descarga.archivos.isNotEmpty()) mostrarCompartir = true
                 else onFinalizada(nuevoEstado)
             }.onFailure {
                 procesando = false
-                Toast.makeText(
-                    context,
-                    "No se pudo finalizar la ficha: " + (it.message ?: "error desconocido"),
-                    Toast.LENGTH_LONG
-                ).show()
+                com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo finalizar la ficha: " + (it.message ?: "error desconocido"))
             }
         }
     }
 
     if (mostrarCompartir) {
-        AlertDialog(
-            // La decisión es importante: tocar fuera o pulsar Atrás ya no cierra
-            // accidentalmente esta ventana ni abandona la ficha.
-            onDismissRequest = {},
-            properties = DialogProperties(
-                dismissOnBackPress = false,
-                dismissOnClickOutside = false
-            ),
-            title = { Text("Archivos descargados") },
-            text = {
-                Column {
-                    Text("Se guardaron en Descargas/Ruralitos:")
-                    Text(
-                        archivosGenerados.joinToString("\n") { "• " + it.nombre },
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(top = 9.dp)
-                    )
-                    Text(
-                        "¿Deseas compartirlos por WhatsApp, Telegram, correo u otra aplicación?",
-                        modifier = Modifier.padding(top = 12.dp)
-                    )
-                }
+        VentanaRuralitos(
+            titulo = "Archivos descargados",
+            subtitulo = "Se guardaron en Descargas/Ruralitos",
+            simbolo = "✓",
+            color = CianRuralitos,
+            // La decisión es importante: tocar fuera o pulsar Atrás no cierra la ventana ni abandona la ficha.
+            cerrarAlTocarFuera = false,
+            onCerrar = {
+                mostrarCompartir = false
+                onFinalizada(estadoGuardado)
             },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (!GestorDescargasFicha.compartir(context, archivosGenerados)) {
-                        Toast.makeText(context, "No se encontró una aplicación para compartir.", Toast.LENGTH_LONG).show()
+            contenido = {
+                Text(
+                    archivosGenerados.joinToString("\n") { "• " + it.nombre },
+                    fontWeight = FontWeight.SemiBold,
+                    color = AzulClinicoOscuro
+                )
+                Text(
+                    "¿Deseas compartirlos por WhatsApp, Telegram, correo u otra aplicación?",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            },
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = "Compartir ahora",
+                    color = CianRuralitos,
+                    onClick = {
+                        if (!GestorDescargasFicha.compartir(context, archivosGenerados)) {
+                            com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se encontró una aplicación para compartir.")
+                        }
+                        mostrarCompartir = false
+                        onFinalizada(estadoGuardado)
                     }
-                    mostrarCompartir = false
-                    onFinalizada(estadoGuardado)
-                }) { Text("Compartir ahora") }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    mostrarCompartir = false
-                    onFinalizada(estadoGuardado)
-                }) { Text("Conservar en el celular") }
+                )
+                BotonSecundarioRuralitos(
+                    texto = "Conservar en el celular",
+                    onClick = {
+                        mostrarCompartir = false
+                        onFinalizada(estadoGuardado)
+                    }
+                )
             }
         )
     }

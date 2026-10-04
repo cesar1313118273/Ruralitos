@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import com.ruralitos.app.ui.components.FlechaDesplegable
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import com.ruralitos.app.ui.theme.TextoSecundario
 import androidx.compose.material3.HorizontalDivider
 import com.ruralitos.app.ui.theme.AzulClinicoOscuro
@@ -130,28 +131,17 @@ fun FichaSeccionesScreen(
     }
 
     if (confirmarEliminacion) {
-        AlertDialog(
-            onDismissRequest = { confirmarEliminacion = false },
-            title = { Text("Eliminar ficha definitivamente") },
-            text = { Text("Se eliminarán la ficha, sus integrantes, evaluaciones, firma y adjuntos internos. Esta acción no se puede deshacer.") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        confirmarEliminacion = false
-                        onEliminar()
-                    }
-                ) {
-                    Text(
-                        "Sí, eliminar definitivamente",
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmarEliminacion = false }) {
-                    Text("No eliminar")
-                }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar ficha definitivamente",
+            mensaje = "Se eliminarán la ficha, sus integrantes, evaluaciones, firma y adjuntos internos. Esta acción no se puede deshacer.",
+            textoConfirmar = "Sí, eliminar definitivamente",
+            onConfirmar = {
+                                confirmarEliminacion = false
+                                onEliminar()
+                            },
+            textoCancelar = "No eliminar",
+            peligro = true,
+            onCancelar = { confirmarEliminacion = false }
         )
     }
 
@@ -597,16 +587,14 @@ private fun AvisoConflictoFicha(ficha: FichaFamiliarEntity) {
     }
 
     if (confirmarServidor) {
-        AlertDialog(
-            onDismissRequest = { confirmarServidor = false },
-            title = { Text("Usar la versión del servidor") },
-            text = { Text("Se descartarán los cambios que hiciste en esta ficha desde la última sincronización y se descargará la versión de tu compañero. No se puede deshacer.") },
-            confirmButton = {
-                TextButton(onClick = { confirmarServidor = false; resolver(true) }) {
-                    Text("Descartar mis cambios", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirmarServidor = false }) { Text("Cancelar") } }
+        VentanaConfirmarRuralitos(
+            titulo = "Usar la versión del servidor",
+            mensaje = "Se descartarán los cambios que hiciste en esta ficha desde la última sincronización y se descargará la versión de tu compañero. No se puede deshacer.",
+            textoConfirmar = "Descartar mis cambios",
+            onConfirmar = { confirmarServidor = false; resolver(true) },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { confirmarServidor = false }
         )
     }
 

@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -53,38 +54,30 @@ fun EliminarCuentaScreen(
     var confirmarFinal by remember { mutableStateOf(false) }
 
     confirmarFinal.takeIf { it }?.let {
-        AlertDialog(
-            onDismissRequest = { confirmarFinal = false },
-            title = { Text("Última confirmación") },
-            text = {
-                Text(
-                    "La cuenta, las Salas que solo te pertenezcan y sus fichas remotas se eliminarán. " +
-                        "Esta acción no se puede deshacer."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !procesando,
-                    onClick = {
-                        confirmarFinal = false
-                        procesando = true
-                        mensaje = null
-                        scope.launch {
-                            runCatching { onEliminar(codigo) }
-                                .onSuccess { onEliminada() }
-                                .onFailure {
-                                    mensaje = it.message
-                                        ?: "No se pudo eliminar la cuenta. Solicita un código nuevo."
-                                    codigo = ""
+        VentanaConfirmarRuralitos(
+            titulo = "Última confirmación",
+            mensaje = "La cuenta, las Salas que solo te pertenezcan y sus fichas remotas se eliminarán. " +
+                                "Esta acción no se puede deshacer.",
+            textoConfirmar = "Sí, eliminar definitivamente",
+            confirmarHabilitado = !procesando,
+            onConfirmar = {
+                                confirmarFinal = false
+                                procesando = true
+                                mensaje = null
+                                scope.launch {
+                                    runCatching { onEliminar(codigo) }
+                                        .onSuccess { onEliminada() }
+                                        .onFailure {
+                                            mensaje = it.message
+                                                ?: "No se pudo eliminar la cuenta. Solicita un código nuevo."
+                                            codigo = ""
+                                        }
+                                    procesando = false
                                 }
-                            procesando = false
-                        }
-                    }
-                ) { Text("Sí, eliminar definitivamente", color = RojoClinico) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmarFinal = false }) { Text("Cancelar") }
-            }
+                            },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { confirmarFinal = false }
         )
     }
 

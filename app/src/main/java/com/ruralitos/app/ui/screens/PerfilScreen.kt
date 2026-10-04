@@ -1,9 +1,12 @@
 package com.ruralitos.app.ui.screens
 
 import com.ruralitos.app.ui.theme.BordeCampo
+import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
+import com.ruralitos.app.ui.components.BotonSelectorRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -314,48 +317,26 @@ internal fun CampoCargoPredeterminado(
             color = Color(0xFF5B7083),
             fontWeight = FontWeight.SemiBold
         )
-        ExposedDropdownMenuBox(
-            expanded = abierto && opciones.isNotEmpty(),
-            onExpandedChange = { if (opciones.isNotEmpty()) abierto = !abierto },
-            modifier = Modifier.fillMaxWidth().padding(top = 6.dp)
-        ) {
-            OutlinedTextField(
-                value = valor,
-                onValueChange = {},
-                readOnly = true,
-                singleLine = true,
+        Box(Modifier.fillMaxWidth().padding(top = 6.dp)) {
+            BotonSelectorRuralitos(
+                onClick = { if (opciones.isNotEmpty()) abierto = true },
                 enabled = opciones.isNotEmpty(),
-                placeholder = {
-                    Text(if (opciones.isEmpty()) "Primero elige tu sexo" else "Selecciona tu cargo")
-                },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(abierto) },
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = CianRuralitos,
-                    unfocusedBorderColor = BordeCampo,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
-                ),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 58.dp).menuAnchor()
-            )
-            ExposedDropdownMenu(
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text(
+                    valor.ifBlank { if (opciones.isEmpty()) "Primero elige tu sexo" else "Selecciona tu cargo" },
+                    color = if (valor.isBlank()) Color(0xFF5B7083) else CianRuralitos,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            MenuDesplegableRuralitos(
                 expanded = abierto && opciones.isNotEmpty(),
                 onDismissRequest = { abierto = false }
             ) {
                 opciones.forEach { opcion ->
                     ItemMenuRuralitos(
-                        text = {
-                            Column {
-                                Text(opcion, fontWeight = FontWeight.SemiBold)
-                                if (opcion == valor) {
-                                    Text(
-                                        "Cargo seleccionado",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = CianRuralitos
-                                    )
-                                }
-                            }
-                        },
+                        text = { Text(opcion) },
+                        seleccionado = opcion == valor,
                         onClick = {
                             onCambio(opcion)
                             abierto = false

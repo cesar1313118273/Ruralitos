@@ -132,15 +132,20 @@ class MapaSeguimientoUiTest {
 
     /** Elige día, mes y año de la fecha inicio ("ini") o fin ("fin") en la ventana de fechas. */
     private fun elegirFecha(marca: String, t: Long) {
-        rule.onNodeWithTag("sel_${marca}_anio").performClick()
-        rule.waitUntil(5_000) { hayTag("op_${marca}_anio_${MapaSeguimiento.anio(t)}") }
-        rule.onNodeWithTag("op_${marca}_anio_${MapaSeguimiento.anio(t)}").performClick()
-        rule.onNodeWithTag("sel_${marca}_mes").performClick()
-        rule.waitUntil(5_000) { hayTag("op_${marca}_mes_${MapaSeguimiento.mes(t)}") }
-        rule.onNodeWithTag("op_${marca}_mes_${MapaSeguimiento.mes(t)}").performClick()
-        rule.onNodeWithTag("sel_${marca}_dia").performClick()
-        rule.waitUntil(5_000) { hayTag("op_${marca}_dia_${MapaSeguimiento.dia(t)}") }
-        rule.onNodeWithTag("op_${marca}_dia_${MapaSeguimiento.dia(t)}").performClick()
+        val actual = if (marca == "ini") estadoMapa.desde else estadoMapa.hasta
+        rule.onNodeWithTag("campo_fecha_$marca").performClick()
+        rule.waitUntil(5_000) { hayTag("calendario_aceptar") }
+        if (MapaSeguimiento.anio(t) != MapaSeguimiento.anio(actual)) {
+            rule.onNodeWithTag("calendario_anio").performClick()
+            rule.waitUntil(5_000) { hayTag("anio_${MapaSeguimiento.anio(t)}") }
+            rule.onNodeWithTag("anio_${MapaSeguimiento.anio(t)}").performClick()
+        }
+        // el calendario abre en el mes de la fecha actual; se avanza o retrocede hasta el mes pedido
+        val pasos = MapaSeguimiento.mes(t) - MapaSeguimiento.mes(actual)
+        repeat(kotlin.math.abs(pasos)) { rule.onNodeWithTag(if (pasos > 0) "mes_siguiente" else "mes_anterior").performClick() }
+        rule.onNodeWithTag("dia_${MapaSeguimiento.dia(t)}").performClick()
+        rule.onNodeWithTag("calendario_aceptar").performClick()
+        rule.waitUntil(5_000) { !hayTag("calendario_aceptar") }
     }
 
     @Test

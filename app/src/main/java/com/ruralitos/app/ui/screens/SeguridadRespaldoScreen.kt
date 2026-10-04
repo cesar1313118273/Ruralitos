@@ -1,6 +1,8 @@
 package com.ruralitos.app.ui.screens
 
 import android.content.Intent
+import com.ruralitos.app.ui.components.VentanaRuralitos
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -125,136 +127,128 @@ fun SeguridadRespaldoScreen(
 
     if (confirmarBorradoTotal) {
         val cantidad = fichasGuardadas.size
-        AlertDialog(
-            onDismissRequest = { if (!procesando) confirmarBorradoTotal = false },
-            title = { Text("Eliminar todas las fichas") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        "Se eliminarán las $cantidad ficha(s) con todo su contenido: integrantes, salud, riesgos, croquis, " +
-                            "fotos y firmas, además de sus visitas en la agenda y tus notas sobre sus integrantes. " +
-                            "Se borran de este teléfono y de la nube, y tus compañeros dejarán de verlas."
-                    )
-                    Text(
-                        "Tu cuenta, tu Sala y los barrios se conservan. Esta acción no se puede deshacer; " +
-                            "si quieres guardar una copia, crea antes un respaldo.",
-                        color = RojoClinico
-                    )
-                    OutlinedTextField(
-                        value = textoBorrado,
-                        onValueChange = { textoBorrado = it; errorBorrado = false },
-                        label = { Text("Escribe ELIMINAR para confirmar") },
-                        singleLine = true,
-                        isError = errorBorrado,
-                        enabled = !procesando,
-                        shape = RoundedCornerShape(16.dp),
-                        modifier = Modifier.fillMaxWidth().testTag("texto_confirmar_borrado")
-                    )
-                    if (errorBorrado) Text("Escribe la palabra ELIMINAR tal como se ve para continuar.", color = RojoClinico, style = MaterialTheme.typography.bodySmall)
-                }
+        VentanaRuralitos(
+            titulo = "Eliminar todas las fichas",
+            subtitulo = "No se puede deshacer",
+            simbolo = "!",
+            color = RojoClinico,
+            cerrarAlTocarFuera = false,
+            onCerrar = { if (!procesando) confirmarBorradoTotal = false },
+            contenido = {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Text(
+                                "Se eliminarán las $cantidad ficha(s) con todo su contenido: integrantes, salud, riesgos, croquis, " +
+                                    "fotos y firmas, además de sus visitas en la agenda y tus notas sobre sus integrantes. " +
+                                    "Se borran de este teléfono y de la nube, y tus compañeros dejarán de verlas."
+                            )
+                            Text(
+                                "Tu cuenta, tu Sala y los barrios se conservan. Esta acción no se puede deshacer; " +
+                                    "si quieres guardar una copia, crea antes un respaldo.",
+                                color = RojoClinico
+                            )
+                            OutlinedTextField(
+                                value = textoBorrado,
+                                onValueChange = { textoBorrado = it; errorBorrado = false },
+                                label = { Text("Escribe ELIMINAR para confirmar") },
+                                singleLine = true,
+                                isError = errorBorrado,
+                                enabled = !procesando,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.fillMaxWidth().testTag("texto_confirmar_borrado")
+                            )
+                            if (errorBorrado) Text("Escribe la palabra ELIMINAR tal como se ve para continuar.", color = RojoClinico, style = MaterialTheme.typography.bodySmall)
+                        }
             },
-            confirmButton = {
-                TextButton(
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = if (procesando) "Eliminando…" else "Eliminar todo",
+                    color = RojoClinico,
                     modifier = Modifier.testTag("confirmar_borrado_total"),
                     onClick = {
-                        if (textoBorrado.trim() != "ELIMINAR") { errorBorrado = true; return@TextButton }
-                        procesando = true
-                        scope.launch {
-                            runCatching {
-                                EliminadorFichas.eliminarTodas(context, RuralitosDatabase.obtenerBaseDatos(context), usuario.id)
-                            }.onSuccess { total ->
-                                // Se borra en la nube ahora mismo; si falta algo (sin internet, sin permiso) sigue anotado.
-                                val pendientes = withContext(Dispatchers.IO) {
-                                    runCatching { SincronizadorSupabase(context).ejecutar() }
-                                    val dao = RuralitosDatabase.obtenerBaseDatos(context).sincronizacionDao()
-                                    dao.contarFichasEnBaja() to dao.contarEliminacionesPendientes()
-                                }
-                                if (pendientes.second > 0) ProgramadorSincronizacion.ejecutarAhora(context)
-                                mensaje = when {
-                                    pendientes.second == 0 ->
-                                        "Se eliminaron $total ficha(s) de este teléfono y de la nube. Tu cuenta sigue igual y ya puedes empezar desde cero."
-                                    pendientes.first == 0 ->
-                                        "Se eliminaron $total ficha(s). En la nube ya no aparecen; aún se están limpiando algunos de sus datos y terminará solo."
-                                    else ->
-                                        "Se eliminaron $total ficha(s) de este teléfono, pero ${pendientes.first} todavía no se pudieron borrar de la nube " +
-                                            "(sin internet o sin permiso). Mientras tanto no volverán a aparecer aquí y se reintentará solo."
-                                }
-                                esError = pendientes.first > 0
-                            }.onFailure {
-                                mensaje = "No se pudieron eliminar todas las fichas. Inténtalo de nuevo."
-                                esError = true
-                            }
-                            procesando = false
-                            confirmarBorradoTotal = false
-                            textoBorrado = ""
-                        }
-                    }
-                ) { Text(if (procesando) "Eliminando…" else "Eliminar todo", color = RojoClinico) }
-            },
-            dismissButton = {
-                TextButton(onClick = { if (!procesando) confirmarBorradoTotal = false }) { Text("Cancelar") }
+                                        if (textoBorrado.trim() != "ELIMINAR") { errorBorrado = true; return@BotonPrincipalRuralitos }
+                                        procesando = true
+                                        scope.launch {
+                                            runCatching {
+                                                EliminadorFichas.eliminarTodas(context, RuralitosDatabase.obtenerBaseDatos(context), usuario.id)
+                                            }.onSuccess { total ->
+                                                // Se borra en la nube ahora mismo; si falta algo (sin internet, sin permiso) sigue anotado.
+                                                val pendientes = withContext(Dispatchers.IO) {
+                                                    runCatching { SincronizadorSupabase(context).ejecutar() }
+                                                    val dao = RuralitosDatabase.obtenerBaseDatos(context).sincronizacionDao()
+                                                    dao.contarFichasEnBaja() to dao.contarEliminacionesPendientes()
+                                                }
+                                                if (pendientes.second > 0) ProgramadorSincronizacion.ejecutarAhora(context)
+                                                mensaje = when {
+                                                    pendientes.second == 0 ->
+                                                        "Se eliminaron $total ficha(s) de este teléfono y de la nube. Tu cuenta sigue igual y ya puedes empezar desde cero."
+                                                    pendientes.first == 0 ->
+                                                        "Se eliminaron $total ficha(s). En la nube ya no aparecen; aún se están limpiando algunos de sus datos y terminará solo."
+                                                    else ->
+                                                        "Se eliminaron $total ficha(s) de este teléfono, pero ${pendientes.first} todavía no se pudieron borrar de la nube " +
+                                                            "(sin internet o sin permiso). Mientras tanto no volverán a aparecer aquí y se reintentará solo."
+                                                }
+                                                esError = pendientes.first > 0
+                                            }.onFailure {
+                                                mensaje = "No se pudieron eliminar todas las fichas. Inténtalo de nuevo."
+                                                esError = true
+                                            }
+                                            procesando = false
+                                            confirmarBorradoTotal = false
+                                            textoBorrado = ""
+                                        }
+                                    }
+                )
+                BotonSecundarioRuralitos(texto = "Cancelar", onClick = { if (!procesando) confirmarBorradoTotal = false })
             }
         )
     }
     respaldoCreado?.let { uri ->
-        AlertDialog(
-            onDismissRequest = { respaldoCreado = null },
-            title = { Text("Respaldo creado correctamente") },
-            text = {
-                Text(
-                    "El archivo está cifrado y no contiene tu contraseña, sesión ni credenciales. " +
-                        "¿Quieres compartirlo ahora?"
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    respaldoCreado = null
-                    compartir(uri)
-                }) { Text("Compartir archivo") }
-            },
-            dismissButton = {
-                TextButton(onClick = { respaldoCreado = null }) { Text("Ahora no") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Respaldo creado correctamente",
+            mensaje = "El archivo está cifrado y no contiene tu contraseña, sesión ni credenciales. " +
+                                "¿Quieres compartirlo ahora?",
+            textoConfirmar = "Compartir archivo",
+            onConfirmar = {
+                            respaldoCreado = null
+                            compartir(uri)
+                        },
+            textoCancelar = "Ahora no",
+            peligro = false,
+            onCancelar = { respaldoCreado = null }
         )
     }
     restauracionPendiente?.let { uri ->
-        AlertDialog(
-            onDismissRequest = { restauracionPendiente = null },
-            title = { Text("Importar fichas del respaldo") },
-            text = {
-                Text(
-                    "Las fichas se agregarán a la Sala activa y quedarán pendientes de sincronización. " +
-                        "Las fichas que ya existan no se duplicarán."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    restauracionPendiente = null
-                    procesando = true
-                    scope.launch {
-                        runCatching {
-                            GestorRespaldoRuralitos.restaurar(
-                                context, uri, clave, usuario, salaActiva
-                            )
-                        }.onSuccess { resultado ->
-                            mensaje = "${resultado.fichasImportadas} ficha(s) importadas; " +
-                                "${resultado.fichasOmitidas} duplicada(s) omitidas."
-                            esError = false
-                            modo = null
-                            clave = ""
-                            onRestaurado(resultado)
-                        }.onFailure {
-                            mensaje = it.message
-                                ?: "No se pudo importar. La contraseña o el archivo pueden ser incorrectos."
-                            esError = true
-                        }
-                        procesando = false
-                    }
-                }) { Text("Importar fichas") }
-            },
-            dismissButton = {
-                TextButton(onClick = { restauracionPendiente = null }) { Text("Cancelar") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Importar fichas del respaldo",
+            mensaje = "Las fichas se agregarán a la Sala activa y quedarán pendientes de sincronización. " +
+                                "Las fichas que ya existan no se duplicarán.",
+            textoConfirmar = "Importar fichas",
+            onConfirmar = {
+                            restauracionPendiente = null
+                            procesando = true
+                            scope.launch {
+                                runCatching {
+                                    GestorRespaldoRuralitos.restaurar(
+                                        context, uri, clave, usuario, salaActiva
+                                    )
+                                }.onSuccess { resultado ->
+                                    mensaje = "${resultado.fichasImportadas} ficha(s) importadas; " +
+                                        "${resultado.fichasOmitidas} duplicada(s) omitidas."
+                                    esError = false
+                                    modo = null
+                                    clave = ""
+                                    onRestaurado(resultado)
+                                }.onFailure {
+                                    mensaje = it.message
+                                        ?: "No se pudo importar. La contraseña o el archivo pueden ser incorrectos."
+                                    esError = true
+                                }
+                                procesando = false
+                            }
+                        },
+            textoCancelar = "Cancelar",
+            peligro = false,
+            onCancelar = { restauracionPendiente = null }
         )
     }
 

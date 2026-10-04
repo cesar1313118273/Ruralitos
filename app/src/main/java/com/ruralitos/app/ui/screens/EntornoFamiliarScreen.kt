@@ -122,7 +122,7 @@ fun EntornoFamiliarScreen(
                         mostrandoContaminacion = false
                         contaminacionEditando = null
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar el informe.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar el informe.")
                     }
                 }
             },

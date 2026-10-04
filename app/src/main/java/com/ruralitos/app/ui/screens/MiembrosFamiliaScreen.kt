@@ -1,6 +1,8 @@
 package com.ruralitos.app.ui.screens
 
 import androidx.compose.runtime.mutableStateListOf
+import com.ruralitos.app.ui.components.VentanaRuralitos
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import com.ruralitos.app.ui.components.ItemMenuRuralitos
 import com.ruralitos.app.ui.components.MenuDesplegableRuralitos
 import com.ruralitos.app.ui.components.BotonSelectorRuralitos
@@ -223,50 +225,43 @@ fun MiembrosFamiliaScreen(
     }
 
     miembroNota?.let { integrante ->
-        AlertDialog(
-            onDismissRequest = {
+        VentanaRuralitos(
+            titulo = "Nota diaria",
+            subtitulo = integrante.apellidosNombres,
+            simbolo = "✎",
+            color = CianRuralitos,
+            onCerrar = {
                 val contenido = textoNota
                 val sesion = sesionNota
                 if (sesion != null) scope.launch { guardarNota(contenido, sesion) }
                 miembroNota = null
             },
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = {
+            contenido = {
+                OutlinedTextField(
+                    value = textoNota,
+                    onValueChange = { textoNota = it },
+                    label = { Text("Nota importante") },
+                    minLines = 3,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    if (errorNota) "No se pudo guardar. Comprueba el almacenamiento."
+                    else "Se guarda automáticamente mientras escribes.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (errorNota) RojoClinico else AzulClinico
+                )
+            },
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar y cerrar",
+                    color = CianRuralitos,
+                    onClick = {
                         val contenido = textoNota
                         val sesion = sesionNota
                         if (sesion != null) scope.launch { guardarNota(contenido, sesion) }
                         miembroNota = null
-                    }) { Text("✕", color = RojoClinico) }
-                    Text("Nota diaria", style = MaterialTheme.typography.titleMedium)
-                }
-            },
-            text = {
-                Column {
-                    Text(integrante.apellidosNombres, fontWeight = FontWeight.SemiBold)
-                    OutlinedTextField(
-                        value = textoNota,
-                        onValueChange = { textoNota = it },
-                        label = { Text("Nota importante") },
-                        minLines = 3,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-                    )
-                    Text(
-                        if (errorNota) "No se pudo guardar. Comprueba el almacenamiento."
-                        else "Se guarda automáticamente mientras escribes.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (errorNota) RojoClinico else AzulClinico,
-                        modifier = Modifier.padding(top = 8.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    val contenido = textoNota
-                    val sesion = sesionNota
-                    if (sesion != null) scope.launch { guardarNota(contenido, sesion) }
-                    miembroNota = null
-                }) { Text("Guardar y cerrar") }
+                    }
+                )
             }
         )
     }
@@ -284,11 +279,7 @@ fun MiembrosFamiliaScreen(
               if (fichaId == 0L && alCrearFicha != null) {
                 // Borrador: nada se guarda hasta registrar al jefe o jefa de familia.
                 if (!RolFamiliar.esJefe(miembro.parentesco)) {
-                    Toast.makeText(
-                        context,
-                        "Primero registra al jefe o jefa de familia. Hasta entonces no se guarda nada.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Primero registra al jefe o jefa de familia. Hasta entonces no se guarda nada.")
                 } else {
                     scope.launch {
                         val creada = runCatching { alCrearFicha(miembro, telefonoJefe, embarazo) }.getOrDefault(false)
@@ -296,7 +287,7 @@ fun MiembrosFamiliaScreen(
                             mostrandoFormulario = false
                             miembroEditando = null
                         } else {
-                            Toast.makeText(context, "No se pudo guardar la ficha.", Toast.LENGTH_SHORT).show()
+                            com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar la ficha.")
                         }
                     }
                 }
@@ -346,7 +337,7 @@ fun MiembrosFamiliaScreen(
                         mostrandoFormulario = false
                         miembroEditando = null
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar el integrante.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar el integrante.")
                     }
                 }
             },
@@ -359,16 +350,19 @@ fun MiembrosFamiliaScreen(
     }
 
     if (eligiendoActor) {
-        AlertDialog(
-            onDismissRequest = { eligiendoActor = false },
-            title = { Text("Actores comunitarios") },
-            text = {
-                Column(Modifier.verticalScroll(rememberScrollState()).testTag("lista_actores")) {
+        VentanaRuralitos(
+            titulo = "Actores comunitarios",
+            subtitulo = "Elige a la persona",
+            simbolo = "◉",
+            color = VerdeSalud,
+            onCerrar = { eligiendoActor = false },
+            contenido = {
+                Column(Modifier.testTag("lista_actores")) {
                     Text(
                         "Elige a la persona que sea prestador comunitario de salud, partero/a ancestral o de sabiduría ancestral.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(bottom = 8.dp)
+                        modifier = Modifier.padding(bottom = 6.dp)
                     )
                     miembros.forEach { persona ->
                         Row(
@@ -386,7 +380,7 @@ fun MiembrosFamiliaScreen(
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { eligiendoActor = false }) { Text("Cerrar") } }
+            acciones = { BotonSecundarioRuralitos(texto = "Cerrar", onClick = { eligiendoActor = false }) }
         )
     }
 
@@ -394,18 +388,21 @@ fun MiembrosFamiliaScreen(
         var prestador by remember(persona.id) { mutableStateOf(persona.prestadorComunitario == true) }
         var partero by remember(persona.id) { mutableStateOf(persona.parteroAncestral == true) }
         var sabiduria by remember(persona.id) { mutableStateOf(persona.sabiduriaAncestral == true) }
-        AlertDialog(
-            onDismissRequest = { actorEditando = null },
-            title = { Text(persona.apellidosNombres.ifBlank { "Integrante sin nombre" }) },
-            text = {
-                Column {
-                    FilaActor("Prestador comunitario de salud", R.drawable.prestador_comunitario, prestador, "actor_prestador") { prestador = it }
-                    FilaActor("Partero/a ancestral tradicional", R.drawable.partero_ancestral, partero, "actor_partero") { partero = it }
-                    FilaActor("Hombre o mujer de sabiduría ancestral", R.drawable.sabiduria_ancestral, sabiduria, "actor_sabiduria") { sabiduria = it }
-                }
+        VentanaRuralitos(
+            titulo = persona.apellidosNombres.ifBlank { "Integrante sin nombre" },
+            subtitulo = "Actores comunitarios",
+            simbolo = "◉",
+            color = VerdeSalud,
+            onCerrar = { actorEditando = null },
+            contenido = {
+                FilaActor("Prestador comunitario de salud", R.drawable.prestador_comunitario, prestador, "actor_prestador") { prestador = it }
+                FilaActor("Partero/a ancestral tradicional", R.drawable.partero_ancestral, partero, "actor_partero") { partero = it }
+                FilaActor("Hombre o mujer de sabiduría ancestral", R.drawable.sabiduria_ancestral, sabiduria, "actor_sabiduria") { sabiduria = it }
             },
-            confirmButton = {
-                TextButton(
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = "Guardar",
+                    color = CianRuralitos,
                     modifier = Modifier.testTag("guardar_actores"),
                     onClick = {
                         val cambiada = persona.copy(
@@ -414,12 +411,12 @@ fun MiembrosFamiliaScreen(
                         actorEditando = null
                         scope.launch {
                             runCatching { withContext(Dispatchers.IO) { database.fichaContenidoDao().actualizarMiembro(cambiada) } }
-                                .onFailure { Toast.makeText(context, "No se pudo guardar.", Toast.LENGTH_SHORT).show() }
+                                .onFailure { com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar.") }
                         }
                     }
-                ) { Text("Guardar") }
-            },
-            dismissButton = { TextButton(onClick = { actorEditando = null }) { Text("Cancelar") } }
+                )
+                BotonSecundarioRuralitos(texto = "Cancelar", onClick = { actorEditando = null })
+            }
         )
     }
 
@@ -435,7 +432,7 @@ fun MiembrosFamiliaScreen(
                             else database.fichaContenidoDao().actualizarMortalidad(item)
                         }
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar el registro de mortalidad.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar el registro de mortalidad.")
                     }
                 }
             },
@@ -447,28 +444,22 @@ fun MiembrosFamiliaScreen(
     }
 
     miembroEliminar?.let { seleccionado ->
-        AlertDialog(
-            onDismissRequest = { miembroEliminar = null },
-            title = { Text("Eliminar integrante") },
-            text = {
-                Text("¿Deseas eliminar a ${seleccionado.apellidosNombres}? Esta acción quitará sus datos de la ficha.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        miembroEliminar = null
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                embarazoDe(seleccionado)?.let { database.fichaContenidoDao().eliminarEmbarazada(it) }
-                                database.fichaContenidoDao().eliminarMiembro(seleccionado)
-                            }
-                        }
-                    }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { miembroEliminar = null }) { Text("Conservar integrante") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar integrante",
+            mensaje = "¿Deseas eliminar a ${seleccionado.apellidosNombres}? Esta acción quitará sus datos de la ficha.",
+            textoConfirmar = "Sí, eliminar",
+            onConfirmar = {
+                                miembroEliminar = null
+                                scope.launch {
+                                    withContext(Dispatchers.IO) {
+                                        embarazoDe(seleccionado)?.let { database.fichaContenidoDao().eliminarEmbarazada(it) }
+                                        database.fichaContenidoDao().eliminarMiembro(seleccionado)
+                                    }
+                                }
+                            },
+            textoCancelar = "Conservar integrante",
+            peligro = true,
+            onCancelar = { miembroEliminar = null }
         )
     }
 
@@ -487,11 +478,7 @@ fun MiembrosFamiliaScreen(
                     color = AzulClinico,
                     onClick = {
                     if (fichaId == 0L && alCrearFicha != null) {
-                        Toast.makeText(
-                            context,
-                            "Registra primero al jefe o jefa de familia para guardar la ficha.",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Registra primero al jefe o jefa de familia para guardar la ficha.")
                     } else {
                         onContinuar()
                     }
@@ -614,26 +601,29 @@ private fun VentanaMortalidad(
     }
 
     porEliminar?.let { seleccionado ->
-        AlertDialog(
-            onDismissRequest = { porEliminar = null },
-            title = { Text("Eliminar registro de mortalidad") },
-            text = { Text("Se eliminará el registro de ${seleccionado.nombre}. Esta acción no se puede deshacer.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    if (editando?.id == seleccionado.id) limpiar()
-                    onEliminar(seleccionado)
-                    porEliminar = null
-                }) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = { TextButton(onClick = { porEliminar = null }) { Text("Conservar registro") } }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar registro de mortalidad",
+            mensaje = "Se eliminará el registro de ${seleccionado.nombre}. Esta acción no se puede deshacer.",
+            textoConfirmar = "Sí, eliminar",
+            onConfirmar = {
+                            if (editando?.id == seleccionado.id) limpiar()
+                            onEliminar(seleccionado)
+                            porEliminar = null
+                        },
+            textoCancelar = "Conservar registro",
+            peligro = true,
+            onCancelar = { porEliminar = null }
         )
     }
 
-    AlertDialog(
-        onDismissRequest = onCerrar,
-        title = { Text("Mortalidad familiar") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()).testTag("ventana_mortalidad")) {
+    VentanaRuralitos(
+        titulo = "Mortalidad familiar",
+        subtitulo = "Últimos cinco años",
+        simbolo = "✝",
+        color = RojoClinico,
+        onCerrar = onCerrar,
+        contenido = {
+            Column(Modifier.testTag("ventana_mortalidad")) {
                 Text(
                     "Solo fallecimientos de los últimos cinco años. Registra apellidos y nombres, parentesco, edad al fallecer y causa.",
                     style = MaterialTheme.typography.bodySmall,
@@ -693,8 +683,10 @@ private fun VentanaMortalidad(
                 }
             }
         },
-        confirmButton = {
-            TextButton(
+        acciones = {
+            BotonPrincipalRuralitos(
+                texto = if (editando == null) "Guardar fallecimiento" else "Guardar cambios",
+                color = RojoClinico,
                 modifier = Modifier.testTag("guardar_fallecimiento"),
                 onClick = {
                     if (nombre.isBlank() || parentesco.isBlank() || edad.toIntOrNull() == null || causa.isBlank()) {
@@ -714,9 +706,9 @@ private fun VentanaMortalidad(
                         limpiar()
                     }
                 }
-            ) { Text(if (editando == null) "Guardar fallecimiento" else "Guardar cambios") }
-        },
-        dismissButton = { TextButton(onClick = onCerrar) { Text("Cerrar") } }
+            )
+            BotonSecundarioRuralitos(texto = "Cerrar", onClick = onCerrar)
+        }
     )
 }
 
@@ -1162,21 +1154,28 @@ private fun FormularioMiembroScreen(
                         else "${diagnosticos.size} diagnóstico(s) seleccionado(s); el texto sin seleccionar no se guarda"
                     )
                 },
-                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-                singleLine = true
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp).testTag("cie_buscar"),
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
-            resultadosCie10.forEach { resultado ->
-                TextButton(onClick = {
-                    diagnosticos = diagnosticos + resultado
+            com.ruralitos.app.ui.components.ListaSugerenciasRuralitos(
+                sugerencias = resultadosCie10.map {
+                    com.ruralitos.app.ui.components.SugerenciaRuralitos(
+                        clave = it.codigo, codigo = it.codigo, titulo = it.descripcion,
+                        marca = if (EstrategiasDesdeCie10.esGrupoIII(it.codigo)) "Grupo III" else null
+                    )
+                },
+                etiquetaPrueba = { "cie_resultado_$it" },
+                onElegir = { codigo ->
+                    resultadosCie10.firstOrNull { it.codigo == codigo }?.let { diagnosticos = diagnosticos + it }
                     consultaCie10 = ""
-                }, modifier = Modifier.fillMaxWidth()) { Text("+ ${resultado.etiqueta}") }
-            }
+                }
+            )
             diagnosticos.forEach { diagnostico ->
-                FilterChip(
-                    selected = true,
-                    onClick = { diagnosticos = diagnosticos.filterNot { it.codigo == diagnostico.codigo } },
-                    label = { Text("${diagnostico.codigo} · ${diagnostico.descripcion}  ×") },
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp)
+                com.ruralitos.app.ui.components.ChipElegidoRuralitos(
+                    texto = "${diagnostico.codigo} · ${diagnostico.descripcion}",
+                    onQuitar = { diagnosticos = diagnosticos.filterNot { it.codigo == diagnostico.codigo } },
+                    etiquetaPrueba = "cie_elegido_${diagnostico.codigo}"
                 )
             }
             if (diagnosticos.isNotEmpty()) {
@@ -1526,8 +1525,9 @@ private fun SelectorDesplegableMiembro(
             opciones.forEach { (valor, etiqueta) ->
                 val bloqueada = valor in bloqueadas && valor != seleccion
                 ItemMenuRuralitos(
-                    text = { Text("${if (valor == seleccion) "✓ " else ""}$etiqueta${if (bloqueada) " (ya registrado)" else ""}") },
+                    text = { Text("$etiqueta${if (bloqueada) " (ya registrado)" else ""}") },
                     enabled = !bloqueada,
+                    seleccionado = valor == seleccion,
                     onClick = {
                         onSeleccion(valor)
                         expandido = false
@@ -1594,7 +1594,8 @@ private fun SelectorMultipleMiembro(
         }
         MenuDesplegableRuralitos(expanded = expandido, onDismissRequest = { expandido = false }) {
             ItemMenuRuralitos(
-                text = { Text("${if (seleccion.isEmpty()) "✓ " else ""}Ninguno") },
+                text = { Text("Ninguno") },
+                casilla = seleccion.isEmpty(),
                 onClick = { onSeleccion(emptySet()); expandido = false }
             )
             opciones.forEach { (valor, etiqueta) ->
@@ -1609,14 +1610,19 @@ private fun SelectorMultipleMiembro(
                                     contentScale = ContentScale.Fit
                                 )
                             }
-                            Text("${if (valor in seleccion) "✓ " else ""}$etiqueta")
+                            Text(etiqueta)
                         }
                     },
+                    casilla = valor in seleccion,
                     onClick = {
                         onSeleccion(if (valor in seleccion) seleccion - valor else seleccion + valor)
                     }
                 )
             }
+            ItemMenuRuralitos(
+                text = { Text("Listo", color = CianRuralitos, fontWeight = FontWeight.SemiBold) },
+                onClick = { expandido = false }
+            )
         }
     }
 }

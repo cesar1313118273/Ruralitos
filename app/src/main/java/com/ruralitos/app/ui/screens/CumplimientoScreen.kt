@@ -1,6 +1,9 @@
 package com.ruralitos.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.VentanaRuralitos
+import com.ruralitos.app.ui.theme.CianRuralitos
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -337,41 +340,46 @@ private fun VentanaPoblacion(inicial: PoblacionAsignada, onCancelar: () -> Unit,
     val totalH = GrupoCumplimiento.entries.sumOf { valor(it, "H") }
     val totalM = GrupoCumplimiento.entries.sumOf { valor(it, "M") }
 
-    AlertDialog(
-        onDismissRequest = onCancelar,
-        title = { Text("Población asignada") },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()).testTag("ventana_poblacion")) {
-                Text(
-                    "Escribe lo que dice la tabla de tu unidad. El total se suma solo.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                FilaTabla("Grupo", "Hombres", "Mujeres", "Total", encabezado = true)
-                GrupoCumplimiento.entries.forEach { g ->
-                    FilaTabla(
-                        g.titulo,
-                        textos["${g.name}|H"].orEmpty(),
-                        textos["${g.name}|M"].orEmpty(),
-                        (valor(g, "H") + valor(g, "M")).toString(),
-                        onHombres = { textos["${g.name}|H"] = CumplimientoPoblacion.limpiarCasilla(it) },
-                        onMujeres = { textos["${g.name}|M"] = CumplimientoPoblacion.limpiarCasilla(it) },
-                        etiqueta = g.name
+    VentanaRuralitos(
+        titulo = "Población asignada",
+        subtitulo = "Cumplimiento",
+        simbolo = "▦",
+        color = CianRuralitos,
+        onCerrar = onCancelar,
+        contenido = {
+    Column(Modifier.testTag("ventana_poblacion")) {
+                    Text(
+                        "Escribe lo que dice la tabla de tu unidad. El total se suma solo.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(bottom = 8.dp)
                     )
+                    FilaTabla("Grupo", "Hombres", "Mujeres", "Total", encabezado = true)
+                    GrupoCumplimiento.entries.forEach { g ->
+                        FilaTabla(
+                            g.titulo,
+                            textos["${g.name}|H"].orEmpty(),
+                            textos["${g.name}|M"].orEmpty(),
+                            (valor(g, "H") + valor(g, "M")).toString(),
+                            onHombres = { textos["${g.name}|H"] = CumplimientoPoblacion.limpiarCasilla(it) },
+                            onMujeres = { textos["${g.name}|M"] = CumplimientoPoblacion.limpiarCasilla(it) },
+                            etiqueta = g.name
+                        )
+                    }
+                    FilaTabla("Ciclos de vida", totalH.toString(), totalM.toString(), (totalH + totalM).toString(), esTotal = true)
                 }
-                FilaTabla("Ciclos de vida", totalH.toString(), totalM.toString(), (totalH + totalM).toString(), esTotal = true)
-            }
         },
-        confirmButton = {
-            TextButton(
+        acciones = {
+            BotonPrincipalRuralitos(
+                texto = "Guardar",
+                color = CianRuralitos,
                 modifier = Modifier.testTag("guardar_poblacion"),
                 onClick = {
-                    onGuardar(PoblacionAsignada(GrupoCumplimiento.entries.associateWith { valor(it, "H") to valor(it, "M") }))
-                }
-            ) { Text("Guardar") }
-        },
-        dismissButton = { TextButton(onClick = onCancelar) { Text("Cancelar") } }
+                                onGuardar(PoblacionAsignada(GrupoCumplimiento.entries.associateWith { valor(it, "H") to valor(it, "M") }))
+                            }
+            )
+            BotonSecundarioRuralitos(texto = "Cancelar", onClick = onCancelar)
+        }
     )
 }
 

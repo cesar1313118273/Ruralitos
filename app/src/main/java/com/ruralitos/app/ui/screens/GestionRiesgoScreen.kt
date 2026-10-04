@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import android.widget.Toast
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -93,7 +94,7 @@ fun GestionRiesgoScreen(
                     }.onSuccess {
                         evaluando = null
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar la evaluación.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar la evaluación.")
                     }
                 }
             },
@@ -119,7 +120,7 @@ fun GestionRiesgoScreen(
                         mostrandoFormulario = false
                         editando = null
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar el seguimiento.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar el seguimiento.")
                     }
                 }
             },
@@ -132,25 +133,19 @@ fun GestionRiesgoScreen(
     }
 
     eliminar?.let { seleccionado ->
-        AlertDialog(
-            onDismissRequest = { eliminar = null },
-            title = { Text("Eliminar seguimiento") },
-            text = {
-                Text("Se eliminará el seguimiento número ${seleccionado.numero ?: "sin número"} del ${seleccionado.fechaAnalisis}.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        eliminar = null
-                        scope.launch(Dispatchers.IO) {
-                            database.fichaContenidoDao().eliminarGestionRiesgo(seleccionado)
-                        }
-                    }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { eliminar = null }) { Text("Conservar seguimiento") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar seguimiento",
+            mensaje = "Se eliminará el seguimiento número ${seleccionado.numero ?: "sin número"} del ${seleccionado.fechaAnalisis}.",
+            textoConfirmar = "Sí, eliminar",
+            onConfirmar = {
+                                eliminar = null
+                                scope.launch(Dispatchers.IO) {
+                                    database.fichaContenidoDao().eliminarGestionRiesgo(seleccionado)
+                                }
+                            },
+            textoCancelar = "Conservar seguimiento",
+            peligro = true,
+            onCancelar = { eliminar = null }
         )
     }
 

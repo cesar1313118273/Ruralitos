@@ -206,44 +206,29 @@ fun BuscarFichasScreen(
 
     selectorFecha?.let { campo ->
         val fechaSeleccionada = if (campo == CampoFechaBusqueda.INICIO) fechaInicio else fechaFin
-        val selector = rememberDatePickerState(
-            initialSelectedDateMillis = fechaParaSelectorMillis(fechaSeleccionada)
-                ?: fechaParaSelectorMillis(fechaHoy)
-        )
-        DatePickerDialog(
-            onDismissRequest = { selectorFecha = null },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selector.selectedDateMillis?.let { millis ->
-                            todasLasFechas = false
-                            if (campo == CampoFechaBusqueda.INICIO) {
-                                fechaInicio = millisAFechaVisible(millis)
-                            } else {
-                                fechaFin = millisAFechaVisible(millis)
-                            }
-                        }
-                        errorFiltros = null
-                        selectorFecha = null
-                    }
-                ) { Text("Usar esta fecha") }
+        // El calendario de la app entrega el inicio del día local; la fecha visible es dd/MM/yyyy.
+        val inicial = fechaParaSelectorMillis(fechaSeleccionada) ?: fechaParaSelectorMillis(fechaHoy)
+        com.ruralitos.app.ui.components.CalendarioRuralitos(
+            titulo = if (campo == CampoFechaBusqueda.INICIO) "Fecha inicial" else "Fecha final",
+            fechaInicialMillis = inicial?.let { utc ->
+                val dia = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply { timeInMillis = utc }
+                Calendar.getInstance().apply {
+                    clear(); set(dia.get(Calendar.YEAR), dia.get(Calendar.MONTH), dia.get(Calendar.DAY_OF_MONTH))
+                }.timeInMillis
             },
-            dismissButton = {
-                TextButton(onClick = { selectorFecha = null }) { Text("Cancelar") }
-            }
-        ) {
-            DatePicker(
-                state = selector,
-                title = {
-                    Text(
-                        if (campo == CampoFechaBusqueda.INICIO) "Selecciona la fecha inicial"
-                        else "Selecciona la fecha final",
-                        modifier = Modifier.padding(24.dp)
-                    )
-                },
-                showModeToggle = true
-            )
-        }
+            onElegida = { local ->
+                val d = Calendar.getInstance().apply { timeInMillis = local }
+                val utc = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    clear(); set(d.get(Calendar.YEAR), d.get(Calendar.MONTH), d.get(Calendar.DAY_OF_MONTH))
+                }.timeInMillis
+                todasLasFechas = false
+                if (campo == CampoFechaBusqueda.INICIO) fechaInicio = millisAFechaVisible(utc)
+                else fechaFin = millisAFechaVisible(utc)
+                errorFiltros = null
+                selectorFecha = null
+            },
+            onCerrar = { selectorFecha = null }
+        )
     }
 
 Column(

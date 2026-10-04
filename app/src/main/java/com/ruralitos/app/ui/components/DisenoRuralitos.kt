@@ -508,20 +508,42 @@ fun MenuDesplegableRuralitos(
     )
 }
 
-/** Opción del spinner: texto grande y fácil de tocar, separada por una línea fina. */
+/**
+ * Opción del menú desplegable: texto grande y fácil de tocar, separada por una línea fina. La elegida lleva fondo suave
+ * y una marca a la derecha; en los menús de varias opciones, [casilla] dibuja una casilla marcada o vacía a la izquierda.
+ */
 @Composable
 fun ItemMenuRuralitos(
     text: @Composable () -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    seleccionado: Boolean = false,
+    casilla: Boolean? = null
 ) {
     DropdownMenuItem(
         text = text,
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
-        colors = MenuDefaults.itemColors(textColor = AzulClinicoOscuro)
+        leadingIcon = casilla?.let { marcada -> { CasillaRuralitos(marcada) } },
+        trailingIcon = if (seleccionado) {
+            { Text("✓", color = CianRuralitos, fontWeight = FontWeight.SemiBold) }
+        } else null,
+        modifier = modifier
+            .heightIn(min = 46.dp)
+            .background(if (seleccionado) CianSuave else Color.Transparent)
+            .drawBehind {
+                drawLine(
+                    color = BordeClinico,
+                    start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                    end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            },
+        colors = MenuDefaults.itemColors(
+            textColor = AzulClinicoOscuro,
+            disabledTextColor = Color(0xFF9AA9B8)
+        )
     )
 }
 

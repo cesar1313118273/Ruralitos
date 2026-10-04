@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import androidx.compose.ui.unit.isSpecified
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import com.ruralitos.app.ui.components.TextoAjustado
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.widthIn
@@ -709,27 +710,17 @@ fun DispensarizacionScreen(
     }
 
     archivoExportado?.let { archivo ->
-        AlertDialog(
-            onDismissRequest = { archivoExportado = null },
-            title = { Text("Registro general guardado") },
-            text = {
-                Text("El archivo se guardó en Descargas/Ruralitos. ¿Deseas compartirlo ahora?")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        GestorDescargasFicha.compartir(context, listOf(archivo))
-                        archivoExportado = null
-                    }
-                ) {
-                    Text("Compartir ahora", fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { archivoExportado = null }) {
-                    Text("Conservar en el celular")
-                }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Registro general guardado",
+            mensaje = "El archivo se guardó en Descargas/Ruralitos. ¿Deseas compartirlo ahora?",
+            textoConfirmar = "Compartir ahora",
+            onConfirmar = {
+                                GestorDescargasFicha.compartir(context, listOf(archivo))
+                                archivoExportado = null
+                            },
+            textoCancelar = "Conservar en el celular",
+            peligro = false,
+            onCancelar = { archivoExportado = null }
         )
     }
 }
@@ -771,9 +762,10 @@ private fun SelectorFichas(
                 ItemMenuRuralitos(
                     text = {
                         Text(
-                            "${if (seleccion == ficha.id) "✓ " else ""}Ficha ${ficha.numeroFichaFamiliar} · ${ficha.nombreApellidoJefeFamilia}${coincidencia?.let { " · ${it.apellidosNombres}" }.orEmpty()}",
+                            "Ficha ${ficha.numeroFichaFamiliar} · ${ficha.nombreApellidoJefeFamilia}${coincidencia?.let { " · ${it.apellidosNombres}" }.orEmpty()}",
                         )
                     },
+                    seleccionado = seleccion == ficha.id,
                     onClick = { onSeleccion(ficha.id); abierto = false; consulta = "" }
                 )
             }
@@ -841,9 +833,10 @@ private fun SelectorIdentificadoUnico(
                 ItemMenuRuralitos(
                     text = {
                         Text(
-                            text = "${if (id == seleccion) "✓ " else ""}$etiqueta",
+                            text = etiqueta,
                         )
                     },
+                    seleccionado = id == seleccion,
                     onClick = {
                         onSeleccion(id)
                         abierto = false

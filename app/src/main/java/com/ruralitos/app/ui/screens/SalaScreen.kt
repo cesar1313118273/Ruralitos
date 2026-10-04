@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import com.ruralitos.app.ui.components.EncabezadoPantallaRuralitos
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import com.ruralitos.app.ui.components.FlechaDesplegable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -171,68 +172,58 @@ fun SalaScreen(
     }
 
     territorioAEliminar?.let { item ->
-        AlertDialog(
-            onDismissRequest = { if (!procesando) territorioAEliminar = null },
-            title = { Text("Eliminar ${item.etiqueta.lowercase()}") },
-            text = {
-                Text(
-                    "${item.nombre} dejará de aparecer para nuevas fichas. " +
-                        "Las fichas históricas conservarán su información."
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !procesando,
-                    onClick = {
-                        territorioAEliminar = null
-                        ejecutar("Barrio eliminado correctamente.") {
-                            val remoto = supabase.desactivarTerritorio(salaId, item.id)
-                            database.salaDao().guardarTerritorio(
-                                item.copy(
-                                    tipo = remoto.tipo,
-                                    nombre = remoto.nombre,
-                                    activo = remoto.activo,
-                                    actualizadoEn = System.currentTimeMillis()
-                                )
-                            )
-                            if (territorioId == item.id) territorioId = ""
-                            if (territorioEditandoId == item.id) {
-                                territorioEditandoId = null
-                                nombreTerritorio = ""
-                            }
-                        }
-                    }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !procesando,
-                    onClick = { territorioAEliminar = null }
-                ) { Text("Cancelar") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar ${item.etiqueta.lowercase()}",
+            mensaje = "${item.nombre} dejará de aparecer para nuevas fichas. " +
+                                "Las fichas históricas conservarán su información.",
+            textoConfirmar = "Sí, eliminar",
+            confirmarHabilitado = !procesando,
+            onConfirmar = {
+                                territorioAEliminar = null
+                                ejecutar("Barrio eliminado correctamente.") {
+                                    val remoto = supabase.desactivarTerritorio(salaId, item.id)
+                                    database.salaDao().guardarTerritorio(
+                                        item.copy(
+                                            tipo = remoto.tipo,
+                                            nombre = remoto.nombre,
+                                            activo = remoto.activo,
+                                            actualizadoEn = System.currentTimeMillis()
+                                        )
+                                    )
+                                    if (territorioId == item.id) territorioId = ""
+                                    if (territorioEditandoId == item.id) {
+                                        territorioEditandoId = null
+                                        nombreTerritorio = ""
+                                    }
+                                }
+                            },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { territorioAEliminar = null }
         )
     }
 
     eaisAEliminar?.let { item ->
-        AlertDialog(
-            onDismissRequest = { if (!procesando) eaisAEliminar = null },
-            title = { Text("Eliminar ${item.nombre}") },
-            text = { Text("El EAIS dejará de estar disponible para nuevas fichas. Las fichas existentes no se borran y podrán seguir editándose.") },
-            confirmButton = {
-                TextButton(enabled = !procesando, onClick = {
-                    eaisAEliminar = null
-                    ejecutar("EAIS desactivado correctamente. Las fichas históricas se conservaron.") {
-                        val remoto = supabase.desactivarEais(salaId, item.id)
-                        database.salaDao().guardarEais(item.copy(activo = remoto.activo, actualizadoEn = System.currentTimeMillis()))
-                        database.salaDao().desactivarTerritoriosDeEais(item.id)
-                        eaisId = ""
-                        territorioId = ""
-                        eaisEditandoId = null
-                        numeroEais = ""
-                    }
-                }) { Text("Sí, desactivar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = { TextButton(enabled = !procesando, onClick = { eaisAEliminar = null }) { Text("Cancelar") } }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar ${item.nombre}",
+            mensaje = "El EAIS dejará de estar disponible para nuevas fichas. Las fichas existentes no se borran y podrán seguir editándose.",
+            textoConfirmar = "Sí, desactivar",
+            confirmarHabilitado = !procesando,
+            onConfirmar = {
+                            eaisAEliminar = null
+                            ejecutar("EAIS desactivado correctamente. Las fichas históricas se conservaron.") {
+                                val remoto = supabase.desactivarEais(salaId, item.id)
+                                database.salaDao().guardarEais(item.copy(activo = remoto.activo, actualizadoEn = System.currentTimeMillis()))
+                                database.salaDao().desactivarTerritoriosDeEais(item.id)
+                                eaisId = ""
+                                territorioId = ""
+                                eaisEditandoId = null
+                                numeroEais = ""
+                            }
+                        },
+            textoCancelar = "Cancelar",
+            peligro = true,
+            onCancelar = { eaisAEliminar = null }
         )
     }
 // Estados exclusivamente visuales de paneles desplegables.

@@ -58,6 +58,11 @@ class FactoresRiesgoUiTest {
     private fun hayTexto(texto: String) = rule.onAllNodes(hasText(texto, substring = true)).fetchSemanticsNodes().isNotEmpty()
     private fun esperar(condicion: () -> Boolean) = rule.waitUntil(20_000, condicion)
 
+    private val resultadoCie = androidx.compose.ui.test.SemanticsMatcher("resultado del CIE-10") {
+        androidx.compose.ui.semantics.SemanticsProperties.TestTag.let { tag -> it.config.contains(tag) && it.config[tag].startsWith("cie_resultado_") }
+    }
+    private fun hayResultadoCie() = rule.onAllNodes(resultadoCie).fetchSemanticsNodes().isNotEmpty()
+
     private fun botonEditar(n: Int) = rule.onAllNodes(hasText("Editar"))[n]
     private fun hayEditar() = rule.onAllNodes(hasText("Editar")).fetchSemanticsNodes().isNotEmpty()
 
@@ -153,8 +158,8 @@ class FactoresRiesgoUiTest {
         abrirSeccion("3. Seguimiento preventivo")
         val campo = rule.onNodeWithText("Otros riesgos, enfermedad o discapacidad · CIE-10")
         campo.performScrollTo().performTextInput("A15")
-        esperar { hayTexto("+ A15") }
-        rule.onAllNodes(hasText("+ A15", substring = true))[0].performClick()
+        esperar { hayResultadoCie() }
+        rule.onAllNodes(resultadoCie)[0].performClick()
         esperar { hayTexto("6. Alertas Epidemiológicas") }
     }
 
@@ -241,8 +246,8 @@ class FactoresRiesgoUiTest {
         assertFalse("el spinner de estado nutricional se eliminó", hayTexto("Estado nutricional evaluado"))
         val campo = rule.onNodeWithText("Otros riesgos, enfermedad o discapacidad · CIE-10")
         campo.performScrollTo().performTextInput("E669")
-        esperar { hayTexto("+ E66") }
-        rule.onAllNodes(hasText("+ E66", substring = true))[0].performClick()
+        esperar { hayResultadoCie() }
+        rule.onAllNodes(resultadoCie)[0].performClick()
         rule.onNodeWithText("Guardar cambios del integrante").performClick()
         esperar { miembros(ids.getValue("c3")).any { it.estadoNutricional == "OBESIDAD" } }
     }

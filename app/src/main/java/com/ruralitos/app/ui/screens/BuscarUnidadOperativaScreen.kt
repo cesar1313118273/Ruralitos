@@ -165,11 +165,7 @@ fun BuscarUnidadOperativaScreen(
             EstablecimientoCard(
                 establecimiento = establecimiento,
                 onClick = {
-                    Toast.makeText(
-                        context,
-                        establecimiento.nombreCentroSalud,
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(establecimiento.nombreCentroSalud)
                     onEstablecimientoSeleccionado(establecimiento)
                 }
             )

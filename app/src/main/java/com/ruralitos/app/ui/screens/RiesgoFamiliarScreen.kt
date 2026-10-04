@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import android.widget.Toast
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -114,7 +115,7 @@ fun RiesgoFamiliarScreen(
                         mostrandoFormulario = false
                         editando = null
                     }.onFailure {
-                        Toast.makeText(context, "No se pudo guardar la calificación.", Toast.LENGTH_SHORT).show()
+                        com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("No se pudo guardar la calificación.")
                     }
                 }
             },
@@ -127,25 +128,19 @@ fun RiesgoFamiliarScreen(
     }
 
     eliminar?.let { seleccionado ->
-        AlertDialog(
-            onDismissRequest = { eliminar = null },
-            title = { Text("Eliminar calificación") },
-            text = {
-                Text("Se eliminará la evaluación del ${seleccionado.fechaCalificacion} y sus 18 respuestas.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        eliminar = null
-                        scope.launch(Dispatchers.IO) {
-                            database.fichaContenidoDao().eliminarCalificacion(seleccionado)
-                        }
-                    }
-                ) { Text("Sí, eliminar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = {
-                TextButton(onClick = { eliminar = null }) { Text("Conservar evaluación") }
-            }
+        VentanaConfirmarRuralitos(
+            titulo = "Eliminar calificación",
+            mensaje = "Se eliminará la evaluación del ${seleccionado.fechaCalificacion} y sus 18 respuestas.",
+            textoConfirmar = "Sí, eliminar",
+            onConfirmar = {
+                                eliminar = null
+                                scope.launch(Dispatchers.IO) {
+                                    database.fichaContenidoDao().eliminarCalificacion(seleccionado)
+                                }
+                            },
+            textoCancelar = "Conservar evaluación",
+            peligro = true,
+            onCancelar = { eliminar = null }
         )
     }
 

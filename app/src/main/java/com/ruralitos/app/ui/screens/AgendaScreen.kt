@@ -49,6 +49,7 @@ import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
 import com.ruralitos.app.ui.components.DatoVentanaRuralitos
 import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
 import com.ruralitos.app.ui.components.VentanaRuralitos
+import com.ruralitos.app.ui.theme.AzulClinico
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -138,6 +139,7 @@ fun AgendaScreen(
     var error by remember { mutableStateOf("") }
     var guardando by remember { mutableStateOf(false) }
     var visitaPorConfirmar by remember { mutableStateOf<ActividadAgendaEntity?>(null) }
+    var grupoParaFecha by remember { mutableStateOf<List<ActividadAgendaEntity>?>(null) }
     var hoy by remember { mutableStateOf(inicioDia(System.currentTimeMillis())) }
     var ahora by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var pestana by remember { mutableIntStateOf(pestanaInicial.coerceIn(0, 2)) }
@@ -203,13 +205,10 @@ fun AgendaScreen(
                                 check(guardada?.estado == "COMPLETADA") { "La visita no quedó registrada." }
                             }.onSuccess {
                                 error = ""
-                                android.widget.Toast.makeText(
-                                    context, "Visita registrada. Las próximas visitas se calcularon de nuevo.",
-                                    android.widget.Toast.LENGTH_LONG
-                                ).show()
+                                com.ruralitos.app.ui.components.AvisosRuralitos.mostrar("Visita registrada. Las próximas visitas se calcularon de nuevo.")
                             }.onFailure {
                                 error = "No se pudo registrar la visita. Inténtalo nuevamente."
-                                android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
+                                com.ruralitos.app.ui.components.AvisosRuralitos.mostrar(error)
                             }
                         }
                     }
@@ -330,26 +329,28 @@ fun AgendaScreen(
             editando = grupo.first(); error = ""; formulario = true
             return
         }
-        val actual = Calendar.getInstance().apply { timeInMillis = grupo.first().fechaHora }
-        DatePickerDialog(context, { _, anio, mes, dia ->
-            val nueva = Calendar.getInstance().apply {
-                timeInMillis = grupo.first().fechaHora
-                set(anio, mes, dia)
-            }.timeInMillis
-            scope.launch {
-                runCatching {
-                    withContext(Dispatchers.IO) {
-                        database.withTransaction {
-                            grupo.forEach { database.agendaDao().actualizar(it.copy(fechaHora = nueva, fechaEditada = true)) }
-                        }
+        grupoParaFecha = grupo
+    }
+
+    fun cambiarFechaGrupo(grupo: List<ActividadAgendaEntity>, nuevoDia: Long) {
+        val dia = Calendar.getInstance().apply { timeInMillis = nuevoDia }
+        val nueva = Calendar.getInstance().apply {
+            timeInMillis = grupo.first().fechaHora
+            set(dia.get(Calendar.YEAR), dia.get(Calendar.MONTH), dia.get(Calendar.DAY_OF_MONTH))
+        }.timeInMillis
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    database.withTransaction {
+                        grupo.forEach { database.agendaDao().actualizar(it.copy(fechaHora = nueva, fechaEditada = true)) }
                     }
-                    grupo.forEach {
-                        RecordatorioAgenda.cancelar(context, it.id)
-                        RecordatorioAgenda.actualizar(context, it.copy(fechaHora = nueva, fechaEditada = true))
-                    }
-                }.onFailure { error = "No se pudo cambiar la fecha familiar." }
-            }
-        }, actual.get(Calendar.YEAR), actual.get(Calendar.MONTH), actual.get(Calendar.DAY_OF_MONTH)).show()
+                }
+                grupo.forEach {
+                    RecordatorioAgenda.cancelar(context, it.id)
+                    RecordatorioAgenda.actualizar(context, it.copy(fechaHora = nueva, fechaEditada = true))
+                }
+            }.onFailure { error = "No se pudo cambiar la fecha familiar." }
+        }
     }
     fun confirmarGrupo(grupo: List<ActividadAgendaEntity>) {
         scope.launch {
@@ -385,6 +386,15 @@ fun AgendaScreen(
                 }.onFailure { error = "No se pudo registrar la actividad." }
             }
         }
+    }
+
+    grupoParaFecha?.let { grupo ->
+        com.ruralitos.app.ui.components.CalendarioRuralitos(
+            titulo = "Nueva fecha de la visita",
+            fechaInicialMillis = grupo.first().fechaHora,
+            onElegida = { dia -> grupoParaFecha = null; cambiarFechaGrupo(grupo, dia) },
+            onCerrar = { grupoParaFecha = null }
+        )
     }
 
     grupoDetalle?.let { grupo ->
@@ -934,36 +944,76 @@ private fun FormularioAgenda(
     var buscarPersona by remember { mutableStateOf("") }
     var elegirPersona by remember { mutableStateOf(false) }
     var elegirTipo by remember { mutableStateOf(false) }
+    var calendarioAbierto by remember { mutableStateOf(false) }
+    var horaAbierta by remember { mutableStateOf(false) }
     val permiso = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         recordar = granted
     }
 
     if (elegirPersona) {
-        AlertDialog(
-            onDismissRequest = { elegirPersona = false },
-            title = { Text("Paciente o familia") },
-            text = {
-                Column {
-                    OutlinedTextField(buscarPersona, { buscarPersona = it },
-                        label = { Text("Buscar nombre o cédula") }, singleLine = true,
-                        shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
-                    LazyColumn(Modifier.height(320.dp).padding(top = 8.dp)) {
-                        item {
-                            FilaBusquedaAgenda("Actividad general", "Sin paciente ni familia asociada") {
-                                persona = null; personaModificada = true; elegirPersona = false
+        VentanaRuralitos(
+            titulo = "Paciente o familia",
+            subtitulo = "Agenda",
+            simbolo = "⌕",
+            color = AzulClinico,
+            onCerrar = { elegirPersona = false },
+            contenido = {
+        Column {
+                            OutlinedTextField(buscarPersona, { buscarPersona = it },
+                                label = { Text("Buscar nombre o cédula") }, singleLine = true,
+                                shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
+                            LazyColumn(Modifier.height(320.dp).padding(top = 8.dp)) {
+                                item {
+                                    FilaBusquedaAgenda("Actividad general", "Sin paciente ni familia asociada") {
+                                        persona = null; personaModificada = true; elegirPersona = false
+                                    }
+                                }
+                                items(personas.filter {
+                                    buscarPersona.isBlank() || it.apellidosNombres.contains(buscarPersona, true) || it.cedula.contains(buscarPersona)
+                                }.take(60), key = { it.miembroId }) { item ->
+                                    FilaBusquedaAgenda(item.apellidosNombres, "${item.cedula} · ${item.barrio}") {
+                                        persona = item; personaModificada = true; elegirPersona = false
+                                    }
+                                }
                             }
                         }
-                        items(personas.filter {
-                            buscarPersona.isBlank() || it.apellidosNombres.contains(buscarPersona, true) || it.cedula.contains(buscarPersona)
-                        }.take(60), key = { it.miembroId }) { item ->
-                            FilaBusquedaAgenda(item.apellidosNombres, "${item.cedula} · ${item.barrio}") {
-                                persona = item; personaModificada = true; elegirPersona = false
-                            }
-                        }
-                    }
-                }
             },
-            confirmButton = { TextButton(onClick = { elegirPersona = false }) { Text("Cerrar") } }
+            acciones = {
+                BotonSecundarioRuralitos(texto = "Cerrar", onClick = { elegirPersona = false })
+            }
+        )
+    }
+
+    if (calendarioAbierto) {
+        com.ruralitos.app.ui.components.CalendarioRuralitos(
+            titulo = "Fecha de la actividad",
+            fechaInicialMillis = fechaHora,
+            onElegida = { dia ->
+                val d = Calendar.getInstance().apply { timeInMillis = dia }
+                fechaHora = Calendar.getInstance().apply {
+                    timeInMillis = fechaHora
+                    set(d.get(Calendar.YEAR), d.get(Calendar.MONTH), d.get(Calendar.DAY_OF_MONTH))
+                }.timeInMillis
+                calendarioAbierto = false
+            },
+            onCerrar = { calendarioAbierto = false }
+        )
+    }
+    if (horaAbierta) {
+        val actual = Calendar.getInstance().apply { timeInMillis = fechaHora }
+        com.ruralitos.app.ui.components.HoraRuralitos(
+            titulo = "Hora de la actividad",
+            horaInicial = actual.get(Calendar.HOUR_OF_DAY),
+            minutoInicial = actual.get(Calendar.MINUTE),
+            onElegida = { h, m ->
+                fechaHora = Calendar.getInstance().apply {
+                    timeInMillis = fechaHora
+                    set(Calendar.HOUR_OF_DAY, h)
+                    set(Calendar.MINUTE, m)
+                }.timeInMillis
+                horaAbierta = false
+            },
+            onCerrar = { horaAbierta = false }
         )
     }
 
@@ -1032,28 +1082,11 @@ private fun FormularioAgenda(
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f)) {
                     Text("Fecha", color = agendaSecundario, style = MaterialTheme.typography.labelLarge)
-                    CampoAgenda(formato(fechaHora, "dd/MM/yyyy"), R.drawable.ruralitos_icono_agenda) {
-                        val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
-                        DatePickerDialog(context, { _, y, m, d ->
-                            fechaHora = Calendar.getInstance().apply {
-                                timeInMillis = fechaHora
-                                set(y, m, d)
-                            }.timeInMillis
-                        }, c.get(Calendar.YEAR), c.get(Calendar.MONTH), c.get(Calendar.DAY_OF_MONTH)).show()
-                    }
+                    CampoAgenda(formato(fechaHora, "dd/MM/yyyy"), R.drawable.ruralitos_icono_agenda) { calendarioAbierto = true }
                 }
                 Column(Modifier.weight(1f)) {
                     Text("Hora", color = agendaSecundario, style = MaterialTheme.typography.labelLarge)
-                    CampoAgenda(formato(fechaHora, "HH:mm"), R.drawable.ruralitos_icono_agenda) {
-                        val c = Calendar.getInstance().apply { timeInMillis = fechaHora }
-                        TimePickerDialog(context, { _, h, m ->
-                            fechaHora = Calendar.getInstance().apply {
-                                timeInMillis = fechaHora
-                                set(Calendar.HOUR_OF_DAY, h)
-                                set(Calendar.MINUTE, m)
-                            }.timeInMillis
-                        }, c.get(Calendar.HOUR_OF_DAY), c.get(Calendar.MINUTE), true).show()
-                    }
+                    CampoAgenda(formato(fechaHora, "HH:mm"), R.drawable.ruralitos_icono_agenda) { horaAbierta = true }
                 }
             }
         }

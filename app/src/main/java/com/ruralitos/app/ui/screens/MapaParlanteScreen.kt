@@ -1,6 +1,9 @@
 package com.ruralitos.app.ui.screens
 
 import android.graphics.RectF
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.VentanaRuralitos
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -412,36 +415,41 @@ private fun VentanaBarrios(
             java.text.Normalizer.normalize(it.nombre, java.text.Normalizer.Form.NFD).replace("\\p{Mn}+".toRegex(), "").lowercase().contains(q)
         }
     }
-    androidx.compose.material3.AlertDialog(
-        onDismissRequest = onCerrar,
-        title = { Text("Elegir barrio", color = AzulTexto) },
-        text = {
-            Column {
-                if (barrios.size > 8) {
-                    androidx.compose.material3.OutlinedTextField(
-                        value = busqueda, onValueChange = { busqueda = it }, singleLine = true,
-                        placeholder = { Text("Buscar barrio") }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).testTag("buscar_barrio")
-                    )
-                }
-                LazyColumn(Modifier.heightIn(max = 380.dp)) {
-                    item(key = "todos") {
-                        FilaOpcionBarrio(
-                            "Todos los barrios", "${barrios.size} barrio${if (barrios.size == 1) "" else "s"} · ${barrios.sumOf { it.personas }} personas",
-                            elegida == null, Modifier.testTag("barrio_todos")
-                        ) { onElegir(null) }
+    VentanaRuralitos(
+        titulo = "Elegir barrio",
+        subtitulo = "Mapa de viviendas",
+        simbolo = "⌖",
+        color = AzulClinico,
+        onCerrar = onCerrar,
+        contenido = {
+    Column {
+                    if (barrios.size > 8) {
+                        androidx.compose.material3.OutlinedTextField(
+                            value = busqueda, onValueChange = { busqueda = it }, singleLine = true,
+                            placeholder = { Text("Buscar barrio") }, modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).testTag("buscar_barrio")
+                        )
                     }
-                    items(visibles, key = { it.clave }) { b ->
-                        FilaOpcionBarrio(
-                            b.nombre, "${b.personas} persona${if (b.personas == 1) "" else "s"} · ${b.fichas} familia${if (b.fichas == 1) "" else "s"}" +
-                                if (b.centro == null) " · sin ubicación" else "",
-                            b.clave == elegida, Modifier.testTag("barrio_${b.clave}")
-                        ) { onElegir(b.clave) }
+                    LazyColumn(Modifier.heightIn(max = 380.dp)) {
+                        item(key = "todos") {
+                            FilaOpcionBarrio(
+                                "Todos los barrios", "${barrios.size} barrio${if (barrios.size == 1) "" else "s"} · ${barrios.sumOf { it.personas }} personas",
+                                elegida == null, Modifier.testTag("barrio_todos")
+                            ) { onElegir(null) }
+                        }
+                        items(visibles, key = { it.clave }) { b ->
+                            FilaOpcionBarrio(
+                                b.nombre, "${b.personas} persona${if (b.personas == 1) "" else "s"} · ${b.fichas} familia${if (b.fichas == 1) "" else "s"}" +
+                                    if (b.centro == null) " · sin ubicación" else "",
+                                b.clave == elegida, Modifier.testTag("barrio_${b.clave}")
+                            ) { onElegir(b.clave) }
+                        }
+                        if (visibles.isEmpty()) item { Text("Ningún barrio coincide.", color = GrisTexto, modifier = Modifier.padding(12.dp)) }
                     }
-                    if (visibles.isEmpty()) item { Text("Ningún barrio coincide.", color = GrisTexto, modifier = Modifier.padding(12.dp)) }
                 }
-            }
         },
-        confirmButton = { androidx.compose.material3.TextButton(onClick = onCerrar) { Text("Cerrar") } }
+        acciones = {
+            BotonSecundarioRuralitos(texto = "Cerrar", onClick = onCerrar)
+        }
     )
 }
 

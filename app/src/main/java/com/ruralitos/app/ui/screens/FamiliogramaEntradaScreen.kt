@@ -1,6 +1,7 @@
 package com.ruralitos.app.ui.screens
 
 import android.graphics.Bitmap
+import com.ruralitos.app.ui.components.VentanaConfirmarRuralitos
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -152,38 +153,32 @@ fun FamiliogramaScreen(
     }
 
     if (confirmarRearmar) {
-        AlertDialog(
-            onDismissRequest = { confirmarRearmar = false },
-            title = { Text("Volver a armar el familiograma") },
-            text = {
-                Text(
-                    "Se dibujará de nuevo con los integrantes de la ficha. El dibujo guardado se reemplazará " +
-                        "solo cuando vuelvas a guardar."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { confirmarRearmar = false; abrirConIntegrantes() }) {
-                    Text("Sí, armar de nuevo", color = CianRuralitos, fontWeight = FontWeight.SemiBold)
-                }
-            },
-            dismissButton = { TextButton(onClick = { confirmarRearmar = false }) { Text("Conservar el dibujo") } }
+        VentanaConfirmarRuralitos(
+            titulo = "Volver a armar el familiograma",
+            mensaje = "Se dibujará de nuevo con los integrantes de la ficha. El dibujo guardado se reemplazará " +
+                                "solo cuando vuelvas a guardar.",
+            textoConfirmar = "Sí, armar de nuevo",
+            onConfirmar = { confirmarRearmar = false; abrirConIntegrantes() },
+            textoCancelar = "Conservar el dibujo",
+            peligro = false,
+            onCancelar = { confirmarRearmar = false }
         )
     }
     if (confirmarQuitar && adjunto != null) {
-        AlertDialog(
-            onDismissRequest = { confirmarQuitar = false },
-            title = { Text("Quitar familiograma") },
-            text = { Text("La imagen dejará de aparecer en Excel y PDF. Podrás dibujar o subir otra después.") },
-            confirmButton = {
-                TextButton(onClick = {
-                    confirmarQuitar = false
-                    scope.launch {
-                        AlmacenFamiliograma.quitar(context, database, adjunto)
-                        mensaje = "Familiograma eliminado."
-                    }
-                }) { Text("Sí, quitar", color = RojoClinico, fontWeight = FontWeight.SemiBold) }
-            },
-            dismissButton = { TextButton(onClick = { confirmarQuitar = false }) { Text("Conservar") } }
+        VentanaConfirmarRuralitos(
+            titulo = "Quitar familiograma",
+            mensaje = "La imagen dejará de aparecer en Excel y PDF. Podrás dibujar o subir otra después.",
+            textoConfirmar = "Sí, quitar",
+            onConfirmar = {
+                            confirmarQuitar = false
+                            scope.launch {
+                                AlmacenFamiliograma.quitar(context, database, adjunto)
+                                mensaje = "Familiograma eliminado."
+                            }
+                        },
+            textoCancelar = "Conservar",
+            peligro = true,
+            onCancelar = { confirmarQuitar = false }
         )
     }
 
