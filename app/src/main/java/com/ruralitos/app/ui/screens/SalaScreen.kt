@@ -740,7 +740,7 @@ fun SalaScreen(
 
                             SeccionFormularioRuralitos(
                                 titulo = "2. Qué puede hacer la otra persona",
-                                descripcion = "Se comparten solo las fichas que tú creaste. El código se usa una sola vez y caduca en 7 días."
+                                descripcion = "Se comparten solo las fichas que tú creaste. El código se usa una sola vez y caduca en 24 horas."
                             ) {
                                 FlowRow(
                                     modifier = Modifier.fillMaxWidth(),

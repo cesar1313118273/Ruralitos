@@ -626,7 +626,7 @@ class SupabaseApi(context: Context) {
                 .put("p_territorio_id", territorioId?.takeIf { it.isNotBlank() } ?: JSONObject.NULL)
                 .put("p_permiso", permiso.uppercase())
                 .put("p_correo", correo.trim().lowercase().ifBlank { JSONObject.NULL })
-                .put("p_horas_vigencia", 168)
+                .put("p_horas_vigencia", 24)
         ).jsonArreglo()
         if (arreglo.length() == 0) throw ErrorSupabase("Supabase no devolvio el codigo de acceso.")
         return arreglo.getJSONObject(0).let {
@@ -665,7 +665,7 @@ class SupabaseApi(context: Context) {
                     .put("p_items", items)
                     .put("p_permiso", permiso.uppercase())
                     .put("p_correo", correo.trim().lowercase().ifBlank { JSONObject.NULL })
-                    .put("p_horas_vigencia", 168)
+                    .put("p_horas_vigencia", 24)
             ).jsonArreglo()
         } catch (error: ErrorSupabase) {
             if (error.codigoHttp == 404 || error.message.orEmpty().contains("crear_codigo_acceso_varios")) {
