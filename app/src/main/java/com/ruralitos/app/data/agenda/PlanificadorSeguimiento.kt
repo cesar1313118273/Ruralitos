@@ -84,8 +84,8 @@ object PlanificadorSeguimiento {
             val pendientes = agenda.seguimientosPendientes(fichaId, usuarioId)
             val canceladas = pendientes.map { it.id }.toMutableList()
             pendientes.forEach { if (it.id != actividadId) agenda.eliminar(it.id) }
-            // Se conserva la visita efectuada como historial, no como cita futura.
-            agenda.actualizar(realizada.copy(estado = "COMPLETADA", origen = ORIGEN, fechaBase = fechaVisita))
+            // Se conserva la visita efectuada como historial, no como cita futura, en la fecha en que de verdad ocurrió.
+            agenda.actualizar(realizada.copy(estado = "COMPLETADA", origen = ORIGEN, fechaBase = fechaVisita, fechaHora = fechaVisita, fechaEditada = true))
             canceladas += actividadId
             val nuevas = crearParaIntegrantes(db, ficha, usuarioId, fechaVisita)
             Resultado(nuevas, pendientes.size - if (pendientes.any { it.id == actividadId }) 1 else 0) to canceladas

@@ -59,7 +59,7 @@ class GaleriaPantallasTest {
             "04_ficha" -> FichaSeccionesScreen(ficha, {}, {}, {}, {})
             "05_miembros" -> MiembrosFamiliaScreen(fichaId, 1, {}, {})
             "07_riesgo" -> RiesgoFamiliarScreen(fichaId, "QA", {}, {})
-            "08_agenda" -> AgendaScreen(1, "", {}, {}, {})
+            "08_agenda" -> AgendaScreen(1, "", {}, {})
             "09_estadisticas" -> EstadisticasScreen({}, {})
             "10_dispensarizacion" -> DispensarizacionScreen(null, {}, {})
             "11_perfil" -> PerfilScreen(usuario, database.usuarioDao(), {}, {}, {}, {})

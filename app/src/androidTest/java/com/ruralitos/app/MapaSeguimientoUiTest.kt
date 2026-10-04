@@ -98,8 +98,6 @@ class MapaSeguimientoUiTest {
 
     private var grupoAbierto: List<ActividadAgendaEntity>? = null
     private var fichaAbierta: Long? = null
-    private var rutaAbierta: Long? = null
-    private var agendarFicha: Long? = -1L
     private var ubicada: Long? = null
     private val estadoMapa = EstadoMapaSeguimiento()
 
@@ -117,8 +115,8 @@ class MapaSeguimientoUiTest {
                     val actividades by database.agendaDao().observar(1).collectAsState(initial = emptyList())
                     MapaSeguimientoVista(
                         usuarioId = 1, actividades = actividades, ahora = System.currentTimeMillis(), estado = estadoMapa,
-                        onAbrirVisita = { grupoAbierto = it }, onAgendar = { agendarFicha = it },
-                        onAbrirFicha = { fichaAbierta = it }, onAbrirRuta = { rutaAbierta = it }, onUbicarFicha = { ubicada = it }
+                        onAbrirVisita = { grupoAbierto = it },
+                        onAbrirFicha = { fichaAbierta = it }, onUbicarFicha = { ubicada = it }
                     )
                 }
             }
@@ -220,21 +218,19 @@ class MapaSeguimientoUiTest {
     }
 
     @Test
-    fun laTarjetaAbreFichaRutaVisitaYAgenda() {
+    fun laTarjetaAbreFichaYVisitaYYaNoTraeAgendarNiRutaAparte() {
         mostrar(ClaseAncho.EXPANDIDA)
         rule.onNodeWithText("PÉREZ LUIS").performClick()
         rule.waitUntil(5_000) { hayTag("tarjeta_vivienda") }
         rule.onNodeWithTag("abrir_ficha_mapa").performClick()
         assertEquals(ids["confirmada"], fichaAbierta)
-        rule.onNodeWithTag("como_llegar_mapa").performClick()
-        assertEquals(ids["confirmada"], rutaAbierta)
         rule.onNodeWithTag("ver_visita_mapa").performClick()
         assertEquals(listOf(visitas["confirmada"]), grupoAbierto?.map { it.id })
-        rule.onNodeWithTag("agendar_visita_mapa").performClick()
-        assertEquals(ids["confirmada"], agendarFicha)
-        // el botón general de agendar no lleva ninguna ficha
-        rule.onNodeWithTag("agendar_mapa").performClick()
-        assertEquals(null, agendarFicha)
+        // agendar solo existe en la Agenda: ni en la tarjeta ni como botón general del mapa
+        assertFalse(hayTag("agendar_visita_mapa"))
+        assertFalse(hayTag("agendar_mapa"))
+        assertFalse("la ruta aparte se eliminó", hayTag("como_llegar_mapa"))
+        assertFalse(hay("＋ Agendar"))
     }
 
     @Test
@@ -258,9 +254,8 @@ class MapaSeguimientoUiTest {
         // la primera vez el motor copia la red vial del país, por eso la espera es larga
         rule.waitUntil(240_000) { hay("Recorrido de 3 viviendas") }
         rule.onNodeWithTag("resumen_recorrido").assertExists()
-        rule.onNodeWithTag("ir_primera_parada").performClick()
+        assertFalse("el botón de ir a la ruta aparte se eliminó", hayTag("ir_primera_parada"))
         val primera = estadoMapa.plan!!.paradas.first().vivienda.fichaId
-        assertEquals(primera, rutaAbierta)
 
         // aviso de llegada: se simula que el GPS ya llegó a la primera parada
         rule.runOnIdle { estadoMapa.avisoLlegadaId = primera }
@@ -271,7 +266,6 @@ class MapaSeguimientoUiTest {
         rule.onNodeWithTag("siguiente_parada").performClick()
         rule.waitUntil(5_000) { !hayTag("aviso_llegada") }
         assertEquals(1, estadoMapa.paradaActual)
-        rule.waitUntil(5_000) { hay("Ir a la parada 2") }
         // cerrar el recorrido ordenado devuelve la barra de elegir viviendas; su ✕ sale del modo
         rule.onNodeWithTag("cerrar_recorrido").performClick()
         rule.waitUntil(5_000) { hayTag("salir_recorrido") }

@@ -30,12 +30,12 @@ class AgendaMapaUiTest {
     }
 
     @Test
-    fun elMapaEsUnaPestanaDeLaAgendaYElBotonMasYaNoEsta() {
+    fun elMapaEsUnaPestanaDeLaAgendaYElBotonMasSoloEstaEnSeguimientoYAgenda() {
         var pestana = -1
         rule.setContent {
             RuralitosTheme {
                 AgendaScreen(
-                    usuarioId = 0, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, onAbrirRuta = {},
+                    usuarioId = 0, organizacionId = "", onRegresar = {}, onAbrirFicha = {},
                     onPestanaCambiada = { pestana = it }
                 )
             }
@@ -45,16 +45,18 @@ class AgendaMapaUiTest {
         assertEquals(true, rule.onAllNodes(hasText("Seguimiento")).fetchSemanticsNodes().isNotEmpty())
         assertEquals(1, rule.onAllNodes(hasText("Agenda")).fetchSemanticsNodes().size)
         assertEquals(1, rule.onAllNodes(hasText("Mapa")).fetchSemanticsNodes().size)
-        // el botón verde de «+» ya no está en Seguimiento ni en Agenda
-        rule.onAllNodes(hasText("+")).fetchSemanticsNodes().let { assertEquals(0, it.size) }
+        // el botón flotante «+» para agendar está siempre en Seguimiento y en Agenda
+        assertEquals(1, rule.onAllNodes(hasTestTag("boton_agendar")).fetchSemanticsNodes().size)
         rule.onNodeWithText("Agenda").performClick()
         rule.waitForIdle()
-        rule.onAllNodes(hasText("+")).fetchSemanticsNodes().let { assertEquals(0, it.size) }
+        assertEquals(1, rule.onAllNodes(hasTestTag("boton_agendar")).fetchSemanticsNodes().size)
 
         rule.onNodeWithText("Mapa").performClick()
         rule.waitUntil(15_000) { rule.onAllNodes(hasTestTag("mapa_viviendas")).fetchSemanticsNodes().isNotEmpty() }
         assertEquals(2, pestana)
         rule.onNodeWithText("Mapa de visitas").assertExists()
-        rule.onAllNodes(hasTestTag("agendar_mapa")).fetchSemanticsNodes().let { assertEquals(1, it.size) }
+        // en el mapa ya no hay botón de agendar
+        assertEquals(0, rule.onAllNodes(hasTestTag("boton_agendar")).fetchSemanticsNodes().size)
+        assertEquals(0, rule.onAllNodes(hasTestTag("agendar_mapa")).fetchSemanticsNodes().size)
     }
 }

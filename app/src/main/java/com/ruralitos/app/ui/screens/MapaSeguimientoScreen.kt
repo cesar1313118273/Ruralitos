@@ -182,7 +182,7 @@ class EstadoMapaSeguimiento {
 /**
  * Mapa de seguimiento, dentro de la agenda: las viviendas con visitas como puntos de colores según el estado de la
  * visita (por confirmar, confirmada, atrasada, realizada), con filtros por estado, fecha, barrio y riesgo; una tarjeta
- * para abrir la ficha, ver o cambiar la visita, agendar otra y trazar la ruta; y el recorrido ordenado con avisos de
+ * para abrir la ficha y ver o cambiar la visita; y el recorrido ordenado con avisos de
  * llegada. Funciona sin internet con los mapas incluidos en la app.
  */
 @Composable
@@ -192,9 +192,7 @@ fun MapaSeguimientoVista(
     ahora: Long,
     estado: EstadoMapaSeguimiento,
     onAbrirVisita: (List<ActividadAgendaEntity>) -> Unit,
-    onAgendar: (Long?) -> Unit,
     onAbrirFicha: (Long) -> Unit,
-    onAbrirRuta: (Long) -> Unit,
     onUbicarFicha: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -685,13 +683,6 @@ fun MapaSeguimientoVista(
                             color = if (estado.modoRecorrido) Color.White else VerdeAgenda, fontWeight = FontWeight.SemiBold, fontSize = 14.sp
                         )
                     }
-                    Surface(
-                        onClick = { onAgendar(null) },
-                        modifier = Modifier.testTag("agendar_mapa"),
-                        shape = RoundedCornerShape(22.dp), color = VerdeAgenda, shadowElevation = 3.dp
-                    ) {
-                        Text("＋ Agendar", Modifier.padding(horizontal = 16.dp, vertical = 11.dp), color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                    }
                 }
                 if (!ancho && estado.plan == null && !estado.modoRecorrido) Leyenda(conteos, Modifier.align(Alignment.TopStart).padding(start = 8.dp, top = 8.dp))
                 if (viviendas.isEmpty()) {
@@ -723,7 +714,6 @@ fun MapaSeguimientoVista(
                 if (!ancho && estado.modoRecorrido && estado.plan != null) {
                     TarjetaRecorrido(
                         estado.plan!!, estado.paradaActual, onSeleccionar = { seleccionar(it) },
-                        onIrParada = { onAbrirRuta(estado.plan!!.paradas[estado.paradaActual.coerceIn(0, estado.plan!!.paradas.lastIndex)].vivienda.fichaId) },
                         onCerrar = { estado.plan = null },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
                     )
@@ -732,9 +722,7 @@ fun MapaSeguimientoVista(
                         seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
                         onCerrar = { estado.seleccionadaId = null },
                         onAbrirFicha = { onAbrirFicha(seleccionado.vivienda.fichaId) },
-                        onAbrirRuta = { onAbrirRuta(seleccionado.vivienda.fichaId) },
                         onVerVisita = { abrirVisita(seleccionado) },
-                        onAgendar = { onAgendar(seleccionado.vivienda.fichaId) },
                         modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
                     )
                 }
@@ -768,7 +756,6 @@ fun MapaSeguimientoVista(
                         item(key = "recorrido") {
                             TarjetaRecorrido(
                                 estado.plan!!, estado.paradaActual, onSeleccionar = { seleccionar(it) },
-                                onIrParada = { onAbrirRuta(estado.plan!!.paradas[estado.paradaActual.coerceIn(0, estado.plan!!.paradas.lastIndex)].vivienda.fichaId) },
                                 onCerrar = { estado.plan = null },
                                 modifier = Modifier.padding(8.dp), conDesplazamiento = false
                             )
@@ -779,9 +766,7 @@ fun MapaSeguimientoVista(
                                 seleccionado, distanciaSeleccion, rutaSel, calculandoRutaSel, estado.modoViaje, { estado.modoViaje = it },
                                 onCerrar = { estado.seleccionadaId = null },
                                 onAbrirFicha = { onAbrirFicha(seleccionado.vivienda.fichaId) },
-                                onAbrirRuta = { onAbrirRuta(seleccionado.vivienda.fichaId) },
                                 onVerVisita = { abrirVisita(seleccionado) },
-                                onAgendar = { onAgendar(seleccionado.vivienda.fichaId) },
                                 modifier = Modifier.padding(8.dp)
                             )
                         }
@@ -1072,9 +1057,7 @@ private fun TarjetaVisita(
     onModo: (String) -> Unit,
     onCerrar: () -> Unit,
     onAbrirFicha: () -> Unit,
-    onAbrirRuta: () -> Unit,
     onVerVisita: () -> Unit,
-    onAgendar: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val v = p.vivienda
@@ -1130,11 +1113,7 @@ private fun TarjetaVisita(
             }
             Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 BotonTarjeta("Abrir ficha", relleno = true, Modifier.weight(1f).testTag("abrir_ficha_mapa"), onAbrirFicha)
-                BotonTarjeta("Cómo llegar", relleno = false, Modifier.weight(1f).testTag("como_llegar_mapa"), onAbrirRuta)
-            }
-            Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 BotonTarjeta("Ver visita", relleno = false, Modifier.weight(1f).testTag("ver_visita_mapa"), onVerVisita)
-                BotonTarjeta("Agendar visita", relleno = false, Modifier.weight(1f).testTag("agendar_visita_mapa"), onAgendar)
             }
         }
     }
@@ -1221,7 +1200,6 @@ private fun TarjetaRecorrido(
     plan: PlanRecorrido,
     paradaActual: Int,
     onSeleccionar: (PuntoSeguimiento) -> Unit,
-    onIrParada: () -> Unit,
     onCerrar: () -> Unit,
     modifier: Modifier = Modifier,
     conDesplazamiento: Boolean = true
@@ -1275,16 +1253,6 @@ private fun TarjetaRecorrido(
                 Column(Modifier.padding(top = 6.dp).height(150.dp).verticalScroll(rememberScrollState())) { columna() }
             } else {
                 Column(Modifier.padding(top = 6.dp)) { columna() }
-            }
-            Surface(
-                onClick = onIrParada, modifier = Modifier.fillMaxWidth().padding(top = 8.dp).testTag("ir_primera_parada"),
-                shape = RoundedCornerShape(12.dp), color = CianRuralitos
-            ) {
-                Text(
-                    if (actual == 0) "Ir a la primera vivienda" else "Ir a la parada ${actual + 1}",
-                    Modifier.padding(vertical = 10.dp).fillMaxWidth(), color = Color.White,
-                    fontWeight = FontWeight.Medium, fontSize = 14.sp, textAlign = TextAlign.Center
-                )
             }
         }
     }

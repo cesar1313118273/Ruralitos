@@ -41,6 +41,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.platform.testTag
+import com.ruralitos.app.ui.components.BotonAccionRuralitos
+import com.ruralitos.app.ui.components.BotonFlotanteRedondo
+import com.ruralitos.app.ui.components.BotonPrincipalRuralitos
+import com.ruralitos.app.ui.components.BotonSecundarioRuralitos
+import com.ruralitos.app.ui.components.DatoVentanaRuralitos
+import com.ruralitos.app.ui.components.MensajeEstadoRuralitos
+import com.ruralitos.app.ui.components.VentanaRuralitos
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -113,7 +121,6 @@ fun AgendaScreen(
     organizacionId: String,
     onRegresar: () -> Unit,
     onAbrirFicha: (Long) -> Unit,
-    onAbrirRuta: (Long) -> Unit,
     estadoMapa: EstadoMapaSeguimiento = remember { EstadoMapaSeguimiento() },
     pestanaInicial: Int = 0,
     onPestanaCambiada: (Int) -> Unit = {},
@@ -169,60 +176,92 @@ fun AgendaScreen(
     }
 
     visitaPorConfirmar?.let { actividad ->
-        AlertDialog(
-            onDismissRequest = { visitaPorConfirmar = null },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = Color.White,
-            title = { Text("Registrar visita familiar", color = agendaAzul) },
-            text = { Text("Confirma la atención del hogar. Las próximas visitas se calcularán nuevamente según el grupo de riesgo de cada integrante.", color = agendaSecundario) },
-            confirmButton = {
-                TextButton(onClick = {
-                    visitaPorConfirmar = null
-                    scope.launch {
-                        runCatching { PlanificadorSeguimiento.registrarVisitaFamiliar(context, actividad.id, usuarioId) }
-                            .onFailure { error = "No se pudo registrar la visita. Inténtalo nuevamente." }
-                    }
-                }) { Text("Registrar visita", color = agendaVerde) }
+        VentanaRuralitos(
+            titulo = "Registrar visita familiar",
+            subtitulo = listOf(actividad.persona, actividad.barrio).filter { it.isNotBlank() }.joinToString(" · "),
+            simbolo = "✓",
+            color = agendaVerde,
+            onCerrar = { visitaPorConfirmar = null },
+            contenido = {
+                Text(
+                    "Confirma la atención del hogar. Las próximas visitas se calcularán nuevamente según el grupo de riesgo de cada integrante.",
+                    color = agendaSecundario
+                )
             },
-            dismissButton = {
-                Row {
-                    TextButton(onClick = {
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = "Registrar visita",
+                    color = agendaVerde,
+                    modifier = Modifier.testTag("confirmar_registro_visita"),
+                    onClick = {
+                        visitaPorConfirmar = null
+                        scope.launch {
+                            runCatching {
+                                PlanificadorSeguimiento.registrarVisitaFamiliar(context, actividad.id, usuarioId)
+                                // Se comprueba en la base que de verdad quedó realizada; si no, se avisa.
+                                val guardada = withContext(Dispatchers.IO) { database.agendaDao().buscar(actividad.id) }
+                                check(guardada?.estado == "COMPLETADA") { "La visita no quedó registrada." }
+                            }.onSuccess {
+                                error = ""
+                                android.widget.Toast.makeText(
+                                    context, "Visita registrada. Las próximas visitas se calcularon de nuevo.",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }.onFailure {
+                                error = "No se pudo registrar la visita. Inténtalo nuevamente."
+                                android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                )
+                BotonSecundarioRuralitos(
+                    texto = "Editar ficha",
+                    onClick = {
                         visitaPorConfirmar = null
                         actividad.fichaId?.let(onAbrirFicha)
-                    }) { Text("Editar ficha", color = agendaAzul) }
-                    TextButton(onClick = { visitaPorConfirmar = null }) { Text("Cancelar") }
-                }
+                    }
+                )
+                BotonSecundarioRuralitos(texto = "Cancelar", onClick = { visitaPorConfirmar = null })
             }
         )
     }
 
     eliminar?.let { grupo ->
-        AlertDialog(
-            onDismissRequest = { eliminar = null },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = Color.White,
-            title = { Text("Eliminar actividad", color = agendaAzul) },
-            text = { Text("¿Eliminar esta actividad? Un seguimiento automático no volverá a aparecer hasta la siguiente ronda de visitas.", color = agendaSecundario) },
-            confirmButton = {
-                TextButton(onClick = {
-                    eliminar = null
-                    scope.launch {
-                        runCatching {
-                            withContext(Dispatchers.IO) {
-                                database.withTransaction {
-                                    grupo.forEach { actividad ->
-                                        if (actividad.origen == "SEGUIMIENTO") {
-                                            database.agendaDao().actualizar(actividad.copy(estado = "CANCELADA"))
-                                        } else database.agendaDao().eliminar(actividad.id)
+        VentanaRuralitos(
+            titulo = "Eliminar actividad",
+            simbolo = "!",
+            color = agendaRojoAtraso,
+            onCerrar = { eliminar = null },
+            contenido = {
+                Text(
+                    "¿Eliminar esta actividad? Un seguimiento automático no volverá a aparecer hasta la siguiente ronda de visitas.",
+                    color = agendaSecundario
+                )
+            },
+            acciones = {
+                BotonPrincipalRuralitos(
+                    texto = "Eliminar",
+                    color = agendaRojoAtraso,
+                    onClick = {
+                        eliminar = null
+                        scope.launch {
+                            runCatching {
+                                withContext(Dispatchers.IO) {
+                                    database.withTransaction {
+                                        grupo.forEach { actividad ->
+                                            if (actividad.origen == "SEGUIMIENTO") {
+                                                database.agendaDao().actualizar(actividad.copy(estado = "CANCELADA"))
+                                            } else database.agendaDao().eliminar(actividad.id)
+                                        }
                                     }
                                 }
-                            }
-                            grupo.forEach { RecordatorioAgenda.cancelar(context, it.id) }
-                        }.onFailure { error = "No se pudo eliminar la actividad." }
+                                grupo.forEach { RecordatorioAgenda.cancelar(context, it.id) }
+                            }.onFailure { error = "No se pudo eliminar la actividad." }
+                        }
                     }
-                }) { Text("Eliminar", color = Color(0xFFC83E4D)) }
-            },
-            dismissButton = { TextButton(onClick = { eliminar = null }) { Text("Conservar") } }
+                )
+                BotonSecundarioRuralitos(texto = "Conservar", onClick = { eliminar = null })
+            }
         )
     }
 
@@ -350,68 +389,76 @@ fun AgendaScreen(
 
     grupoDetalle?.let { grupo ->
         val actividad = grupo.first()
-        AlertDialog(
-            onDismissRequest = { grupoDetalle = null },
-            shape = RoundedCornerShape(16.dp),
-            containerColor = Color.White,
-            title = { Text(if (grupo.size > 1) "Visita familiar (${grupo.size})" else actividad.tipo,
-                color = agendaAzul, fontWeight = FontWeight.SemiBold) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Text(grupo.joinToString(", ") { it.persona }.ifBlank { "Actividad general" }, color = agendaAzul)
-                    Text("${formato(actividad.fechaHora, "EEEE d 'de' MMMM · HH:mm")} · ${actividad.barrio}", color = agendaSecundario)
-                    Text(estadoVisible(actividad, ahora), color = colorEstado(actividad, ahora), fontWeight = FontWeight.SemiBold)
-                    if (actividad.nota.isNotBlank()) Text(actividad.nota, color = agendaSecundario)
-                    if (actividad.fichaId != null) {
-                        Row {
-                            TextButton(onClick = { grupoDetalle = null; actividad.fichaId.let(onAbrirFicha) }) {
-                                Text("Abrir ficha", color = agendaAzul)
-                            }
-                            TextButton(onClick = { grupoDetalle = null; actividad.fichaId.let(onAbrirRuta) }) {
-                                Text("Ver ruta", color = agendaAzul)
-                            }
-                        }
-                    }
-                    if (actividad.estado != "COMPLETADA") {
-                        if (actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada) {
-                            Button(onClick = { confirmarGrupo(grupo) },
-                                colors = ButtonDefaults.buttonColors(containerColor = agendaVerde),
-                                modifier = Modifier.fillMaxWidth()) { Text("Confirmar fecha") }
-                        }
-                        TextButton(onClick = { grupoDetalle = null; editarFechaGrupo(grupo) }) {
-                            Text(if (estadoVisible(actividad, ahora) == "Atrasada") "Reprogramar" else "Cambiar fecha",
-                                color = agendaAzul)
-                        }
-                        if (estadoVisible(actividad, ahora) == "Programado") {
-                            Row(verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { completarGrupo(grupo) }) {
-                                Checkbox(checked = false, onCheckedChange = { completarGrupo(grupo) },
-                                    colors = CheckboxDefaults.colors(checkedColor = agendaVerde))
-                                Text("Marcar realizada", color = agendaVerde)
-                            }
-                        } else if (estadoVisible(actividad, ahora) == "Atrasada") {
-                            Text("Esta actividad necesita reprogramarse o eliminarse.",
-                                color = agendaRojoAtraso, fontSize = 12.sp)
-                        }
-                    }
-                    if (actividad.estado == "COMPLETADA") {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(checked = true, onCheckedChange = null,
-                                colors = CheckboxDefaults.colors(checkedColor = agendaVerde))
-                            Text("Realizada", color = agendaVerde, fontWeight = FontWeight.SemiBold)
-                        }
-                    }
-                    if (actividad.estado != "COMPLETADA") {
-                        TextButton(onClick = { grupoDetalle = null; eliminar = grupo }) {
-                            Text("Eliminar actividad", color = Color(0xFFC83E4D))
-                        }
-                    }
+        val estadoActual = estadoVisible(actividad, ahora)
+        val colorActual = colorEstado(actividad, ahora)
+        VentanaRuralitos(
+            titulo = if (grupo.size > 1) "Visita familiar (${grupo.size})" else actividad.tipo,
+            subtitulo = estadoActual,
+            simbolo = when (estadoActual) { "Realizado" -> "✓"; "Atrasada" -> "!"; else -> "◷" },
+            color = colorActual,
+            onCerrar = { grupoDetalle = null },
+            contenido = {
+                DatoVentanaRuralitos("Persona", grupo.joinToString(", ") { it.persona }.ifBlank { "Actividad general" })
+                DatoVentanaRuralitos(
+                    "Fecha y lugar",
+                    "${formato(actividad.fechaHora, "EEEE d 'de' MMMM · HH:mm")}${if (actividad.barrio.isNotBlank()) " · ${actividad.barrio}" else ""}"
+                )
+                if (actividad.nota.isNotBlank()) DatoVentanaRuralitos("Nota", actividad.nota)
+                if (estadoActual == "Atrasada") {
+                    Text(
+                        "La fecha ya pasó. Si se hizo la visita, márcala como realizada; si no, reprográmala o elimínala.",
+                        color = agendaRojoAtraso, fontSize = 12.sp
+                    )
                 }
             },
-            confirmButton = { TextButton(onClick = { grupoDetalle = null }) { Text("Cerrar", color = agendaAzul) } }
+            acciones = {
+                if (actividad.estado != "COMPLETADA") {
+                    // Se puede registrar como realizada en cualquier estado: una visita hecha tarde también hay que guardarla.
+                    BotonPrincipalRuralitos(
+                        texto = "Marcar como realizada",
+                        color = agendaVerde,
+                        modifier = Modifier.testTag("marcar_realizada"),
+                        onClick = { completarGrupo(grupo) }
+                    )
+                    if (actividad.origen == "SEGUIMIENTO" && !actividad.fechaEditada) {
+                        BotonPrincipalRuralitos(
+                            texto = "Confirmar fecha",
+                            color = agendaAzulPunto,
+                            modifier = Modifier.testTag("confirmar_fecha"),
+                            onClick = { confirmarGrupo(grupo) }
+                        )
+                    }
+                    BotonSecundarioRuralitos(
+                        texto = if (estadoActual == "Atrasada") "Reprogramar" else "Cambiar fecha",
+                        onClick = { grupoDetalle = null; editarFechaGrupo(grupo) }
+                    )
+                } else {
+                    MensajeEstadoRuralitos(
+                        titulo = "Visita realizada",
+                        descripcion = "Esta actividad ya quedó registrada.",
+                        color = agendaVerdeEstado,
+                        simbolo = "✓"
+                    )
+                }
+                if (actividad.fichaId != null) {
+                    BotonSecundarioRuralitos(
+                        texto = "Abrir ficha",
+                        onClick = { grupoDetalle = null; actividad.fichaId.let(onAbrirFicha) }
+                    )
+                }
+                if (actividad.estado != "COMPLETADA") {
+                    BotonAccionRuralitos(
+                        texto = "Eliminar actividad",
+                        color = agendaRojoAtraso,
+                        onClick = { grupoDetalle = null; eliminar = grupo },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         )
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(Modifier.fillMaxSize().background(agendaFondo).formularioSeguro()) {
       EncabezadoPantallaRuralitos(
           titulo = when (pestana) { 0 -> "Seguimiento"; 1 -> "Agenda"; else -> "Mapa de visitas" },
@@ -423,7 +470,7 @@ fun AgendaScreen(
           descripcion = when (pestana) {
               0 -> "Organiza visitas, notas y controles pendientes"
               1 -> "Organiza y consulta tus actividades de salud"
-              else -> "Ubica tus visitas, ordena el recorrido del día y agenda desde el mapa"
+              else -> "Ubica tus visitas y ordena el recorrido del día"
           }
       )
       if (pestana == 2) {
@@ -436,9 +483,7 @@ fun AgendaScreen(
             ahora = ahora,
             estado = estadoMapa,
             onAbrirVisita = { grupoDetalle = it },
-            onAgendar = { id -> fichaParaAgendar = id; editando = null; error = ""; formulario = true },
             onAbrirFicha = onAbrirFicha,
-            onAbrirRuta = onAbrirRuta,
             onUbicarFicha = onUbicarFicha,
             modifier = Modifier.weight(1f)
         )
@@ -518,6 +563,17 @@ fun AgendaScreen(
             item { Spacer(Modifier.height(96.dp)) }
         }
       }
+    }
+    // El + para agendar está siempre en Seguimiento y en Agenda; en el mapa no.
+    if (pestana != 2) {
+        BotonFlotanteRedondo(
+            descripcion = "Agendar una visita",
+            color = agendaVerde,
+            etiquetaPrueba = "boton_agendar",
+            onClick = { fichaParaAgendar = null; editando = null; error = ""; formulario = true },
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 16.dp, bottom = 24.dp)
+        )
+    }
     }
 }
 
@@ -785,7 +841,7 @@ private fun TarjetaActividadAgenda(
     }
     Surface(
         onClick = onAbrir,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp),
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 18.dp).testTag("tarjeta_actividad_${actividad.id}"),
         shape = RoundedCornerShape(16.dp),
         color = Color.White,
         border = BorderStroke(1.dp, agendaBorde),

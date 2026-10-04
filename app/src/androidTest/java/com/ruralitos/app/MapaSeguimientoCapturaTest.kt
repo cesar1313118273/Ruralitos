@@ -59,7 +59,7 @@ class MapaSeguimientoCapturaTest {
         }
         rule.setContent {
             RuralitosTheme {
-                AgendaScreen(usuarioId = 1, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, onAbrirRuta = {}, pestanaInicial = 2)
+                AgendaScreen(usuarioId = 1, organizacionId = "", onRegresar = {}, onAbrirFicha = {}, pestanaInicial = 2)
             }
         }
         rule.waitUntil(30_000) { rule.onAllNodes(hasTestTag("mapa_viviendas")).fetchSemanticsNodes().isNotEmpty() }

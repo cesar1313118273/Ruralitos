@@ -116,7 +116,6 @@ import com.ruralitos.app.ui.screens.AgendaScreen
 import com.ruralitos.app.ui.screens.EstadoMapaSeguimiento
 import com.ruralitos.app.ui.screens.MapaParlanteScreen
 import com.ruralitos.app.ui.screens.CumplimientoScreen
-import com.ruralitos.app.ui.screens.RutaSeguimientoScreen
 import com.ruralitos.app.data.agenda.PlanificadorSeguimiento
 import com.ruralitos.app.data.agenda.RecordatorioAgenda
 import com.ruralitos.app.ui.screens.CredencialesProfesionalesScreen
@@ -280,7 +279,6 @@ fun RuralitosApp() {
     var codigoInvitacion by remember { mutableStateOf<String?>(null) }
     var pantallaActual by remember { mutableStateOf("inicio") }
     var fichaIdActual by remember { mutableStateOf<Long?>(null) }
-    var fichaIdRuta by remember { mutableStateOf<Long?>(null) }
     var fichaAbiertaDesdeAgenda by remember { mutableStateOf(false) }
     var pestanaAgenda by remember { mutableStateOf(0) }
     val estadoMapaSeguimiento = remember { EstadoMapaSeguimiento() }
@@ -1264,10 +1262,6 @@ fun RuralitosApp() {
                                 }
                             }
                         },
-                        onAbrirRuta = { id ->
-                            fichaIdRuta = id
-                            pantallaActual = "rutaSeguimiento"
-                        },
                         estadoMapa = estadoMapaSeguimiento,
                         pestanaInicial = pestanaAgenda,
                         onPestanaCambiada = { pestanaAgenda = it },
@@ -1285,28 +1279,6 @@ fun RuralitosApp() {
                             }
                         }
                     )
-                }
-
-                "rutaSeguimiento" -> {
-                    val id = fichaIdRuta
-                    if (id != null) RutaSeguimientoScreen(
-                        fichaId = id,
-                        usuarioId = usuarioActual?.id,
-                        onRegresar = { pantallaActual = "agenda" },
-                        onAbrirFicha = {
-                            scope.launch {
-                                fichaSeleccionada = withContext(Dispatchers.IO) {
-                                    database.fichaFamiliarDao().buscarPorId(id)
-                                }
-                                if (fichaSeleccionada != null) {
-                                    fichaIdActual = id
-                                    modoEdicion = true
-                                    fichaAbiertaDesdeAgenda = true
-                                    pantallaActual = "menuFicha"
-                                }
-                            }
-                        }
-                    ) else pantallaActual = "agenda"
                 }
 
                 "sala" -> {
