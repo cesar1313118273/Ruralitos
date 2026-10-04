@@ -15,6 +15,7 @@ import com.ruralitos.app.data.local.entity.MortalidadFamiliarEntity
 import com.ruralitos.app.data.local.entity.ValorRiesgoEntity
 import com.ruralitos.app.data.remote.SupabaseApi
 import com.ruralitos.app.data.remote.ErrorSupabase
+import com.ruralitos.app.data.remote.InfoFichaCompartida
 import org.json.JSONObject
 import java.text.ParseException
 import java.text.SimpleDateFormat
@@ -236,6 +237,8 @@ class SincronizadorSupabase(context: Context) {
      */
     private suspend fun actualizarEtiquetasCompartidas(org: String) {
         val filas = api.infoFichasCompartidas()
+        // Primero se completa lo que falta (fichas recién compartidas) y se retira lo que ya no se puede ver.
+        runCatching { ponerAlDiaFichasCompartidas(org, filas) }
         val previas = dao.fichasDeOrganizacion(org).associate { it.syncId to EtiquetaPrevia(it.miPermiso, it.editadaPorOtroEn) }
         database.withTransaction {
             dao.limpiarEtiquetasCompartidas(org)
@@ -254,6 +257,43 @@ class SincronizadorSupabase(context: Context) {
             runCatching { AvisosCompartidas.mostrar(appContext, AvisosCompartidas.detectar(previas, filas)) }
         } else {
             preferencias.edit().putBoolean(claveBase, true).apply()
+        }
+    }
+
+    /**
+     * La descarga incremental no ve dos cosas: una ficha antigua que acaban de compartirme (su fecha de cambio es vieja)
+     * y una a la que me quitaron el acceso. Aquí se baja lo que falta, ficha por ficha, y se retira del teléfono lo que
+     * el servidor ya no me deja ver (nunca una ficha con cambios sin subir ni una que sigo viendo).
+     */
+    private suspend fun ponerAlDiaFichasCompartidas(org: String, filas: List<InfoFichaCompartida>) {
+        val locales = dao.fichasDeOrganizacion(org).map { FichaLocalCompartida(it.syncId, it.miPermiso, it.syncEstado) }
+        val plan = PlaneadorCompartidas.planear(org, locales, filas, dao.fichasEnBaja(org).toSet())
+
+        plan.faltantes.chunked(25).forEach { lote ->
+            val cabeceras = api.seleccionar(
+                "fichas_familiares?organizacion_id=eq.$org&deleted_at=is.null&id=in.(${lote.joinToString(",")})&select=*"
+            )
+            for (i in 0 until cabeceras.length()) {
+                val cabecera = cabeceras.getJSONObject(i)
+                val id = cabecera.getString("id")
+                runCatching {
+                    val grupo = GrupoFicha().also { it.cabecera = cabecera }
+                    traerHijosDeFicha(id, grupo)
+                    aplicador.aplicar(org, construirDatos(org, id, grupo), completo = true)
+                }
+            }
+        }
+
+        if (plan.candidatasARetirar.isNotEmpty()) {
+            val siguenVisibles = mutableSetOf<String>()
+            plan.candidatasARetirar.chunked(50).forEach { lote ->
+                val visibles = api.seleccionar(
+                    "fichas_familiares?deleted_at=is.null&id=in.(${lote.joinToString(",")})&select=id"
+                )
+                for (i in 0 until visibles.length()) siguenVisibles += visibles.getJSONObject(i).getString("id")
+            }
+            val retirar = plan.candidatasARetirar.filter { it !in siguenVisibles }
+            if (retirar.isNotEmpty()) aplicador.eliminarFichas(org, retirar.toSet())
         }
     }
 
@@ -372,8 +412,10 @@ class SincronizadorSupabase(context: Context) {
 
     private suspend fun marcarEliminadosYLimpiar(tabla: String, ids: List<String>) {
         val rutas = runCatching { rutasDeAlmacenamientoVarias(tabla, ids) }.getOrDefault(emptyList())
-        api.marcarEliminados(tabla, ids)
-        rutas.forEach { ruta -> runCatching { api.eliminarArchivoAlmacenamiento(ruta) } }
+        val ignoradas = api.marcarEliminados(tabla, ids)
+        // Si el servidor ignoró la baja de una ficha (no era de quien la pidió), sus archivos NO se tocan.
+        rutas.filter { ruta -> ignoradas.none { id -> "/$id/" in ruta } }
+            .forEach { ruta -> runCatching { api.eliminarArchivoAlmacenamiento(ruta) } }
     }
 
     private suspend fun rutasDeAlmacenamientoVarias(tabla: String, ids: List<String>): List<String> {
@@ -391,9 +433,10 @@ class SincronizadorSupabase(context: Context) {
 
     private suspend fun marcarEliminadoYLimpiar(tabla: String, id: String) {
         val rutas = runCatching { rutasDeAlmacenamiento(tabla, id) }.getOrDefault(emptyList())
-        api.marcarEliminado(tabla, id)
+        val ignorada = api.marcarEliminado(tabla, id)
         // Los archivos de una ficha o adjunto eliminado no deben quedarse en el servidor con datos de pacientes.
-        rutas.forEach { ruta -> runCatching { api.eliminarArchivoAlmacenamiento(ruta) } }
+        // Si el servidor ignoró la baja de una ficha (no era de quien la pidió), sus archivos NO se tocan.
+        if (!ignorada) rutas.forEach { ruta -> runCatching { api.eliminarArchivoAlmacenamiento(ruta) } }
     }
 
     private suspend fun rutasDeAlmacenamiento(tabla: String, id: String): List<String> = when (tabla) {

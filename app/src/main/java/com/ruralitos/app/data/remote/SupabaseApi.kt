@@ -112,7 +112,8 @@ data class InfoFichaCompartida(
     val personas: Int,
     /** En fichas mías: quién, distinta de mí, la modificó por última vez y cuándo (vacío / 0 si nadie). */
     val editorNombre: String = "",
-    val editadaEn: Long = 0L
+    val editadaEn: Long = 0L,
+    val organizacionId: String = ""
 )
 
 /** Una persona que ve una de mis fichas; `via` = FICHA, BARRIO, EAIS o CENTRO. */
@@ -803,7 +804,8 @@ class SupabaseApi(context: Context) {
                 permiso = f.optString("permiso").takeIf { it != "null" }.orEmpty(),
                 personas = f.optInt("personas"),
                 editorNombre = f.optString("editor_nombre").takeIf { it != "null" }.orEmpty(),
-                editadaEn = f.optLong("editada_en")
+                editadaEn = f.optLong("editada_en"),
+                organizacionId = f.optString("organizacion_id").takeIf { it != "null" }.orEmpty()
             )
         }
     }
@@ -1164,7 +1166,8 @@ class SupabaseApi(context: Context) {
         }
     }
 
-    suspend fun marcarEliminado(tabla: String, id: String) {
+    /** Devuelve verdadero si el servidor ignoró la baja (por ejemplo, una ficha que no es de quien la pidió). */
+    suspend fun marcarEliminado(tabla: String, id: String): Boolean {
         val modificados = solicitar(
             "PATCH",
             "/rest/v1/$tabla?id=eq.${codificar(id)}",
@@ -1178,14 +1181,15 @@ class SupabaseApi(context: Context) {
                 throw ErrorSupabase("Supabase no permitió eliminar el registro. Revisa los permisos del grupo.")
             }
         }
+        return modificados.length() > 0 && modificados.getJSONObject(0).isNull("deleted_at")
     }
 
     /**
      * Marca como eliminados varios registros de una tabla en una sola petición. Lo que no existe en el servidor
      * (nunca llegó a subirse) se da por eliminado; si existe pero el servidor no lo modificó, es un problema de permisos.
      */
-    suspend fun marcarEliminados(tabla: String, ids: List<String>) {
-        if (ids.isEmpty()) return
+    suspend fun marcarEliminados(tabla: String, ids: List<String>): Set<String> {
+        if (ids.isEmpty()) return emptySet()
         val lista = ids.joinToString(",") { codificar(it) }
         val modificados = solicitar(
             "PATCH",
@@ -1194,13 +1198,17 @@ class SupabaseApi(context: Context) {
             accessToken = tokenValido(),
             headers = mapOf("Prefer" to "return=representation")
         ).jsonArreglo()
-        if (modificados.length() >= ids.size) return
+        // Filas que el servidor devolvió sin la baja aplicada: la ignoró a propósito (no son de quien la pidió).
+        val ignoradas = (0 until modificados.length()).map { modificados.getJSONObject(it) }
+            .filter { it.isNull("deleted_at") }.mapTo(mutableSetOf()) { it.optString("id") }
+        if (modificados.length() >= ids.size) return ignoradas
         val tocados = (0 until modificados.length()).map { modificados.getJSONObject(it).optString("id") }.toSet()
         val faltantes = ids.filter { it !in tocados }
         val visibles = seleccionar("$tabla?id=in.(${faltantes.joinToString(",") { codificar(it) }})&select=id")
         if (visibles.length() > 0) {
             throw ErrorSupabase("Supabase no permitió eliminar el registro. Revisa los permisos del grupo.")
         }
+        return ignoradas
     }
 
     suspend fun subirAdjunto(uri: Uri, rutaStorage: String, mimeType: String): Long =

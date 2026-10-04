@@ -1,5 +1,13 @@
 # Changelog de Supabase
 
+## 2026-10-07 — info_fichas_compartidas por Sala y más liviana
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261007300000_info_compartidas_por_sala.sql`).
+- Tipo: cambio compatible (agrega la columna `organizacion_id`; la app anterior la ignora).
+- Ya no devuelve una fila por cada ficha propia, solo las compartidas o editadas por otra persona (PostgREST corta en 1000 filas).
+- La app la usa en cada sincronización para bajar las fichas recién compartidas y retirar las que perdió.
+
+
 ## 2026-10-07 — Solo el autor elimina su ficha
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261007200000_solo_el_autor_elimina_su_ficha.sql`).
