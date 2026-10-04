@@ -184,7 +184,7 @@ fun AgendaScreen(
             onCerrar = { visitaPorConfirmar = null },
             contenido = {
                 Text(
-                    "Confirma la atención del hogar. Las próximas visitas se calcularán nuevamente según el grupo de riesgo de cada integrante.",
+                    "Registra la atención del hogar. Las próximas visitas se calcularán nuevamente según el grupo de riesgo de cada integrante.",
                     color = agendaSecundario
                 )
             },
