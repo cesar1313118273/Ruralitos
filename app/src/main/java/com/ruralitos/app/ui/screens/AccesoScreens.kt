@@ -383,7 +383,7 @@ fun GestionUsuariosScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(usuario.nombres, fontWeight = FontWeight.SemiBold)
-                            Text("${usuario.cargo} · ${if (usuario.esAdministrador) "Administrador" else "Personal de salud"}")
+                            Text("${usuario.cargo} · Personal de salud")
                             Text("Cédula: ${usuario.cedula}", style = MaterialTheme.typography.bodySmall)
                         }
                         Switch(

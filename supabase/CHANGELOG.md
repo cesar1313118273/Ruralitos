@@ -1,5 +1,13 @@
 # Changelog de Supabase
 
+## 2026-10-09 — Roles iguales: sin permisos propios del administrador
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261009200000_roles_iguales.sql`).
+- Tipo: cambio de permisos (restringe lo exclusivo del administrador). Se quitan las políticas de administrador de `accesos_sala` y `miembros_organizacion` (los miembros y accesos se escriben solo con las funciones de compartir, traspasar y quitar).
+- Crear fichas, ver y editar EAIS y barrios, y cambiar los datos de la Sala: cualquier miembro que edita (administrador o médico) por igual. Ver EAIS y barrios: cualquier miembro.
+- Probado con cuentas reales en una transacción revertida: administrador y médico crean fichas, ven los EAIS y no ven las fichas del otro.
+
+
 ## 2026-10-09 — El administrador tiene las mismas funciones que los demás roles
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261009100000_administrador_sin_privilegios_en_fichas.sql`).

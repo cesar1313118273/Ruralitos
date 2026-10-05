@@ -142,7 +142,7 @@ fun PerfilScreen(
     PantallaRuralitos(
         titulo = "Datos personales",
         descripcion = "Actualiza la información que identifica tu cuenta profesional en Ruralitos.",
-        subtitulo = if (usuario.esAdministrador) "Perfil de administrador" else "Perfil del personal de salud",
+        subtitulo = "Perfil del personal de salud",
         onVolver = onRegresar,
         barraAccion = {
             BotonPrincipalRuralitos(
