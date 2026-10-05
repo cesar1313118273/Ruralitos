@@ -1,5 +1,14 @@
 # Changelog de Supabase
 
+## 2026-10-09 — El administrador tiene las mismas funciones que los demás roles
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261009100000_administrador_sin_privilegios_en_fichas.sql`).
+- Tipo: cambio de permisos (restringe). `tiene_acceso_ficha` ya no abre fichas por ser administrador ni por tener acceso a toda la Sala: se ve y se edita lo que uno creó y lo que otra persona comparte. Las políticas de `fichas_familiares` también comprueban la autoría con la propia fila para que crear una ficha y leerla en la misma instrucción funcione.
+- `accesos_ficha`: se quitan las políticas de administrador; cada quien ve solo los accesos que dio o que recibió.
+- EAIS y barrios: los puede crear y editar cualquier miembro con rol administrador o médico (antes solo el administrador); ya no se eliminan por la API.
+- Probado con cuentas reales dentro de una transacción revertida: el administrador ve solo sus fichas, quien recibe ve solo la compartida, y crear una ficha funciona.
+
+
 ## 2026-10-08 — Traspaso de fichas por código
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261008200000_traspaso_de_fichas_por_codigo.sql`).

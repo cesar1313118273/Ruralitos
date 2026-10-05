@@ -164,7 +164,8 @@ fun SalaScreen(
     val sala = salas.firstOrNull { it.organizacionId == salaId }
     val eaisElegido = eais.firstOrNull { it.id == eaisId }
     val territorio = territorios.firstOrNull { it.id == territorioId }
-    val puedeAdministrar = sala?.permiso == "ADMINISTRADOR" || sala?.rol == "ADMINISTRADOR"
+    // Todos los roles iguales: cualquier miembro que edita (administrador o médico) gestiona los EAIS y barrios de su Sala.
+    val puedeAdministrar = sala != null && !sala.rol.equals("ESTADISTICA", ignoreCase = true)
     val todasLasFichas by remember(database) { database.fichaFamiliarDao().listarFichas() }
         .collectAsState(initial = emptyList())
     val todosLosEais by remember(database) { database.salaDao().observarTodosEais() }
