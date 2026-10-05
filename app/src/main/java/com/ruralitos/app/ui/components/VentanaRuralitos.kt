@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -64,11 +66,15 @@ fun VentanaRuralitos(
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnBackPress = cerrarAlTocarFuera,
-            dismissOnClickOutside = cerrarAlTocarFuera
+            dismissOnClickOutside = cerrarAlTocarFuera,
+            // Para que la ventana pueda subir por encima del teclado en vez de quedar tapada por él.
+            decorFitsSystemWindows = false
         )
     ) {
         Surface(
-            modifier = modifier.padding(horizontal = 20.dp, vertical = 24.dp).widthIn(max = 420.dp).fillMaxWidth(),
+            // Con el teclado abierto la ventana se encoge y su contenido se desplaza: ningún cuadro ni botón queda tapado.
+            modifier = modifier.imePadding().systemBarsPadding()
+                .padding(horizontal = 20.dp, vertical = 24.dp).widthIn(max = 420.dp).fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             color = Color.White,
             border = BorderStroke(1.dp, BordeClinico),

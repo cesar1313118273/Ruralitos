@@ -197,6 +197,11 @@ class SincronizadorSupabase(context: Context) {
 
         var subidas = 0
         dao.fichasPendientes(organizacionId).forEach { ficha ->
+            // Una ficha que solo puedo ver no se sube nunca: si quedó marcada como pendiente, se devuelve a sincronizada.
+            if (ficha.miPermiso == "LECTOR") {
+                runCatching { dao.marcarSincronizadaDescarga(ficha.id, ficha.syncVersion) }
+                return@forEach
+            }
             runCatching { subirFicha(ficha, organizacionId) }
                 .onSuccess { guardadaSinCambiosPosteriores ->
                     if (guardadaSinCambiosPosteriores) subidas++
@@ -249,7 +254,9 @@ class SincronizadorSupabase(context: Context) {
         // Primero se completa lo que falta (fichas recién compartidas) y se retira lo que ya no se puede ver.
         runCatching { ponerAlDiaFichasCompartidas(org, filas) }
         val previas = dao.fichasDeOrganizacion(org).associate { it.syncId to EtiquetaPrevia(it.miPermiso, it.editadaPorOtroEn) }
+        // Las etiquetas no son cambios de la ficha: se anotan sin dejarla «pendiente de sincronizar».
         database.withTransaction {
+            dao.suspenderSincronizadas()
             dao.limpiarEtiquetasCompartidas(org)
             filas.forEach { fila ->
                 if (fila.recibida) dao.marcarFichaRecibida(fila.fichaId, fila.autorId, fila.autorNombre, fila.permiso)
@@ -258,6 +265,7 @@ class SincronizadorSupabase(context: Context) {
                     if (fila.editadaEn > 0L) dao.marcarFichaEditadaPorOtro(fila.fichaId, fila.editorNombre, fila.editadaEn)
                 }
             }
+            dao.reanudarSincronizadas()
         }
         // La primera vez solo se toma la foto de lo que ya había; los avisos son para lo que cambie después.
         val preferencias = appContext.getSharedPreferences("avisos_compartidas_ruralitos", Context.MODE_PRIVATE)

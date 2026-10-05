@@ -101,6 +101,15 @@ interface FichaContenidoDao {
     @Query("SELECT * FROM miembros_familia WHERE fichaId = :fichaId ORDER BY id")
     fun listarMiembros(fichaId: Long): Flow<List<MiembroFamiliaEntity>>
 
+    /** Integrantes de MIS fichas (las que creé o me traspasaron); no cuenta las que otra persona me compartió. */
+    @Query("""
+        SELECT m.* FROM miembros_familia m
+        JOIN fichas_familiares f ON f.id = m.fichaId
+        WHERE f.miPermiso = ''
+        ORDER BY m.fichaId, m.id
+    """)
+    fun listarMiembrosDeMisFichas(): Flow<List<MiembroFamiliaEntity>>
+
     @Query("SELECT * FROM miembros_familia ORDER BY fichaId, id")
     fun listarTodosMiembros(): Flow<List<MiembroFamiliaEntity>>
 

@@ -549,17 +549,15 @@ fun RuralitosApp() {
     }.collectAsState(initial = 0L)
     val revisionSincronizacion by EstadoSincronizacion.revision.collectAsState()
     val totalPendiente = fichasPendientesSync + agendaPendientesSync + notasPendientesSync
-    val estadoSincronizacion = when {
-        agendaConflictosSync + notasConflictosSync + fichasConflictoSync > 0 ->
-            "${agendaConflictosSync + notasConflictosSync + fichasConflictoSync} cambios por revisar"
-        totalPendiente > 0 -> "$totalPendiente pendiente${if (totalPendiente == 1) "" else "s"} de sincronizar"
-        !supabase.hayInternet() -> "Sin conexión · datos guardados en el teléfono"
-        EstadoSincronizacion.ultimoIntentoCorrecto(context, usuarioActual?.supabaseId.orEmpty()) == false ->
-            "No se pudo sincronizar · datos guardados"
-        EstadoSincronizacion.ultimoIntentoCorrecto(context, usuarioActual?.supabaseId.orEmpty()) == true ->
-            "Sincronizado"
-        else -> "Guardado local"
-    }
+    val sincronizando by EstadoSincronizacion.enCurso.collectAsState()
+    val estadoSincronizacion = EstadoSincronizacion.mensaje(
+        conflictos = agendaConflictosSync + notasConflictosSync + fichasConflictoSync,
+        pendientes = totalPendiente,
+        enCurso = sincronizando,
+        hayInternet = supabase.hayInternet(),
+        fallosSeguidos = EstadoSincronizacion.fallosSeguidos(context, usuarioActual?.supabaseId.orEmpty()),
+        ultimoCorrecto = EstadoSincronizacion.ultimoIntentoCorrecto(context, usuarioActual?.supabaseId.orEmpty())
+    )
 
     LaunchedEffect(estadoAcceso, fichasPendientesSync, ultimoCambioPendiente,
         agendaPendientesSync, notasPendientesSync, agendaUltimoCambio, notasUltimoCambio) {

@@ -57,10 +57,22 @@ interface SincronizacionDao {
     """)
     suspend fun contarCambiosSinSubir(): Int
 
+    /**
+     * Las etiquetas de «compartida» (autor, permiso, a cuántas personas) NO son cambios de la ficha: no deben dejarla
+     * «pendiente de sincronizar». Un disparador de la base marca pendiente toda ficha sincronizada que se modifica, así que
+     * al anotar etiquetas se las aparta un instante como «descargando» y se devuelven a «sincronizada» (siempre dentro de
+     * una sola transacción, ver [ponerEtiquetas]).
+     */
+    @Query("UPDATE fichas_familiares SET syncEstado = 'DESCARGANDO' WHERE syncEstado = 'SINCRONIZADO'")
+    suspend fun suspenderSincronizadas()
+
+    @Query("UPDATE fichas_familiares SET syncEstado = 'SINCRONIZADO' WHERE syncEstado = 'DESCARGANDO'")
+    suspend fun reanudarSincronizadas()
+
     /** Antes de poner las etiquetas de compartidas que dice el servidor se borran las anteriores. */
     @Query("""
         UPDATE fichas_familiares SET miPermiso = '', autorNombre = '', compartidaConPersonas = 0, editorNombre = '', editadaPorOtroEn = 0
-        WHERE organizacionId = :organizacionId AND syncEstado = 'SINCRONIZADO'
+        WHERE organizacionId = :organizacionId AND syncEstado IN ('SINCRONIZADO', 'DESCARGANDO')
     """)
     suspend fun limpiarEtiquetasCompartidas(organizacionId: String)
 

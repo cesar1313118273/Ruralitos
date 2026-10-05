@@ -12,6 +12,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.room.withTransaction
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -86,8 +87,13 @@ fun AccesosDeFichaRuralitos(
             .onSuccess {
                 personas = it
                 withContext(Dispatchers.IO) {
-                    RuralitosDatabase.obtenerBaseDatos(context).sincronizacionDao()
-                        .marcarFichaCompartidaPorMi(ficha.syncId, it.size)
+                    val bd = RuralitosDatabase.obtenerBaseDatos(context)
+                    bd.withTransaction {
+                        val dao = bd.sincronizacionDao()
+                        dao.suspenderSincronizadas()
+                        dao.marcarFichaCompartidaPorMi(ficha.syncId, it.size)
+                        dao.reanudarSincronizadas()
+                    }
                 }
             }
             .onFailure { error = it.message ?: "No se pudo cargar la lista." }

@@ -87,13 +87,13 @@ fun CumplimientoScreen(organizacionId: String, onRegresar: () -> Unit) {
     val repositorio = remember { PoblacionAsignadaRepositorio(context) }
     var asignada by remember(organizacionId) { mutableStateOf(repositorio.cargar(organizacionId)) }
     var editando by remember { mutableStateOf(false) }
-    val miembros by remember { RuralitosDatabase.obtenerBaseDatos(context).fichaContenidoDao().listarTodosMiembros() }
+    val miembros by remember { RuralitosDatabase.obtenerBaseDatos(context).fichaContenidoDao().listarMiembrosDeMisFichas() }
         .collectAsState(initial = emptyList())
     val resumen = remember(asignada, miembros) { CumplimientoPoblacion.calcular(asignada, miembros) }
 
     PantallaRuralitos(
         titulo = "Cumplimiento",
-        descripcion = "Las personas con ficha frente a la población que tienes asignada.",
+        descripcion = "Las personas de tus fichas frente a la población que tienes asignada. No cuenta las fichas que otras personas te compartieron.",
         onVolver = onRegresar
     ) {
         TarjetaGeneral(resumen.asignados, resumen.registrados, resumen.porcentaje, resumen.nivel,

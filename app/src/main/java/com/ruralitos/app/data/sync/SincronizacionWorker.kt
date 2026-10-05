@@ -24,11 +24,12 @@ class SincronizacionWorker(
         if (usuarioId == null) {
             return Result.success()
         }
+        EstadoSincronizacion.iniciar()
         return runCatching {
             SincronizadorSupabase(applicationContext).ejecutar(
                 soloSubidas = inputData.getBoolean(CLAVE_SOLO_SUBIDAS, false)
             )
-        }.fold(
+        }.also { EstadoSincronizacion.terminar() }.fold(
             onSuccess = { resultado ->
                 EstadoSincronizacion.registrar(applicationContext, usuarioId, resultado.errores == 0)
                 if (resultado.erroresReintentables > 0) Result.retry() else Result.success()
