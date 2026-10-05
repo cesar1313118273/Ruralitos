@@ -101,7 +101,8 @@ object ConsolidadoExcelExporter {
     private suspend fun cargar(context: Context, filtro: FiltroConsolidado): DatosConsolidado {
         val db = RuralitosDatabase.obtenerBaseDatos(context); val dao = db.fichaContenidoDao()
         val seleccion = filtro.ids.ifEmpty { filtro.id.takeIf(String::isNotBlank)?.let(::setOf).orEmpty() }
-        val fichas = db.fichaFamiliarDao().listarFichas().first().filter { f -> when (filtro.alcance) {
+        // Los reportes cuentan solo mis fichas (creadas o traspasadas), no las que otra persona me compartió.
+        val fichas = db.fichaFamiliarDao().listarFichas().first().filter { f -> !com.ruralitos.app.domain.EtiquetasFicha.esRecibida(f) }.filter { f -> when (filtro.alcance) {
             AlcanceConsolidado.FICHA -> f.id.toString() in seleccion
             AlcanceConsolidado.TERRITORIO -> f.territorioId in seleccion
             AlcanceConsolidado.EAIS -> f.eaisId in seleccion

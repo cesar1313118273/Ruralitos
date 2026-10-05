@@ -78,6 +78,7 @@ import com.ruralitos.app.data.local.entity.EaisSalaEntity
 import com.ruralitos.app.data.local.entity.FichaFamiliarEntity
 import com.ruralitos.app.data.local.entity.MiembroFamiliaEntity
 import com.ruralitos.app.data.local.entity.TerritorioSalaEntity
+import com.ruralitos.app.domain.EtiquetasFicha
 import com.ruralitos.app.domain.DispensarizacionAutomatica
 import com.ruralitos.app.domain.GrupoEdadRiesgo
 import com.ruralitos.app.domain.IconosMais
@@ -164,7 +165,9 @@ fun DispensarizacionScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val database = remember(context) { RuralitosDatabase.obtenerBaseDatos(context) }
-    val fichas by database.fichaFamiliarDao().listarFichas().collectAsState(initial = emptyList())
+    val fichasTodas by database.fichaFamiliarDao().listarFichas().collectAsState(initial = emptyList())
+    // El registro general y sus reportes cuentan solo mis fichas (las que creé o me traspasaron), no las que me compartieron.
+    val fichas = remember(fichasTodas) { fichasTodas.filter { !EtiquetasFicha.esRecibida(it) } }
     val miembros by database.fichaContenidoDao().listarTodosMiembros().collectAsState(initial = emptyList())
     val embarazadas by database.fichaContenidoDao().listarTodasEmbarazadas().collectAsState(initial = emptyList())
     val territorios by database.salaDao().observarTodosTerritorios().collectAsState(initial = emptyList())
