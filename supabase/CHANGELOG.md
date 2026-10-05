@@ -1,5 +1,13 @@
 # Changelog de Supabase
 
+## 2026-10-09 — Al traspasar, el responsable del llenado pasa a la nueva dueña
+
+- Estado: aplicado en el proyecto remoto (`migrations/20261009300000_traspaso_cambia_responsable_del_llenado.sql`).
+- Tipo: cambio compatible. `aceptar_traspaso` y `traspasar_ficha` ahora también cambian `responsable_nombre` y `responsable_codigo` (los que salen como «Responsable del llenado» en el PDF y el Excel) por los del perfil de quien recibe.
+- Las fichas ya traspasadas se corrigieron con un `update` (la ficha traspasada a la Dra. Diana ahora muestra su nombre y su código).
+- Probado en una transacción revertida: traspaso de ida y vuelta entre dos cuentas.
+
+
 ## 2026-10-09 — Roles iguales: sin permisos propios del administrador
 
 - Estado: aplicado en el proyecto remoto (`migrations/20261009200000_roles_iguales.sql`).
