@@ -556,7 +556,8 @@ fun RuralitosApp() {
         enCurso = sincronizando,
         hayInternet = supabase.hayInternet(),
         fallosSeguidos = EstadoSincronizacion.fallosSeguidos(context, usuarioActual?.supabaseId.orEmpty()),
-        ultimoCorrecto = EstadoSincronizacion.ultimoIntentoCorrecto(context, usuarioActual?.supabaseId.orEmpty())
+        ultimoCorrecto = EstadoSincronizacion.ultimoIntentoCorrecto(context, usuarioActual?.supabaseId.orEmpty()),
+        motivo = EstadoSincronizacion.motivoGuardado(context)
     )
 
     LaunchedEffect(estadoAcceso, fichasPendientesSync, ultimoCambioPendiente,

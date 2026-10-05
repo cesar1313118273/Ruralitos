@@ -10,7 +10,23 @@ object EstadoSincronizacion {
     /** Verdadero mientras hay una sincronización en marcha (para no mostrar mensajes contradictorios a mitad de camino). */
     val enCurso = MutableStateFlow(false)
 
-    fun iniciar() { enCurso.value = true }
+    private val errores = java.util.concurrent.ConcurrentLinkedQueue<String>()
+
+    /** Anota por qué falló un paso de la sincronización (para mostrar el motivo y poder diagnosticarlo). */
+    fun anotarError(origen: String, error: Throwable) {
+        val texto = "$origen: ${error.message.orEmpty().ifBlank { error.javaClass.simpleName }}".take(220)
+        errores.add(texto)
+        while (errores.size > 8) errores.poll()
+        if (com.ruralitos.app.BuildConfig.DEBUG) android.util.Log.w("RuralitosSync", texto)
+    }
+
+    /** El primer motivo anotado en la última sincronización, o vacío. */
+    fun motivo(): String = errores.firstOrNull().orEmpty()
+
+    fun iniciar() {
+        errores.clear()
+        enCurso.value = true
+    }
 
     fun terminar() { enCurso.value = false }
 
@@ -22,9 +38,14 @@ object EstadoSincronizacion {
             .putString("ultimo_usuario", usuarioId)
             .putBoolean("ultimo_intento_correcto", correcto)
             .putInt("fallos_seguidos", fallosSeguidos)
+            .putString("ultimo_motivo", if (correcto) "" else motivo())
             .apply()
         revision.value = System.currentTimeMillis()
     }
+
+    /** El motivo del último fallo (queda en el teléfono; no se envía a ninguna parte). */
+    fun motivoGuardado(context: Context): String =
+        context.getSharedPreferences("ruralitos_sync", Context.MODE_PRIVATE).getString("ultimo_motivo", "").orEmpty()
 
     fun ultimoIntentoCorrecto(context: Context, usuarioId: String): Boolean? {
         val preferencias = context.getSharedPreferences("ruralitos_sync", Context.MODE_PRIVATE)
@@ -52,13 +73,16 @@ object EstadoSincronizacion {
         enCurso: Boolean,
         hayInternet: Boolean,
         fallosSeguidos: Int,
-        ultimoCorrecto: Boolean?
+        ultimoCorrecto: Boolean?,
+        motivo: String = ""
     ): String = when {
         conflictos > 0 -> "$conflictos cambios por revisar"
         // Con internet y algo por subir: se está sincronizando (o se va a sincronizar en un instante).
         pendientes > 0 && hayInternet && enCurso -> "Sincronizando $pendientes cambio${if (pendientes == 1) "" else "s"}…"
         pendientes > 0 && !hayInternet -> "Sin conexión · $pendientes pendiente${if (pendientes == 1) "" else "s"} de sincronizar"
-        fallosSeguidos >= FALLOS_PARA_AVISAR -> "No se pudo sincronizar · datos guardados, se reintentará solo"
+        fallosSeguidos >= FALLOS_PARA_AVISAR ->
+            "No se pudo sincronizar · datos guardados, se reintentará solo" +
+                (if (motivo.isBlank()) "" else "\nMotivo: $motivo")
         pendientes > 0 -> "$pendientes pendiente${if (pendientes == 1) "" else "s"} de sincronizar"
         !hayInternet -> "Sin conexión · datos guardados en el teléfono"
         ultimoCorrecto == true || ultimoCorrecto == false -> "Sincronizado"

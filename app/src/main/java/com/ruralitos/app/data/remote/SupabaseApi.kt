@@ -1206,8 +1206,33 @@ class SupabaseApi(context: Context) {
         }
     }
 
+    /**
+     * Las tablas privadas (agenda y notas de cada cuenta) no tienen `deleted_at`: una baja es poner `eliminado_en` y subir
+     * la versión para que los demás teléfonos de la cuenta se enteren. Lo que no existe en la nube (nunca se subió) no
+     * necesita nada.
+     */
+    private suspend fun marcarEliminadosPrivados(tabla: String, ids: List<String>) {
+        if (ids.isEmpty()) return
+        val ahora = System.currentTimeMillis()
+        val lista = ids.joinToString(",") { codificar(it) }
+        val filas = seleccionar("$tabla?id=in.($lista)&select=id,version,eliminado_en")
+        for (i in 0 until filas.length()) {
+            val fila = filas.getJSONObject(i)
+            if (!fila.isNull("eliminado_en")) continue
+            val version = fila.optLong("version", 1L)
+            solicitar(
+                "PATCH",
+                "/rest/v1/$tabla?id=eq.${codificar(fila.getString("id"))}&version=eq.$version",
+                cuerpo = JSONObject().put("eliminado_en", ahora).put("actualizado_en", ahora).put("version", version + 1),
+                accessToken = tokenValido(),
+                headers = mapOf("Prefer" to "return=minimal")
+            )
+        }
+    }
+
     /** Devuelve verdadero si el servidor ignoró la baja (por ejemplo, una ficha que no es de quien la pidió). */
     suspend fun marcarEliminado(tabla: String, id: String): Boolean {
+        if (tabla in TABLAS_PRIVADAS) { marcarEliminadosPrivados(tabla, listOf(id)); return false }
         val modificados = solicitar(
             "PATCH",
             "/rest/v1/$tabla?id=eq.${codificar(id)}",
@@ -1229,6 +1254,7 @@ class SupabaseApi(context: Context) {
      * (nunca llegó a subirse) se da por eliminado; si existe pero el servidor no lo modificó, es un problema de permisos.
      */
     suspend fun marcarEliminados(tabla: String, ids: List<String>): Set<String> {
+        if (tabla in TABLAS_PRIVADAS) { marcarEliminadosPrivados(tabla, ids); return emptySet() }
         if (ids.isEmpty()) return emptySet()
         val lista = ids.joinToString(",") { codificar(it) }
         val modificados = solicitar(
@@ -1438,6 +1464,8 @@ class SupabaseApi(context: Context) {
     companion object {
         /** Columnas agregadas en versiones recientes: si el servidor no las tiene, se omiten al subir. */
         private val COLUMNAS_RECIENTES = listOf("factores_riesgo_edad_json", "factores_obstetricos_json")
+        /** Tablas privadas de cada cuenta: se dan de baja con `eliminado_en`, no con `deleted_at`. */
+        private val TABLAS_PRIVADAS = setOf("notas_privadas", "agenda_privada")
 
         /** Solo para pruebas del emulador: apunta la app a un servidor de mentira en este mismo teléfono. */
         @Volatile

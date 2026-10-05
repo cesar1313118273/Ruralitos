@@ -213,7 +213,7 @@ class SincronizadorSupabase(context: Context) {
                             aplicador.eliminarFichas(organizacionId, setOf(ficha.syncId))
                         }
                     } else {
-                        errores++
+                        errores++; EstadoSincronizacion.anotarError("subir la ficha ${ficha.numeroFichaFamiliar}", error)
                         if (errorSincronizacionReintentable(error)) reintentables++
                         dao.marcarError(
                             ficha.id,
@@ -231,7 +231,7 @@ class SincronizadorSupabase(context: Context) {
                     errores += it.errores
                     reintentables += it.reintentables
                 }
-                .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
+                .onFailure { error -> errores++; EstadoSincronizacion.anotarError("descargar de la nube", error); if (errorSincronizacionReintentable(error)) reintentables++ }
         }
         if (!soloSubidas) runCatching { actualizarEtiquetasCompartidas(organizacionId) }
         val resultadoPrivado = privados.ejecutar(organizacionId, soloSubidas)
@@ -473,7 +473,7 @@ class SincronizadorSupabase(context: Context) {
                 }
                 val falloDeRed = enLote.exceptionOrNull()?.let(::errorSincronizacionReintentable) == true
                 if (falloDeRed) {
-                    resultado.errores++
+                    resultado.errores++; enLote.exceptionOrNull()?.let { EstadoSincronizacion.anotarError("eliminar $tabla (red)", it) }
                     resultado.reintentables++
                     return resultado
                 }
@@ -486,7 +486,7 @@ class SincronizadorSupabase(context: Context) {
                             algunaListo = true
                         }
                         .onFailure { error ->
-                            resultado.errores++
+                            resultado.errores++; EstadoSincronizacion.anotarError("eliminar ${tumba.tabla}", error)
                             if (errorSincronizacionReintentable(error)) resultado.reintentables++
                         }
                 }
@@ -742,7 +742,7 @@ class SincronizadorSupabase(context: Context) {
                 val datos = construirDatos(org, syncId, grupo)
                 if (aplicador.aplicar(org, datos, completa)) aplicadas++
             }.onFailure { error ->
-                errores++
+                errores++; EstadoSincronizacion.anotarError("aplicar ficha descargada", error)
                 if (errorSincronizacionReintentable(error)) reintentables++
             }
         }
@@ -753,7 +753,7 @@ class SincronizadorSupabase(context: Context) {
             dao.fichasLocalesSincronizadas(org).map { it.syncId }.filter { it !in fichasVisibles && it !in bajas }
         } else emptyList()
         runCatching { aplicador.eliminarFichas(org, bajas + ausentes) }
-            .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
+            .onFailure { error -> errores++; EstadoSincronizacion.anotarError("retirar fichas eliminadas", error); if (errorSincronizacionReintentable(error)) reintentables++ }
 
         // Si algo falló, las marcas no avanzan: la próxima vez se repite lo mismo (aplicarlo dos veces es inocuo).
         if (errores == 0) {

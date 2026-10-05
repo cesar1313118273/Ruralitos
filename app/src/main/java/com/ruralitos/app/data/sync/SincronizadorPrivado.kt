@@ -49,7 +49,7 @@ internal class SincronizadorPrivado(context: Context, private val api: SupabaseA
                 } else if (agenda.marcarSincronizada(item.id, item.actualizadoEn,
                         remoto.optLong("version", item.syncVersion + 1)) > 0) subidas++
             }.onFailure { error ->
-                errores++
+                errores++; EstadoSincronizacion.anotarError("subir agenda", error)
                 if (errorSincronizacionReintentable(error)) reintentables++
             }
         }
@@ -63,16 +63,16 @@ internal class SincronizadorPrivado(context: Context, private val api: SupabaseA
                 else if (notas.marcarSincronizada(item.id, item.actualizadoEn,
                         remoto.optLong("version", item.syncVersion + 1)) > 0) subidas++
             }.onFailure { error ->
-                errores++
+                errores++; EstadoSincronizacion.anotarError("subir nota", error)
                 if (errorSincronizacionReintentable(error)) reintentables++
             }
         }
 
         if (!soloSubidas) {
             runCatching { descargarAgenda(ownerId, organizacionId, usuario.id) }
-                .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
+                .onFailure { error -> errores++; EstadoSincronizacion.anotarError("bajar agenda", error); if (errorSincronizacionReintentable(error)) reintentables++ }
             runCatching { descargarNotas(ownerId, organizacionId, usuario.id) }
-                .onFailure { error -> errores++; if (errorSincronizacionReintentable(error)) reintentables++ }
+                .onFailure { error -> errores++; EstadoSincronizacion.anotarError("bajar notas", error); if (errorSincronizacionReintentable(error)) reintentables++ }
         }
         return ResultadoPrivado(subidas, errores, reintentables)
     }

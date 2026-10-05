@@ -35,6 +35,7 @@ class SincronizacionWorker(
                 if (resultado.erroresReintentables > 0) Result.retry() else Result.success()
             },
             onFailure = { error ->
+                EstadoSincronizacion.anotarError("sincronización", error)
                 EstadoSincronizacion.registrar(applicationContext, usuarioId, false)
                 if (errorSincronizacionReintentable(error)) Result.retry() else Result.failure()
             }
