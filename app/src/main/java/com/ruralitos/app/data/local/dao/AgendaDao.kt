@@ -76,19 +76,24 @@ interface AgendaDao {
     suspend fun eliminarDeFichaConFecha(fichaId: Long, ahora: Long)
     suspend fun eliminarDeFicha(fichaId: Long) = eliminarDeFichaConFecha(fichaId, System.currentTimeMillis())
 
+    /** Cancela las citas por hacer de una ficha que dejó de ser de esta persona; las visitas ya realizadas se conservan. */
+    @Query("UPDATE actividades_agenda SET eliminadoEn = :ahora, syncEstado = 'PENDIENTE', actualizadoEn = :ahora, estado = 'CANCELADA' WHERE fichaId = :fichaId AND estado = 'PENDIENTE' AND eliminadoEn IS NULL")
+    suspend fun cancelarPendientesDeFicha(fichaId: Long, ahora: Long)
+
     @Query("""
         SELECT DISTINCT a.fichaId FROM actividades_agenda a
         LEFT JOIN fichas_familiares f ON f.id = a.fichaId
         WHERE a.usuarioId = :usuarioId AND a.origen = 'SEGUIMIENTO'
           AND a.estado = 'PENDIENTE' AND a.eliminadoEn IS NULL AND a.fichaId IS NOT NULL
-          AND (f.id IS NULL OR f.estado != 'COMPLETA')
+          AND (f.id IS NULL OR f.estado != 'COMPLETA' OR f.miPermiso != '')
     """)
     suspend fun fichasInactivasConSeguimiento(usuarioId: Long): List<Long>
 
     @Query("SELECT MAX(fechaBase) FROM actividades_agenda WHERE fichaId = :fichaId AND usuarioId = :usuarioId AND origen = 'SEGUIMIENTO'")
     suspend fun ultimaFechaBase(fichaId: Long, usuarioId: Long): Long?
 
-    @Query("SELECT * FROM fichas_familiares WHERE estado = 'COMPLETA' AND (:organizacionId = '' OR organizacionId = :organizacionId)")
+    /** Solo las fichas propias (creadas o traspasadas): el seguimiento de las compartidas es de su dueña. */
+    @Query("SELECT * FROM fichas_familiares WHERE estado = 'COMPLETA' AND miPermiso = '' AND (:organizacionId = '' OR organizacionId = :organizacionId)")
     suspend fun fichasCompletas(organizacionId: String): List<FichaFamiliarEntity>
 
     @Query("SELECT * FROM miembros_familia WHERE fichaId = :fichaId ORDER BY id")

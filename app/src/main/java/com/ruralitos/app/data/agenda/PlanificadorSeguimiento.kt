@@ -22,7 +22,7 @@ object PlanificadorSeguimiento {
         withContext(Dispatchers.IO) {
             val db = RuralitosDatabase.obtenerBaseDatos(context)
             val ficha = db.fichaFamiliarDao().buscarPorId(fichaId) ?: return@withContext Resultado(0, 0)
-            if (ficha.estado != "COMPLETA") {
+            if (ficha.estado != "COMPLETA" || com.ruralitos.app.domain.EtiquetasFicha.esRecibida(ficha)) {
                 retirarFicha(context, fichaId)
                 return@withContext Resultado(0, 0)
             }

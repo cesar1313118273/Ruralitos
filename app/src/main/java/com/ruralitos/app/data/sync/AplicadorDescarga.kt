@@ -124,6 +124,8 @@ internal class AplicadorDescarga(
                         }
                     }
                     ficha.firmaUri?.let(borrarArchivoLocal)
+                    // La agenda es personal: las citas por hacer de una ficha que ya no es mía no tienen a dónde ir.
+                    database.agendaDao().cancelarPendientesDeFicha(ficha.id, System.currentTimeMillis())
                     dao.marcarDescargando(ficha.id)
                     dao.eliminarFichaRemota(ficha.syncId)
                     (idsHijos + ficha.syncId).forEach { dao.descartarTumbaRemota(it) }
