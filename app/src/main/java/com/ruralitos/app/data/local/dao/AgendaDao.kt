@@ -107,7 +107,7 @@ interface AgendaDao {
                m.cedula AS cedula, f.barrio AS barrio
         FROM miembros_familia AS m
         INNER JOIN fichas_familiares AS f ON f.id = m.fichaId
-        WHERE (:organizacionId = '' OR f.organizacionId = :organizacionId)
+        WHERE f.miPermiso = '' AND (:organizacionId = '' OR f.organizacionId = :organizacionId)
         ORDER BY m.apellidosNombres
     """)
     fun observarPersonas(organizacionId: String): Flow<List<PersonaAgenda>>
